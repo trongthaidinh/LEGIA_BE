@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-
     private $messages = [
         'email.required' => 'Vui lòng nhập email',
         'email.email' => 'Email không đúng định dạng',
@@ -79,8 +78,9 @@ class AuthController extends Controller
         }
 
         if (! $token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Người dùng chưa được xác thực!'], 401);
+            return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
         }
+
 
         return responseJson(['accessToken' => $token]);
     }
