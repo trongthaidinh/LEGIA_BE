@@ -84,4 +84,12 @@ class AuthController extends Controller
 
         return responseJson(['accessToken' => $token]);
     }
+
+    public function logout()
+    {
+        auth()->logout();
+
+        return responseJson(null, 200, 'Đăng xuất thành công!');
+    }
+
 }
