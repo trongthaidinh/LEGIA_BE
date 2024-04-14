@@ -1,19 +1,19 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 
 
-// Route::prefix('user')->group(function () {
-//     Route::get('', [UserController::class, 'index'])->name('index');
-// });
+Route::prefix('user')->group(function () {
+    Route::get('me', [UserController::class, 'me']);
+});
 
 
 Route::group([
     'middleware' => 'api',
     'prefix' => 'auth',
 ], function () {
-    Route::post('login', [AuthController::class, 'login'])->name('loginUser');
-    Route::post('register', [AuthController::class, 'register'])->name('registerUser');
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']);
 });
