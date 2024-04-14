@@ -1,9 +1,7 @@
 <?php
 use Illuminate\Http\Request;
 
-
-
-function responseJson($data, $status = 200) {
+function responseJson($data, $status = 200, $message = null) {
     $messages = [
         200 => 'Success',
         400 => 'Bad Request',
@@ -22,5 +20,12 @@ function responseJson($data, $status = 200) {
         530 => 'Access Denied',
     ];
 
-    return response()->json(['message'=> $messages[$status] ,'data' => $data, 'status' => $status]);
+    return response()->json(
+    [
+    'statusCode' => $status,
+    'message'=> $message ? $message : $messages[$status],
+    'data' => $data
+    ], $status);
 }
+
+?>

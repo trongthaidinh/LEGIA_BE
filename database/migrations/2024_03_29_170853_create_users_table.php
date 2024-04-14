@@ -17,15 +17,15 @@ return new class extends Migration
             $table->string('last_name', 20);
             $table->string('avatar')->nullable();
             $table->enum('gender', ['male', 'female', 'other']);
-            $table->enum('role', ['admin', 'user']);
+            $table->enum('role', ['admin', 'user'])->default('user');
             $table->string('email', 30)->unique();
             $table->string('phone_number', 10)->unique();
             $table->string('address', 200)->nullable();
             $table->string('password');
             $table->date('date_of_birth')->nullable();
             $table->boolean('is_verified')->default(false);
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrentOnUpdate();
+            $table->timestamp('created_at')->useCurrent()->nullable();
+            $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });
     }
 
