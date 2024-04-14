@@ -90,11 +90,6 @@ class AuthController extends Controller
         return responseJson(auth()->user());
     }
 
-    public function logout()
-    {
-        auth()->logout();
 
-        return responseJson(null, 200, 'Đăng xuất thành công!');
-    }
 
 }
