@@ -2,18 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-
-    // public function __construct()
-    // {
-    //     $this->middleware('auth:api', ['except' => ['login', 'register']]);
-    // }
 
     private $messages = [
         'email.required' => 'Vui lòng nhập email',
@@ -73,6 +68,15 @@ class AuthController extends Controller
     public function login()
     {
         $credentials = request(['email', 'password']);
+
+        $validator = Validator::make($credentials, [
+            'email' => 'required|email',
+            'password' => 'required|min:8|max:200',
+        ], $this->messages);
+
+        if($validator->fails()){
+            return responseJson(['messages' => $validator->errors()], 400);
+        }
 
         if (! $token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Người dùng chưa được xác thực!'], 401);

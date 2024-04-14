@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -25,6 +26,10 @@ class User extends Authenticatable implements JWTSubject
         'is_verified'
     ];
 
+    protected $hidden = [
+        'password',
+    ];
+
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -34,4 +39,5 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
 }
