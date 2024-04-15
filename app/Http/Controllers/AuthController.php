@@ -9,41 +9,23 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    private $messages = [
-        'email.required' => 'Vui lòng nhập email',
-        'email.email' => 'Email không đúng định dạng',
-        'email.unique' => 'Email được sử dụng',
-        'password.required' => 'Vui lòng nhập mật khẩu',
-        'password.max' => 'Mật khẩu tối đa 200 ký tự',
-        'password.min' => 'Mật khẩu tối thiểu 8 ký tự',
-        'first_name.required' => 'Vui lòng nhập tên',
-        'last_name.required' => 'Vui lòng nhập họ',
-        'first_name.max' => 'Tên tối đa 30 ký tự',
-        'last_name.max' => 'Họ tối đa 20 ký tự',
-        'phone_number.required' => 'Vui lòng nhập số điện thoại',
-        'phone_number.max' => 'Số điện thoại tối đa 10 ký tự',
-        'phone_number.unique' => 'Số điện thoại đã được sử dụng',
-    ];
-
 
     public function register(Request $request)
     {
         $avatarPath = null;
         $avatarPublicId = null;
 
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->except(['role', 'is_verified']), [
             'first_name' => 'required|max:30',
             'last_name' => 'required|max:20',
-            'avatar' => 'nullable',
+            'avatar' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'required|in:male,female,other',
-            'role' => 'nullable|in:user,admin',
             'address' => 'nullable|max:120',
             'email' => 'required|email|unique:users',
             'phone_number' => 'required|max:10|unique:users',
             'password' => 'required|min:8|max:200',
             'date_of_birth' => 'nullable|date',
-            'is_verified' => 'nullable|boolean',
-        ], $this->messages);
+        ], userValidatorMessages());
 
         if($validator->fails()){
             return responseJson(['messages' => $validator->errors()], 400);
@@ -71,7 +53,7 @@ class AuthController extends Controller
         $validator = Validator::make($credentials, [
             'email' => 'required|email',
             'password' => 'required|min:8|max:200',
-        ], $this->messages);
+        ], userValidatorMessages());
 
         if($validator->fails()){
             return responseJson(['messages' => $validator->errors()], 400);
@@ -82,7 +64,7 @@ class AuthController extends Controller
         }
 
 
-        return responseJson(['accessToken' => $token]);
+        return responseJson(['accessToken' => $token], 200, 'Đăng nhập thành công!');
     }
 
     public function logout()

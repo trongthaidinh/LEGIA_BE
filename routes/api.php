@@ -5,8 +5,15 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 
 
-Route::prefix('user')->group(function () {
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'user',
+], function () {
     Route::get('me', [UserController::class, 'me']);
+    Route::patch('update-password', [UserController::class, 'updatePassword']);
+    Route::patch('update-information', [UserController::class, 'updateInformation']);
+    Route::post('update-avatar', [UserController::class, 'updateAvatar']);
+    Route::delete('delete-avatar', [UserController::class, 'deleteAvatar']);
 });
 
 

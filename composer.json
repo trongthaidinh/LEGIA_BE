@@ -25,7 +25,9 @@
     },
     "autoload": {
         "files": [
-            "app/Helpers/ResponseBuilder.php"
+            "app/Share/Utils/ResponseBuilder.php",
+            "app/Share/Utils/GetPublicIdFromAvatarUrl.php",
+            "app/Share/Messages/UserValidators.php"
         ],
         "psr-4": {
             "App\\": "app/",
