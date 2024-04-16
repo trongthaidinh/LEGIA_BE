@@ -52,6 +52,7 @@ class UserController extends Controller
             $user = auth()->userOrFail();
 
             $validator = Validator::make($request->all(), [
+                'old_password' => 'required|string',
                 'new_password' => 'required|string|min:8|max:200',
             ], userValidatorMessages());
 
