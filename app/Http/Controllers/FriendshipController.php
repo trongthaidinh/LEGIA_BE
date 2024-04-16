@@ -14,12 +14,15 @@ class FriendshipController extends Controller
             $user = auth()->userOrFail();
 
             $friendships = DB::table('friendships')
-                ->where('owner', $user->id)
                 ->where('status', 'accepted')
-                ->orWhere(function (Builder $query) use ($user) {
-                    $query->where('friend', $user->id)
-                          ->where('owner', $user->id);
+                ->join('users', function ($join) use ($user) {
+                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend = '.$user->id.' THEN  friendships.owner ELSE friendships.friend END)'));
                 })
+                ->where(function ($query) use ($user) {
+                    $query->orWhere('friendships.owner', $user->id)
+                          ->orWhere('friendships.friend', $user->id);
+                })
+                ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
                 ->get();
 
             if($friendships->isEmpty()){
@@ -38,9 +41,15 @@ class FriendshipController extends Controller
             $user = auth()->userOrFail();
 
             $friendships = DB::table('friendships')
-                ->where('owner', $user->id)
-                ->where('friend', $user->id)
                 ->where('status', 'pending')
+                ->join('users', function ($join) use ($user) {
+                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend = '.$user->id.' THEN  friendships.owner ELSE friendships.friend END)'));
+                })
+                ->where(function ($query) use ($user) {
+                    $query->orWhere('friendships.owner', $user->id)
+                          ->orWhere('friendships.friend', $user->id);
+                })
+                ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
                 ->get();
 
             if($friendships->isEmpty()){
@@ -125,9 +134,9 @@ class FriendshipController extends Controller
             $isFriend = DB::table('friendships')
                 ->where('id', '=', $id)
                 ->where('status', 'accepted')
-                ->orWhere(function (Builder $query) use ($user) {
-                    $query->where('friend', $user->id)
-                          ->where('owner', $user->id);
+                ->where(function (Builder $query) use ($user) {
+                    $query->orWhere('friend', $user->id)
+                          ->orWhere('owner', $user->id);
                 })
                 ->first();
 
@@ -140,8 +149,11 @@ class FriendshipController extends Controller
                 ->where('friend', $user->id)
                 ->update(['status' => 'accepted']);
 
+            if(!$friendship){
+                return responseJson(null, 400, 'Đã xảy ra lỗi, vui lòng thử lại!');
+            }
 
-            return responseJson($friendship, 200, 'Chấp nhận lời mời kết bạn thành công!');
+            return responseJson(null, 200, 'Chấp nhận lời mời kết bạn thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
@@ -166,9 +178,9 @@ class FriendshipController extends Controller
 
             $friendship = DB::table('friendships')
                 ->where('id', $id)
-                ->orWhere(function (Builder $query) use ($user) {
-                    $query->where('friend', $user->id)
-                          ->where('owner', $user->id);
+                ->where(function (Builder $query) use ($user) {
+                    $query->orWhere('friend', $user->id)
+                          ->orWhere('owner', $user->id);
                 })
                 ->first();
 
