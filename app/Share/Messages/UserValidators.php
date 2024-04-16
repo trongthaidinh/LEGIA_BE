@@ -25,6 +25,8 @@
             'avatar.image' => 'Avatar phải là file ảnh',
             'gender.in' => 'Giới tính phải là một trong: nam, nữ, khác',
             'avatar.required' => 'Vui lòng chọn avatar',
+            'friend.required' => 'Vui lòng chọn người dùng để kết bạn!',
+            'friend.exists' => 'Người dùng bạn muốn kết bạn không tìm thấy!',
         ];
     }
 ?>

@@ -34,7 +34,7 @@ class UserController extends Controller
             ], userValidatorMessages());
 
             if($validator->fails()){
-                return responseJson(['messages' => $validator->errors()], 400);
+                return responseJson(null, 400, $validator->errors());
             }
 
             $user->update($dataUpdate);
@@ -43,6 +43,7 @@ class UserController extends Controller
             return responseJson($user, 200, 'Cập nhật thông tin người dùng thành công!');
 
         }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+            var_dump($e);
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
@@ -57,7 +58,7 @@ class UserController extends Controller
             ], userValidatorMessages());
 
             if($validator->fails()){
-                return responseJson(['messages' => $validator->errors()], 400);
+                return responseJson(null, 400, $validator->errors());
             }
 
             if (!Hash::check($request->old_password, $user->password)) {
@@ -90,7 +91,7 @@ class UserController extends Controller
             ], userValidatorMessages());
 
             if($validator->fails()){
-                return responseJson(['messages' => $validator->errors()], 400);
+                return responseJson(null, 400, $validator->errors());
             }
 
             if($oldAvatar = $user->avatar){

@@ -23,7 +23,7 @@ function responseJson($data, $status = 200, $message = null) {
     return response()->json(
     [
     'statusCode' => $status,
-    'message'=> $message ? $message : $messages[$status],
+    'message'=> isset($message) ? $message : $messages[$status],
     'data' => $data
     ], $status);
 }

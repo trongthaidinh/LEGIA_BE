@@ -28,7 +28,7 @@ class AuthController extends Controller
         ], userValidatorMessages());
 
         if($validator->fails()){
-            return responseJson(['messages' => $validator->errors()], 400);
+            return responseJson(null, 400, $validator->errors());
         }
 
         if($request->hasFile('avatar')){
@@ -56,7 +56,7 @@ class AuthController extends Controller
         ], userValidatorMessages());
 
         if($validator->fails()){
-            return responseJson(['messages' => $validator->errors()], 400);
+            return responseJson(null, 400, $validator->errors());
         }
 
         if (! $token = auth()->attempt($credentials)) {

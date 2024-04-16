@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FriendshipController;
 
 
 Route::group([
@@ -16,7 +17,6 @@ Route::group([
     Route::delete('delete-avatar', [UserController::class, 'deleteAvatar']);
 });
 
-
 Route::group([
     'middleware' => 'api',
     'prefix' => 'auth',
@@ -24,4 +24,15 @@ Route::group([
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'friendship',
+], function () {
+    Route::get('get-accepted-list', [FriendshipController::class, 'getAcceptedList']);
+    Route::get('get-pending-list', [FriendshipController::class, 'getPendingList']);
+    Route::post('add/{friend}', [FriendshipController::class, 'add']);
+    Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
+    Route::delete('{id}', [FriendshipController::class, 'delete']);
 });
