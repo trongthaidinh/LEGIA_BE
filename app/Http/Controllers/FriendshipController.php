@@ -31,7 +31,7 @@ class FriendshipController extends Controller
 
             return responseJson($friendships);
 
-        }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
@@ -58,7 +58,7 @@ class FriendshipController extends Controller
 
             return responseJson($friendships);
 
-        }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
@@ -109,7 +109,7 @@ class FriendshipController extends Controller
 
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
 
-        }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
@@ -155,7 +155,7 @@ class FriendshipController extends Controller
 
             return responseJson(null, 200, 'Chấp nhận lời mời kết bạn thành công!');
 
-        }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
@@ -196,7 +196,7 @@ class FriendshipController extends Controller
 
             return responseJson($deleted, 200, 'Từ chối lời mời kết bạn thành công!');
 
-        }catch(\Tymon\JWTAuth\Exceptions\TokenExpiredException $e){
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Không tìm thấy người dùng!');
         }
     }
