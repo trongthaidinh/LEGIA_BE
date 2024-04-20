@@ -23,7 +23,29 @@ class FriendshipController extends Controller
                           ->orWhere('friendships.friend', $user->id);
                 })
                 ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
-                ->get();
+                ->get()
+                ->map(function($friendship) use ($user) {
+                    if($friendship->owner == $user->id) {
+                        $friendship->friend_info = (object) [
+                            'id' => $friendship->friend,
+                            'first_name' => $friendship->first_name,
+                            'last_name' => $friendship->last_name,
+                            'avatar' => $friendship->avatar,
+                        ];
+                    } else if($friendship->friend == $user->id) {
+                        $friendship->owner_info = (object) [
+                            'id' => $friendship->owner,
+                            'first_name' => $friendship->first_name,
+                            'last_name' => $friendship->last_name,
+                            'avatar' => $friendship->avatar,
+                        ];
+                    }
+                    unset($friendship->first_name);
+                    unset($friendship->last_name);
+                    unset($friendship->avatar);
+                    return $friendship;
+                });
+
 
             if($friendships->isEmpty()){
                 return responseJson(null, 404, 'Bạn không có bạn bè :(');
@@ -50,7 +72,28 @@ class FriendshipController extends Controller
                           ->orWhere('friendships.friend', $user->id);
                 })
                 ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
-                ->get();
+                ->get()
+                ->map(function($friendship) use ($user) {
+                    if($friendship->owner == $user->id) {
+                        $friendship->friend_info = (object) [
+                            'id' => $friendship->friend,
+                            'first_name' => $friendship->first_name,
+                            'last_name' => $friendship->last_name,
+                            'avatar' => $friendship->avatar,
+                        ];
+                    } else if($friendship->friend == $user->id) {
+                        $friendship->owner_info = (object) [
+                            'id' => $friendship->owner,
+                            'first_name' => $friendship->first_name,
+                            'last_name' => $friendship->last_name,
+                            'avatar' => $friendship->avatar,
+                        ];
+                    }
+                    unset($friendship->first_name);
+                    unset($friendship->last_name);
+                    unset($friendship->avatar);
+                    return $friendship;
+                });
 
             if($friendships->isEmpty()){
                 return responseJson(null, 404, 'Lời mời kết bạn trống');
