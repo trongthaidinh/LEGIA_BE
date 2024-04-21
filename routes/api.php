@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FriendshipController;
-
+use App\Http\Controllers\PostController;
 
 Route::group([
     'middleware' => 'api',
@@ -35,4 +35,15 @@ Route::group([
     Route::post('add/{friend}', [FriendshipController::class, 'add']);
     Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
     Route::delete('{id}', [FriendshipController::class, 'delete']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'posts',
+], function () {
+    Route::get('/', [PostController::class, 'index']); 
+    Route::post('/', [PostController::class, 'store']); 
+    Route::get('/{id}', [PostController::class, 'show']);
+    Route::put('/{id}', [PostController::class, 'update']);
+    Route::delete('/{id}', [PostController::class, 'destroy']);
 });
