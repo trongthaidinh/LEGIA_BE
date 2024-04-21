@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('friendships', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('owner')->constrained(
+            $table->foreignId('owner_id')->constrained(
                 table: 'users', indexName: 'friendships_owner_id'
             );
-            $table->foreignId('friend')->constrained(
+            $table->foreignId('friend_id')->constrained(
                 table: 'users', indexName: 'friendships_friend_id'
             );
             $table->enum('status', ['pending', 'accepted'])->default('pending');

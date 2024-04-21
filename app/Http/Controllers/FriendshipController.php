@@ -16,11 +16,11 @@ class FriendshipController extends Controller
             $friendships = DB::table('friendships')
                 ->where('status', 'accepted')
                 ->join('users', function ($join) use ($user) {
-                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend = '.$user->id.' THEN  friendships.owner ELSE friendships.friend END)'));
+                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend_id= '.$user->id.' THEN  friendships.owner_id ELSE friendships.friend_idEND)'));
                 })
                 ->where(function ($query) use ($user) {
-                    $query->orWhere('friendships.owner', $user->id)
-                          ->orWhere('friendships.friend', $user->id);
+                    $query->orWhere('friendships.owner_id', $user->id)
+                          ->orWhere('friendships.friend_id', $user->id);
                 })
                 ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
                 ->get()
@@ -65,11 +65,11 @@ class FriendshipController extends Controller
             $friendships = DB::table('friendships')
                 ->where('status', 'pending')
                 ->join('users', function ($join) use ($user) {
-                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend = '.$user->id.' THEN  friendships.owner ELSE friendships.friend END)'));
+                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend_id = '.$user->id.' THEN  friendships.owner_id ELSE friendships.friend_id END)'));
                 })
                 ->where(function ($query) use ($user) {
-                    $query->orWhere('friendships.owner', $user->id)
-                          ->orWhere('friendships.friend', $user->id);
+                    $query->orWhere('friendships.owner_id', $user->id)
+                          ->orWhere('friendships.friend_id', $user->id);
                 })
                 ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
                 ->get()
@@ -115,9 +115,9 @@ class FriendshipController extends Controller
             }
 
             $validator = Validator::make([
-                'friend' => $friend
+                'friend_id' => $friend
             ], [
-                'friend' => 'required|exists:users,id',
+                'friend_id' => 'required|exists:users,id',
             ], userValidatorMessages());
 
             if($validator->fails()){
@@ -125,8 +125,8 @@ class FriendshipController extends Controller
             }
 
             $isFriend = DB::table('friendships')
-                ->where('owner', $user->id)
-                ->where('friend', $friend)
+                ->where('owner_id', $user->id)
+                ->where('friend_id', $friend)
                 ->where('status', 'accepted')
                 ->first();
 
@@ -135,8 +135,8 @@ class FriendshipController extends Controller
             }
 
             $isSent = DB::table('friendships')
-                ->where('owner', $user->id)
-                ->where('friend', $friend)
+                ->where('owner_id', $user->id)
+                ->where('friend_id', $friend)
                 ->where('status', 'pending')
                 ->first();
 
@@ -146,8 +146,8 @@ class FriendshipController extends Controller
 
             $friendship = Friendship::create(array_merge(
                 $validator->validated(),
-                ['owner' => $user->id],
-                ['friend' => (int)$friend],
+                ['owner_id' => $user->id],
+                ['friend_id' => (int)$friend],
             ));
 
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
@@ -178,8 +178,8 @@ class FriendshipController extends Controller
                 ->where('id', '=', $id)
                 ->where('status', 'accepted')
                 ->where(function (Builder $query) use ($user) {
-                    $query->orWhere('friend', $user->id)
-                          ->orWhere('owner', $user->id);
+                    $query->orWhere('friend_id', $user->id)
+                          ->orWhere('owner_id', $user->id);
                 })
                 ->first();
 
@@ -189,7 +189,7 @@ class FriendshipController extends Controller
 
             $friendship = DB::table('friendships')
                 ->where('id', $id)
-                ->where('friend', $user->id)
+                ->where('friend_id', $user->id)
                 ->update(['status' => 'accepted']);
 
             if(!$friendship){
@@ -222,8 +222,8 @@ class FriendshipController extends Controller
             $friendship = DB::table('friendships')
                 ->where('id', $id)
                 ->where(function (Builder $query) use ($user) {
-                    $query->orWhere('friend', $user->id)
-                          ->orWhere('owner', $user->id);
+                    $query->orWhere('friend_id', $user->id)
+                          ->orWhere('owner_id', $user->id);
                 })
                 ->first();
 
