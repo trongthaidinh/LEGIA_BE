@@ -29,4 +29,13 @@
             'friend.exists' => 'Người dùng bạn muốn kết bạn không tìm thấy!',
         ];
     }
+
+    function chatValidatorMessages(){
+        return [
+            'type.in' => 'Dạng phòng chat chỉ bao gồm "Cá nhân" hoặc "Nhóm"',
+        ];
+    }
+
+
+
 ?>
