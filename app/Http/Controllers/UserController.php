@@ -100,7 +100,7 @@ class UserController extends Controller
             }
 
 
-            $result = $request->file('avatar')->storeOnCloudinary();
+            $result = $request->file('avatar')->storeOnCloudinary('avatars/' . $request->email);
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
 
