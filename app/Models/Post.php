@@ -10,7 +10,7 @@ class Post extends Model
     use HasFactory;
 
     protected $fillable = [
-        'owner', 
+        'owner_id', 
         'content', 
         'privacy', 
         'background', 
@@ -45,6 +45,6 @@ class Post extends Model
 
     public function postBackgrounds()
     {
-        return $this->hasMany(PostBackgrounds::class, 'post_id');
+        return $this->hasMany(PostBackground::class, 'post_id');
     }
 }
