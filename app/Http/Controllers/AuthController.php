@@ -32,7 +32,7 @@ class AuthController extends Controller
         }
 
         if($request->hasFile('avatar')){
-            $result = $request->file('avatar')->storeOnCloudinary();
+            $result = $request->file('avatar')->storeOnCloudinary('avatars');
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
         }
