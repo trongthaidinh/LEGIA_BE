@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('creator_id')->constrained(
+                table: 'users', indexName: 'conversations_creator_id'
+            );
             $table->string('name', 40)->nullable();
             $table->enum('type', ['individual', 'group'])->default('individual');
             $table->timestamp('created_at')->useCurrent()->nullable();

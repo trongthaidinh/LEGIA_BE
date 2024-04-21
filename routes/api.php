@@ -42,5 +42,5 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'chat',
 ], function () {
-    Route::post('create', [ChatController::class, 'create']);
+    Route::post('create-conversation', [ChatController::class, 'createConversation']);
 });

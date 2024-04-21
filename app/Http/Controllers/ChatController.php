@@ -9,7 +9,7 @@ use App\Models\ConversationParticipant;
 
 class ChatController extends Controller
 {
-    public function create() {
+    public function createConversation() {
         try{
             $user = auth()->userOrFail();
 
