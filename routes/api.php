@@ -46,4 +46,9 @@ Route::group([
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
+
+    Route::post('/{id}/archive', [PostController::class, 'saveToArchive']);
+    Route::delete('/{id}/archive', [PostController::class, 'removeFromArchive']);
+    Route::get('/archived', [PostController::class, 'getArchivedPosts']);
+
 });
