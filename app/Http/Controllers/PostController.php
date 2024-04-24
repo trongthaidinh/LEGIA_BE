@@ -41,10 +41,10 @@ class PostController extends Controller
         $post = Post::create([
             'owner_id' => auth()->id(), 
             'content' => $request->content,
-            'privacy' => $request->privacy ?? 'PUBLIC',
-            'post_type' => $request->post_type ?? 'STATUS', 
-            'background' => $request->background ?? 'color', 
-        ]);
+            'privacy' => $request->privacy,
+            'post_type' => $request->post_type,
+            'background' => $request->background,
+        ]);        
 
         if ($request->hasFile('images')) {
             foreach ($request->images as $image) {
@@ -82,26 +82,46 @@ class PostController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $post = Post::findOrFail($id);
-
+            $post = Post::withTrashed()->findOrFail($id);
+    
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300', 
                 'privacy' => 'required|in:PUBLIC,PRIVATE', 
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE', 
                 'background' => 'required|in:color,image', 
             ]);
-
+    
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-
-            $post->update($request->only('content', 'privacy', 'post_type', 'background'));
-
-            return responseJson($post, 200, 'Bài đăng đã được cập nhật');
+    
+            if ($request->privacy == 'PRIVATE' && $post->privacy == 'PUBLIC') {
+                $post->delete();
+                $post->update($request->only('content', 'privacy', 'post_type', 'background'));
+                return responseJson($post, 200, 'Bài đăng đã được chuyển thành trạng thái chỉ mình tôi');
+            } 
+            else if ($request->privacy == 'PRIVATE' && $post->privacy == 'PRIVATE') 
+            {
+                $post->update($request->only('content', 'privacy', 'post_type', 'background'));
+                return responseJson($post, 200, 'Bài đăng đã được cập nhật và vẫn ở trạng thái chỉ mình tôi');
+            } 
+            else 
+            {
+                if ($post->trashed()) {
+                    $post->restore();
+                    $post->update($request->only('content', 'privacy', 'post_type', 'background'));
+                    return responseJson($post, 200, 'Bài đăng đã được chuyển thành trạng thái mọi người');
+                } else {
+                    $post->update($request->only('content', 'privacy', 'post_type', 'background'));
+                    return responseJson($post, 200, 'Bài đăng đã được cập nhật');
+                }
+            }
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi cập nhật bài đăng: ' . $e->getMessage());
         }
     }
+    
+
 
     public function destroy($id)
     {

@@ -13,12 +13,11 @@ return new class extends Migration
     {
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('owner')->constrained('users');
+            $table->foreignId('owner_id')->constrained('users');
             $table->string('content', 300);
-            $table->enum('privacy', ['PUBLIC', 'PRIVATE']);
-            $table->enum('background', ['color', 'image']);
-            $table->enum('post_type', ['AVATAR_CHANGE', 'COVER_CHANGE', 'STATUS', 'SHARE']);
-            $table->boolean('is_saved')->default(false);
+            $table->enum('privacy', ['PUBLIC', 'PRIVATE'])->default('PUBLIC');
+            $table->enum('background', ['color', 'image'])->default('color');
+            $table->enum('post_type', ['AVATAR_CHANGE', 'COVER_CHANGE', 'STATUS', 'SHARE'])->default('STATUS');
             $table->softDeletes();
             $table->timestamps();
         });

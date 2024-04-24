@@ -43,12 +43,10 @@ Route::group([
 ], function () {
     Route::get('/', [PostController::class, 'index']); 
     Route::post('/', [PostController::class, 'store']); 
+    Route::get('/archived', [PostController::class, 'getArchivedPosts']);
+    Route::post('/{id}/archive', [PostController::class, 'saveToArchive']);
+    Route::delete('/{id}/archive', [PostController::class, 'removeFromArchive']);
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
-
-    Route::post('/{id}/archive', [PostController::class, 'saveToArchive']);
-    Route::delete('/{id}/archive', [PostController::class, 'removeFromArchive']);
-    Route::get('/archived', [PostController::class, 'getArchivedPosts']);
-
 });
