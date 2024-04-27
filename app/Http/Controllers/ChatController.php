@@ -43,31 +43,31 @@ class ChatController extends Controller
             ->where('conversation_id', $conversation->id)
             ->get();
 
-            if($conversationParticipantsCreated->isEmpty()){
-                $participants = [];
+            if(!$conversationParticipantsCreated->isEmpty()){
+                return responseJson(null, 400, 'Cuộc đối thoại và những người tham gia đã được tạo từ trước!');
+            }
+            // LÀM TIẾP VỤ 2 THẰNG CÓ THỂ TẠO NHIỀU CVS
+            $participants = [];
 
-                $myConversationParticipant = ConversationParticipant::create([
-                    'user_id' => $user->id,
+            $myConversationParticipant = ConversationParticipant::create([
+                'user_id' => $user->id,
+                'conversation_id' => $conversation->id,
+            ]);
+
+            $participants[] = $myConversationParticipant;
+
+            foreach ($conversationData['target_id'] as $targetId) {
+                $conversationParticipants = ConversationParticipant::create([
+                    'user_id' => $targetId,
                     'conversation_id' => $conversation->id,
                 ]);
-
-                $participants[] = $myConversationParticipant;
-
-                foreach ($conversationData['target_id'] as $targetId) {
-                    $conversationParticipants = ConversationParticipant::create([
-                        'user_id' => $targetId,
-                        'conversation_id' => $conversation->id,
-                    ]);
-                    $participants[] = $conversationParticipants;
-                }
-
-                return responseJson([
-                    'conversation' => $conversation,
-                    'conversation_participants' => $participants
-                ], 200, 'Cuộc đối thoại mới đã được tạo thành công!');
+                $participants[] = $conversationParticipants;
             }
 
-            return responseJson(null, 400, 'Cuộc đối thoại và những người tham gia đã được tạo từ trước!');
+            return responseJson([
+                'conversation' => $conversation,
+                'conversation_participants' => $participants
+            ], 200, 'Cuộc đối thoại mới đã được tạo thành công!');
 
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
