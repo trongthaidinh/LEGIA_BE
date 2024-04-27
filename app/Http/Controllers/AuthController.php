@@ -32,7 +32,7 @@ class AuthController extends Controller
         }
 
         if($request->hasFile('avatar')){
-            $result = $request->file('avatar')->storeOnCloudinary('avatars');
+            $result = $request->file('avatar')->storeOnCloudinary();
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
         }
@@ -52,7 +52,7 @@ class AuthController extends Controller
 
         $validator = Validator::make($credentials, [
             'email' => 'required|email',
-            'password' => 'required|min:8|max:200',
+            'password' => 'required',
         ], userValidatorMessages());
 
         if($validator->fails()){
