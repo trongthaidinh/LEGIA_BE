@@ -18,7 +18,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->except(['role', 'is_verified']), [
             'first_name' => 'required|max:30',
             'last_name' => 'required|max:20',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'avatar' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'required|in:male,female,other',
             'address' => 'nullable|max:120',
             'email' => 'required|email|unique:users',
