@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conversation_participant_id')->constrained(
-                table: 'conversation_participants', indexName: 'messages_conversation_participant_id'
+            $table->foreignId('conversation_id')->constrained(
+                table: 'conversations', indexName: 'messages_conversation_id'
             );
             $table->string('content', 300);
             $table->timestamp('created_at')->useCurrent()->nullable();

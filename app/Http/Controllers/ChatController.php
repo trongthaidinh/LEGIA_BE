@@ -74,7 +74,9 @@ class ChatController extends Controller
         }
     }
 
-    public function getConversations()
+    public function createMessage(){}
+
+    public function getMyConversations()
     {
         try {
             $user = auth()->userOrFail();
@@ -100,12 +102,12 @@ class ChatController extends Controller
         }
     }
 
-    public function getMessagesByConversationParticipantId($conversationParticipantId) {
+    public function getMessagesByConversationParticipantId($conversationId) {
         try{
             auth()->userOrFail();
 
             $messages = DB::table('messages')
-            ->where('conversation_participant_id', $conversationParticipantId)
+            ->where('conversation_id', $conversationId)
             ->orderBy('created_at', 'desc')
             ->get();
 
