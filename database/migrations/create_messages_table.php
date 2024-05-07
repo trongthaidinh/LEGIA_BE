@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained(
+                table: 'users', indexName: 'messages_user_id'
+            );
             $table->foreignId('conversation_id')->constrained(
                 table: 'conversations', indexName: 'messages_conversation_id'
             );

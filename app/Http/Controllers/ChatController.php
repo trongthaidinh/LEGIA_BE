@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use App\Models\Message;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
@@ -74,7 +75,32 @@ class ChatController extends Controller
         }
     }
 
-    public function createMessage(){}
+    public function createMessage(){
+        try {
+            $user = auth()->userOrFail();
+
+            $data = request()->only(['conversation_id', 'content']);
+
+            $validator = Validator::make($data, [
+                'conversation_id' => 'required|string|exists:conversations,id',
+                'content' => 'required|string|max:400',
+            ], chatValidatorMessages());
+
+            if($validator->fails()){
+                return responseJson(null, 400, $validator->errors());
+            }
+
+            $message = Message::create(array_merge(
+                $validator->validated(),
+                ['user_id' => $user->id]
+            ));
+
+            return responseJson($message, 200, 'Tạo tin nhắn thành công!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
 
     public function getMyConversations()
     {
@@ -102,16 +128,29 @@ class ChatController extends Controller
         }
     }
 
-    public function getMessagesByConversationParticipantId($conversationId) {
+    public function getMessagesByConversationId($conversationId) {
         try{
-            auth()->userOrFail();
+            $user = auth()->userOrFail();
+
+            $conversationParticipants = DB::table('conversation_participants')
+            ->where('user_id', $user->id)
+            ->where('conversation_id', $conversationId)
+            ->first();
+
+            if(!$conversationParticipants){
+                return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
+            }
 
             $messages = DB::table('messages')
-            ->where('conversation_id', $conversationId)
+            ->where('conversation_id', $conversationParticipants->conversation_id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-            return responseJson($messages, 200, 'Lấy đoạn chat thành công');
+            if($messages->isEmpty()){
+                return responseJson(null, 400, 'Không có tin nhắn trong cuộc đối thoại này!');
+            }
+
+            return responseJson($messages, 200, 'Lấy tin nhắn trong cuộc đối thoại thành công');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
