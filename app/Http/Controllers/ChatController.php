@@ -102,8 +102,7 @@ class ChatController extends Controller
         }
     }
 
-    public function getMyConversations()
-    {
+    public function getMyConversations(){
         try {
             $user = auth()->userOrFail();
 
