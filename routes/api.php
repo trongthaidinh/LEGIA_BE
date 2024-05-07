@@ -43,4 +43,5 @@ Route::group([
     'prefix' => 'chat',
 ], function () {
     Route::post('create-conversation', [ChatController::class, 'createConversation']);
+    Route::get('conversations', [ChatController::class, 'getConversations']);
 });

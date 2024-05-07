@@ -33,11 +33,11 @@
     function chatValidatorMessages(){
         return [
             'type.in' => 'Dạng phòng chat chỉ bao gồm "Cá nhân" hoặc "Nhóm"',
-            'target_id.required' => 'Vui lòng chọn người mà bạn muốn trò chuyện',
-            'target_id.array' => 'Target id phải là một mảng',
-            'target_id.min' => 'Vui lòng chọn ít nhất 1 người bạn muốn trò chuyện',
-            'target_id.*.string' => 'Giá trị target id phải là một chuỗi',
-            'target_id.*.exists' => 'Người bạn muốn trò chuyện không được tìm thấy',
+            'targets_id.required' => 'Vui lòng chọn người mà bạn muốn trò chuyện',
+            'targets_id.array' => 'Targets id phải là một mảng',
+            'targets_id.min' => 'Vui lòng chọn ít nhất 1 người bạn muốn trò chuyện',
+            'targets_id.*.string' => 'Giá trị target id phải là một chuỗi',
+            'targets_id.*.exists' => 'Người bạn muốn trò chuyện không được tìm thấy',
         ];
     }
 
