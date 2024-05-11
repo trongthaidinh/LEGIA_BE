@@ -11,7 +11,7 @@ class Comment extends Model
 
     protected $fillable = [
         'post_id',
-        'owner',
+        'owner_id',
         'content',
     ];
 
@@ -22,6 +22,6 @@ class Comment extends Model
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 }

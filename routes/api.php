@@ -49,4 +49,9 @@ Route::group([
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
+    Route::post('/{id}/like', [PostController::class, 'likePost']);
+    Route::get('/{id}/comments', [PostController::class, 'getComments']);
+    Route::post('/{id}/comments', [PostController::class, 'storeComment']);
+    Route::put('/{id}/comments/{commentId}', [PostController::class, 'updateComment']);
+    Route::delete('/{id}/comments/{commentId}', [PostController::class, 'deleteComment']);
 });
