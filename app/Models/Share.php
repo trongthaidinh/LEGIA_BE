@@ -11,7 +11,7 @@ class Share extends Model
 
     protected $fillable = [
         'post_id',
-        'owner',
+        'owner_id',
     ];
 
     public function post()
@@ -21,6 +21,6 @@ class Share extends Model
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 }

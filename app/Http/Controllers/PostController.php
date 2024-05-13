@@ -8,6 +8,7 @@ use App\Models\Like;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostImage;
+use App\Models\Share;
 use Illuminate\Support\Facades\Validator;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Auth;
@@ -220,7 +221,7 @@ public function getArchivedPosts()
             'owner_id' => 1
         ]);
 
-        return responseJson($post, 200,'Người dùng đã thích bài viết này.');
+        return responseJson($like, 200,'Người dùng đã thích bài viết này.');
     } catch (\Exception $e) {
         return responseJson($post, 500, 'Đã xảy ra lỗi khi thích/bỏ thích bài viết: ' . $e->getMessage());
     }
@@ -280,15 +281,15 @@ public function getArchivedPosts()
                               ->findOrFail($commentId);
 
             if ($comment->owner_id != $user->id) {
-                return responseJson(null, 403, 'Bạn không có quyền cập nhật bình luận này');
+                return responseJson(null, 403, 'Bạn không có quyền sửa bình luận này');
             }
 
             $comment->content = $request->content;
             $comment->save();
 
-            return responseJson($comment, 200, 'Bình luận đã được cập nhật thành công');
+            return responseJson($comment, 200, 'Bình luận đã được sửa');
         } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi cập nhật bình luận: ' . $e->getMessage());
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi sửa bình luận: ' . $e->getMessage());
         }
     }
 
@@ -308,6 +309,21 @@ public function getArchivedPosts()
             return responseJson(null, 200, 'Bình luận đã được xóa thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa bình luận: ' . $e->getMessage());
+        }
+    }
+
+    public function sharePost($postId)
+    {
+        try {
+            $user = auth()->userOrFail(); 
+            $share = Share::create([
+                'owner_id' => $user->id,
+                'post_id' => $postId,
+            ]);
+
+            return responseJson($share, 200, 'Bài viết đã được chia sẻ');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi chia sẻ bài viết ' . $e->getMessage());
         }
     }
 }

@@ -54,4 +54,5 @@ Route::group([
     Route::post('/{id}/comments', [PostController::class, 'storeComment']);
     Route::put('/{id}/comments/{commentId}', [PostController::class, 'updateComment']);
     Route::delete('/{id}/comments/{commentId}', [PostController::class, 'deleteComment']);
+    Route::post('/{id}/share', [PostController::class, 'sharePost']);
 });
