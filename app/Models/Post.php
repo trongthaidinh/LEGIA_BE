@@ -17,7 +17,6 @@ class Post extends Model
         'privacy', 
         'background', 
         'post_type', 
-        'is_saved', 
     ];
 
     public function owner()
