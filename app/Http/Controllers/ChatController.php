@@ -124,6 +124,7 @@ class ChatController extends Controller
 
             $conversations = Conversation::whereIn('id', $conversationParticipants
             ->pluck('conversation_id'))
+            ->with('creator')
             ->get();
 
             if ($conversations->isEmpty()) {

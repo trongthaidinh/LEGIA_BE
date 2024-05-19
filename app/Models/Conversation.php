@@ -14,4 +14,8 @@ class Conversation extends Model
         'name',
         'secret_key'
     ];
+
+    public function creator() {
+        return $this->belongsTo(User::class, 'creator_id', 'id');
+    }
 }
