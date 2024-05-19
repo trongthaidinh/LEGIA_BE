@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Pusher\Pusher;
+use App\Models\Message;
+use App\Events\MessageSent;
+use Illuminate\Support\Str;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
-use App\Models\Message;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
@@ -36,7 +39,8 @@ class ChatController extends Controller
 
             $conversation = Conversation::create(array_merge(
                 $validatorConversation->validated(),
-                ['creator_id' => $user->id]
+                ['creator_id' => $user->id,
+                'secret_key' => Str::uuid()->toString()]
             ));
 
             $conversationParticipantsCreated = DB::table('conversation_participants')
@@ -82,7 +86,7 @@ class ChatController extends Controller
             $data = request()->only(['conversation_id', 'content']);
 
             $validator = Validator::make($data, [
-                'conversation_id' => 'required|string|exists:conversations,id',
+                'conversation_id' => 'required|exists:conversations,id',
                 'content' => 'required|string|max:400',
             ], chatValidatorMessages());
 
@@ -90,10 +94,15 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validator->errors());
             }
 
+
             $message = Message::create(array_merge(
                 $validator->validated(),
                 ['user_id' => $user->id]
             ));
+
+            $secret_key = $data['conversation_id'];
+
+            pusherMessageSent($secret_key, $message);
 
             return responseJson($message, 200, 'Tạo tin nhắn thành công!');
 
@@ -150,6 +159,24 @@ class ChatController extends Controller
             }
 
             return responseJson($messages, 200, 'Lấy tin nhắn trong cuộc đối thoại thành công');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function getSecretKey($conversationId) {
+        try{
+            auth()->userOrFail();
+
+            $conversation = DB::table('conversations')
+            ->where('id', $conversationId)
+            ->first();
+
+            if(!$conversation){
+                return responseJson(null, 400, 'Secret key không đúng!');
+            }
+            return responseJson($conversation->secret_key);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");

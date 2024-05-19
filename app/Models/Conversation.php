@@ -11,7 +11,7 @@ class Conversation extends Model
 
     protected $fillable = [
         'creator_id',
-        'name'
+        'name',
+        'secret_key'
     ];
-
 }
