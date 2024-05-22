@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Pusher\Pusher;
 use App\Models\Message;
-use App\Events\MessageSent;
 use Illuminate\Support\Str;
 use App\Models\Conversation;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
 use Illuminate\Support\Facades\Validator;
@@ -100,9 +97,11 @@ class ChatController extends Controller
                 ['user_id' => $user->id]
             ));
 
-            $secret_key = $data['conversation_id'];
+            $conversation =  DB::table('conversations')
+            ->where('id', $message->conversation_id)
+            ->first();
 
-            pusherMessageSent($secret_key, $message);
+            pusherMessageSent($conversation->secret_key, $message);
 
             return responseJson($message, 200, 'Tạo tin nhắn thành công!');
 
@@ -152,7 +151,6 @@ class ChatController extends Controller
 
             $messages = DB::table('messages')
             ->where('conversation_id', $conversationParticipants->conversation_id)
-            ->orderBy('created_at', 'desc')
             ->get();
 
             if($messages->isEmpty()){
