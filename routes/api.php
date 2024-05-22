@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\PostController;
@@ -39,6 +40,7 @@ Route::group([
 
 Route::group([
     'middleware' => 'api',
+<<<<<<< routes/api.php
     'prefix' => 'posts',
 ], function () {
     Route::get('/', [PostController::class, 'index']); 
@@ -73,4 +75,16 @@ Route::group([
     'prefix' => 'search',
 ], function () {
     Route::get('/posts', [PostController::class, 'searchPost']);
+});
+=======
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'chat',
+], function () {
+    Route::post('create-conversation', [ChatController::class, 'createConversation']);
+    Route::post('message', [ChatController::class, 'createMessage']);
+    Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
+    Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
+    Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
+>>>>>>> routes/api.php
 });

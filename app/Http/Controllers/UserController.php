@@ -13,7 +13,7 @@ class UserController extends Controller
 
     public function me(){
         if(! $user = auth()->user()){
-            return responseJson(null, 404, 'Không tìm thấy người dùng!');
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
 
         return responseJson($user);
@@ -44,7 +44,7 @@ class UserController extends Controller
 
         }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             var_dump($e);
-            return responseJson(null, 404, 'Không tìm thấy người dùng!');
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
@@ -75,7 +75,7 @@ class UserController extends Controller
             return responseJson($user, 201, 'Đổi mật khẩu mới thành công!');
 
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-            return responseJson(null, 404, 'Không tìm thấy người dùng!');
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
 
     }
@@ -110,7 +110,7 @@ class UserController extends Controller
             return responseJson($user, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, 'Không tìm thấy người dùng!');
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
@@ -131,7 +131,7 @@ class UserController extends Controller
             return responseJson($user, 200, 'Xóa ảnh đại diện người dùng thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, 'Không tìm thấy người dùng!');
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
