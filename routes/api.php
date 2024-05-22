@@ -25,6 +25,8 @@ Route::group([
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('forgot-password', [AuthController::class, 'sendResetLinkEmail']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Route::group([
@@ -40,7 +42,6 @@ Route::group([
 
 Route::group([
     'middleware' => 'api',
-<<<<<<< routes/api.php
     'prefix' => 'posts',
 ], function () {
     Route::get('/', [PostController::class, 'index']); 
@@ -76,7 +77,7 @@ Route::group([
 ], function () {
     Route::get('/posts', [PostController::class, 'searchPost']);
 });
-=======
+
 Route::group([
     'middleware' => 'api',
     'prefix' => 'chat',
@@ -86,5 +87,4 @@ Route::group([
     Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
     Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
->>>>>>> routes/api.php
 });
