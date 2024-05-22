@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FriendshipController;
 
@@ -35,4 +36,15 @@ Route::group([
     Route::post('add/{friend}', [FriendshipController::class, 'add']);
     Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
     Route::delete('{id}', [FriendshipController::class, 'delete']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'chat',
+], function () {
+    Route::post('create-conversation', [ChatController::class, 'createConversation']);
+    Route::post('message', [ChatController::class, 'createMessage']);
+    Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
+    Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
+    Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
 });

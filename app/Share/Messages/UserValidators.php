@@ -29,4 +29,23 @@
             'friend.exists' => 'Người dùng bạn muốn kết bạn không tìm thấy!',
         ];
     }
+
+    function chatValidatorMessages(){
+        return [
+            'type.in' => 'Dạng phòng chat chỉ bao gồm "Cá nhân" hoặc "Nhóm"',
+            'targets_id.required' => 'Vui lòng chọn người mà bạn muốn trò chuyện',
+            'targets_id.array' => 'Targets id phải là một mảng',
+            'targets_id.min' => 'Vui lòng chọn ít nhất 1 người bạn muốn trò chuyện',
+            'targets_id.*.string' => 'Giá trị target id phải là một chuỗi',
+            'targets_id.*.exists' => 'Người bạn muốn trò chuyện không được tìm thấy',
+            'conversation_id.required' => 'Vui lòng nhập id cuộc trò chuyện',
+            'conversation_id.string' => 'Id cuộc trò chuyện phải là một chuỗi',
+            'conversation_id.exists' => 'Cuộc trò chuyện không tìm thấy',
+            'message.required' => 'Vui lòng nhập nội dung tin nhắn',
+            'message.max' => 'Tin nhắn tối đa 400 ký tự',
+        ];
+    }
+
+
+
 ?>
