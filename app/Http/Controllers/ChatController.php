@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use MessageSent;
 
@@ -190,18 +191,20 @@ class ChatController extends Controller
         }
     }
 
-    public function getConversationParticipants($conversationId) {
+    public function getConversationParticipants(Request $request) {
         try{
             auth()->userOrFail();
 
-            $conversationParticipants = ConversationParticipant::where('conversation_id', $conversationId)
+            $conversationIds = explode(',', $request->input('ids'));
+
+            $conversationParticipants = ConversationParticipant::whereIn('conversation_id', $conversationIds)
             ->with('user')
             ->get();
 
             if($conversationParticipants->isEmpty()){
                 return responseJson(null, 400, 'Truy vấn người tham gia cuộc trò chuyện không thành công!');
             }
-            return responseJson($conversationParticipants, 200, 'Truy vấn người tham gia cuộc trò chuyện không thành công!');
+            return responseJson($conversationParticipants, 200, 'Truy vấn người tham gia cuộc trò chuyện thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
