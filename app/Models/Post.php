@@ -10,12 +10,11 @@ class Post extends Model
 {
     use HasFactory, SoftDeletes;
     
-    protected $dates = ['deleted_at'];
     protected $fillable = [
         'owner_id', 
         'content', 
         'privacy', 
-        'background', 
+        'background_id', 
         'post_type', 
     ];
 
@@ -44,8 +43,8 @@ class Post extends Model
         return $this->hasMany(Share::class, 'post_id');
     }
 
-    public function postBackgrounds()
+    public function background()
     {
-        return $this->hasMany(PostBackground::class, 'post_id');
+        return $this->belongsTo(Background::class);
     }
 }
