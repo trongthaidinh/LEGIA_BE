@@ -8,9 +8,17 @@ use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
 use Illuminate\Support\Facades\Validator;
+use MessageSent;
 
 class ChatController extends Controller
 {
+    private $MessageSent;
+
+    public function __construct(
+    ) {
+        $this->MessageSent = new MessageSent();
+    }
+
     public function createConversation() {
         try{
             $user = auth()->userOrFail();
@@ -101,7 +109,7 @@ class ChatController extends Controller
             ->where('id', $message->conversation_id)
             ->first();
 
-            pusherMessageSent($conversation->secret_key, $message);
+            $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
 
             return responseJson($message, 200, 'Tạo tin nhắn thành công!');
 
@@ -176,6 +184,24 @@ class ChatController extends Controller
                 return responseJson(null, 400, 'Secret key không đúng!');
             }
             return responseJson($conversation->secret_key);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function getConversationParticipants($conversationId) {
+        try{
+            auth()->userOrFail();
+
+            $conversationParticipants = ConversationParticipant::where('conversation_id', $conversationId)
+            ->with('user')
+            ->get();
+
+            if($conversationParticipants->isEmpty()){
+                return responseJson(null, 400, 'Truy vấn người tham gia cuộc trò chuyện không thành công!');
+            }
+            return responseJson($conversationParticipants, 200, 'Truy vấn người tham gia cuộc trò chuyện không thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
