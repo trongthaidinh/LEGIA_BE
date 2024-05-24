@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -72,6 +75,62 @@ class AuthController extends Controller
         auth()->logout();
 
         return responseJson(null, 200, 'Đăng xuất thành công!');
+    }
+
+    public function sendResetLinkEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.required' => 'Email là bắt buộc.',
+            'email.email' => 'Email không hợp lệ.',
+            'email.exists' => 'Email không tồn tại trong hệ thống.',
+        ]);
+
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
+        }
+
+        $email = $request->input('email');
+        $token = Password::createToken(User::where('email', $email)->first());
+
+        Mail::to($email)->send(new ResetPasswordMail($token, $email));
+
+        return responseJson(null, 200, 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn.');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.required' => 'Email là bắt buộc.',
+            'email.email' => 'Email không hợp lệ.',
+            'email.exists' => 'Email không tồn tại trong hệ thống.',
+            'token.required' => 'Token là bắt buộc.',
+            'password.required' => 'Mật khẩu là bắt buộc.',
+            'password.min' => 'Mật khẩu phải có ít nhất :min ký tự.',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+        ]);
+
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
+        }
+
+        $credentials = $request->only('email', 'password', 'password_confirmation', 'token');
+
+        $resetPasswordStatus = Password::reset($credentials, function ($user, $password) {
+            $user->password = bcrypt($password);
+            $user->save();
+        });
+
+        if ($resetPasswordStatus == Password::INVALID_TOKEN) {
+            return responseJson(null, 400, 'Token không hợp lệ.');
+        }
+
+        return responseJson(null, 200, 'Mật khẩu đã được đặt lại thành công.');
     }
 
 }
