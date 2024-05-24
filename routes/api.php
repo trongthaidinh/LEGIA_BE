@@ -44,8 +44,8 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'posts',
 ], function () {
-    Route::get('/', [PostController::class, 'index']); 
-    Route::post('/', [PostController::class, 'store']); 
+    Route::get('/', [PostController::class, 'index']);
+    Route::post('/', [PostController::class, 'store']);
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
@@ -87,5 +87,5 @@ Route::group([
     Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
     Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
-    Route::get('conversation_participants/{conversation_id}', [ChatController::class, 'getConversationParticipants']);
+    Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
 });
