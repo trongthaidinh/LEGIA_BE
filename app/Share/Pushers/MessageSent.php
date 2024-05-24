@@ -2,10 +2,23 @@
 
 use Pusher\Pusher;
 
-    function pusherMessageSent($secret_key, $message) {
-        var_dump(123);
-        $pusher = new Pusher("bdf3ac284bdbb6bfabae", "1cea3d48fa3a2c572c2c", "1791163", array('cluster' => 'ap1'));
+class MessageSent {
+    private $pusher;
 
-        $pusher->trigger('chat' . $secret_key, 'MessageSent', $message);
+    public function __construct(
+        $APP_KEY = "bdf3ac284bdbb6bfabae",
+        $APP_SECRET = "1cea3d48fa3a2c572c2c",
+        $APP_ID = "1791163",
+        $APP_CLUSTER = "ap1"
+    ) {
+        $this->pusher = new Pusher($APP_KEY, $APP_SECRET, $APP_ID, array('cluster' => $APP_CLUSTER));
     }
+
+    public function pusherMessageSent($secret_key, $message) {
+
+        $this->pusher->trigger('chat' . $secret_key, 'MessageSent', $message);
+    }
+}
+
+
 ?>
