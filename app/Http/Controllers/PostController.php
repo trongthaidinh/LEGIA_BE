@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\Like;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Models\PostBackground;
 use App\Models\PostImage;
 use App\Models\Share;
 use Illuminate\Support\Facades\Validator;
@@ -58,7 +59,7 @@ public function getUserPosts($userId)
             'content' => 'nullable|string|max:300',
             'privacy' => 'required|in:PUBLIC,PRIVATE', 
             'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE', 
-            'background' => 'nullable|in:color,image',
+            'background_id' => 'nullable|exists:backgrounds,id',
             'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048', 
         ], [
             'content.required' => 'Nội dung bài viết không được để trống.',
@@ -68,7 +69,7 @@ public function getUserPosts($userId)
             'privacy.in' => 'Quyền riêng tư không hợp lệ.',
             'post_type.required' => 'Bạn phải chọn loại bài viết.',
             'post_type.in' => 'Loại bài viết không hợp lệ.',
-            'background.in' => 'Nền bài viết không hợp lệ.',
+            'background_id.exists' => 'Background không tồn tại.',
             'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
             'images.*.image' => 'Tệp phải là hình ảnh.',
             'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
@@ -79,13 +80,15 @@ public function getUserPosts($userId)
             return responseJson(null, 400, $validator->errors());
         }
 
-        $post = Post::create([
+        $postData = [
             'owner_id' => auth()->id(), 
             'content' => $request->content,
             'privacy' => $request->privacy,
             'post_type' => $request->post_type,
-            'background' => $request->background,
-        ]);        
+            'background_id' => $request->background_id, 
+        ];
+
+        $post = Post::create($postData);
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
@@ -141,7 +144,12 @@ public function getUserPosts($userId)
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
-            ], postValidatorMessages());
+            ], [
+                'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
+                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+                'privacy.required' => 'Bạn phải chọn quyền riêng tư cho bài viết.',
+                'privacy.in' => 'Quyền riêng tư không hợp lệ.',
+            ]);
     
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
@@ -365,12 +373,27 @@ public function getArchivedPosts()
     {
         try {
             $user = auth()->userOrFail(); 
+
+            $originalPost = Post::find($postId);
+
+            if (!$originalPost) {
+                return response()->json(['message' => 'Bài viết không tồn tại'], 404);
+            }
+
+            $sharedPost = Post::create([
+                'owner_id' => $originalPost->owner_id, 
+                'content' => $originalPost->content,
+                'privacy' => $originalPost->privacy,
+                'post_type' => 'SHARE',
+                'background_id' => $originalPost->background_id,
+            ]);
+
             $share = Share::create([
                 'owner_id' => $user->id,
                 'post_id' => $postId,
             ]);
 
-            return responseJson($share, 200, 'Bài viết đã được chia sẻ');
+            return responseJson($sharedPost, 200, 'Bài viết đã được chia sẻ');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi chia sẻ bài viết ' . $e->getMessage());
         }

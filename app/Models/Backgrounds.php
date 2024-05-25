@@ -10,11 +10,11 @@ class Background extends Model
     use HasFactory;
 
     protected $fillable = [
-        'url',
+        'value', 'text_color', 'is_hidden'
     ];
 
-    public function postBackgrounds()
+    public function posts()
     {
-        return $this->hasMany(PostBackground::class);
+        return $this->hasMany(Post::class);
     }
 }
