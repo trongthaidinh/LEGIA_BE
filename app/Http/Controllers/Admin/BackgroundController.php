@@ -6,13 +6,21 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Background;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class BackgroundController extends Controller
 {
     public function index()
     {
-        $backgrounds = Background::all();
+        $user = Auth::user();
+
+        if ($user->role === 'admin') {
+            $backgrounds = Background::all();
+        } else {
+            $backgrounds = Background::where('is_hidden', false)->get();
+        }
+
         return responseJson($backgrounds, 200, 'Danh sách Backgrounds');
     }
 
@@ -120,6 +128,26 @@ class BackgroundController extends Controller
         return responseJson(null, 500, 'Đã xảy ra lỗi khi cập nhật background: ' . $e->getMessage());
     }
 }
+
+    public function toggleVisibility($id)
+    {
+        try {
+            $background = Background::find($id);
+
+            if (!$background) {
+                return responseJson(null, 404, 'Background không tồn tại');
+            }
+
+            $background->is_hidden = !$background->is_hidden;
+            $background->save();
+
+            $message = $background->is_hidden ? 'Background đã được ẩn' : 'Background đã được hiển thị';
+
+            return responseJson($background, 200, $message);
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi thay đổi trạng thái hiển thị của background: ' . $e->getMessage());
+        }
+    }
 
 
     public function destroy($id)
