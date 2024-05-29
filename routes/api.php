@@ -4,8 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\PostController;
+use App\Http\Middleware\AdminMiddleware;
 
 Route::group([
     'middleware' => 'api',
@@ -27,6 +29,34 @@ Route::group([
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('forgot-password', [AuthController::class, 'sendResetLinkEmail']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
+});
+
+Route::group([
+    'middleware' => ['api'],
+], function () {
+    Route::get('backgrounds', [BackgroundController::class, 'index']);
+    Route::group([
+        'middleware' => [AdminMiddleware::class],
+        'prefix' => 'admin',
+    ], function () {
+        Route::post('backgrounds', [BackgroundController::class, 'store']);
+        Route::get('backgrounds/{id}', [BackgroundController::class, 'show']);
+        Route::put('backgrounds/{id}', [BackgroundController::class, 'update']);
+        Route::patch('backgrounds/{id}/toggle-visibility', [BackgroundController::class, 'toggleVisibility']);
+        Route::delete('backgrounds/{id}', [BackgroundController::class, 'destroy']);
+    });
+});
+
+Route::group([
+    'middleware' => ['api', AdminMiddleware::class],
+    'prefix' => 'admin',
+],  function () {
+        Route::get('backgrounds', [BackgroundController::class, 'index']);
+        Route::post('backgrounds', [BackgroundController::class, 'store']);
+        Route::get('backgrounds/{id}', [BackgroundController::class, 'show']);
+        Route::put('backgrounds/{id}', [BackgroundController::class, 'update']);
+        Route::patch('backgrounds/{id}/toggle-visibility', [BackgroundController::class, 'toggleVisibility']);
+        Route::delete('backgrounds/{id}', [BackgroundController::class, 'destroy']);
 });
 
 Route::group([
