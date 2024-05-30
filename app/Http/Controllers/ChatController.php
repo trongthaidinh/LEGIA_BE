@@ -241,21 +241,5 @@ class ChatController extends Controller
         }
     }
 
-    public function destroyConversation($conversationId) {
-        try{
-            $user = auth()->userOrFail();
 
-            $conversation = Conversation::find($conversationId);
-
-            if(!$conversation){
-                return responseJson(null, 400, 'Không tìm thấy cuộc đối thoại!');
-            }
-
-            if($conversation->creator_id != $user->id){
-                return responseJson(null, 400, 'Không thể xóa cuộc đối thoại này vì bạ!');
-            }
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
-        }
 }
