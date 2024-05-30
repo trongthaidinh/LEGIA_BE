@@ -13,5 +13,6 @@ class Message extends Model
         "conversation_id",
         "user_id",
         "content",
+        "read_at"
     ];
 }

@@ -210,4 +210,52 @@ class ChatController extends Controller
             return responseJson(null, 404, "Người dùng chưa xác thực!");
         }
     }
+
+    public function markMessageAsRead(Request $request, $messageId) {
+        $data = $request->only(['secret_key']);
+
+        $validator = Validator::make($data, [
+            'secret_key' => 'required|string|exists:conversations,secret_key',
+        ], chatValidatorMessages());
+
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors()->first());
+        }
+
+        try{
+            $user = auth()->userOrFail();
+            $message = Message::find($messageId);
+            if(!$message){
+                return responseJson(null, 400, 'Không tìm thấy tin nhắn!');
+            }
+            $message->read_at = now();
+
+            $this->messageSent->pusherMessageIsRead($data['secret_key'], $message);
+
+            $message->save();
+
+            return responseJson($message, 200, 'Thành công!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function destroyConversation($conversationId) {
+        try{
+            $user = auth()->userOrFail();
+
+            $conversation = Conversation::find($conversationId);
+
+            if(!$conversation){
+                return responseJson(null, 400, 'Không tìm thấy cuộc đối thoại!');
+            }
+
+            if($conversation->creator_id != $user->id){
+                return responseJson(null, 400, 'Không thể xóa cuộc đối thoại này vì bạ!');
+            }
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
 }

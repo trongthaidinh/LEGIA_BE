@@ -15,9 +15,13 @@ class MessageSent {
     }
 
     public function pusherMessageSent($secret_key, $message) {
-
         $this->pusher->trigger('chat' . $secret_key, 'MessageSent', $message);
     }
+
+    public function pusherMessageIsRead($secret_key, $message) {
+        $this->pusher->trigger('chat' . $secret_key, 'MessageIsRead', $message);
+    }
+
 }
 
 

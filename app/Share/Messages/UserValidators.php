@@ -43,6 +43,9 @@
             'conversation_id.exists' => 'Cuộc trò chuyện không tìm thấy',
             'message.required' => 'Vui lòng nhập nội dung tin nhắn',
             'message.max' => 'Tin nhắn tối đa 400 ký tự',
+            'secret_key.required' => 'Thiếu secret key',
+            'secret_key.string' => 'Secret key phải là một chuỗi',
+            'secret_key.exists' => 'Secret key không tìm thấy',
         ];
     }
 

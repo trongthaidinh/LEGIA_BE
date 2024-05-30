@@ -118,4 +118,5 @@ Route::group([
     Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
+    Route::post('message/mark-is-read/{message_id}', [ChatController::class, 'markIsRead']);
 });

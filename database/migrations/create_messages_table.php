@@ -20,6 +20,7 @@ return new class extends Migration
                 table: 'conversations', indexName: 'messages_conversation_id'
             );
             $table->string('content', 300);
+            $table->timestamp('read_at')->default(null)->nullable();
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });
