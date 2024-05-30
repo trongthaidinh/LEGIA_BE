@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained(
                 table: 'users', indexName: 'conversation_participants_user_id'
-            );
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->foreignId('conversation_id')->constrained(
                 table: 'conversations', indexName: 'conversation_participants_conversation_id'
-            );
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });

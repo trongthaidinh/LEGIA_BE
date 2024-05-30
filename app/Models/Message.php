@@ -15,4 +15,6 @@ class Message extends Model
         "content",
         "read_at"
     ];
+
+
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('creator_id')->constrained(
                 table: 'users', indexName: 'conversations_creator_id'
-            );
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->string('name', 40)->nullable();
             $table->enum('type', ['individual', 'group'])->default('individual');
             $table->timestamp('created_at')->useCurrent()->nullable();

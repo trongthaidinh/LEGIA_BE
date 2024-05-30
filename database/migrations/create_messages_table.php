@@ -21,6 +21,9 @@ return new class extends Migration
             );
             $table->string('content', 300);
             $table->timestamp('read_at')->default(null)->nullable();
+            $table->foreignId('deleted_by')->constrained(
+                table: 'users', indexName: 'messages_user_id'
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });

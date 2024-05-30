@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('owner_id')->constrained(
                 table: 'users', indexName: 'notifications_owner_id'
-            );
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->foreignId('emitter_id')->constrained(
                 table: 'users', indexName: 'notifications_emitter_id'
-            );
+            )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->enum('type', ['post_comment', 'post_like', 'post_creation', 'your_post_shared', 'friend_request', 'friend_request_accept']);
             $table->string('content', 300);
             $table->timestamp('created_at')->useCurrent()->nullable();

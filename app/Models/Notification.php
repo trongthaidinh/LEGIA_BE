@@ -15,4 +15,15 @@ class Notification extends Model
         'type',
         'content',
     ];
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function emitter()
+    {
+        return $this->belongsTo(User::class, 'emitter_id');
+    }
+
 }
