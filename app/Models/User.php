@@ -22,7 +22,8 @@ class User extends Authenticatable implements JWTSubject
         'phone_number',
         'address',
         'date_of_birth',
-        'is_verified'
+        'is_verified',
+        'is_locked'
     ];
 
     protected $hidden = [
@@ -38,5 +39,4 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-
 }

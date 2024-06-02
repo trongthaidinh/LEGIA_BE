@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\BackgroundController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\PostController;
 use App\Http\Middleware\AdminMiddleware;
@@ -18,6 +19,17 @@ Route::group([
     Route::patch('update-information', [UserController::class, 'updateInformation']);
     Route::post('update-avatar', [UserController::class, 'updateAvatar']);
     Route::delete('delete-avatar', [UserController::class, 'deleteAvatar']);
+});
+
+
+Route::group([
+    'middleware' => ['api', AdminMiddleware::class],
+    'prefix' => 'admin',
+], function () {
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::get('users/{id}', [AdminUserController::class, 'show']);
+    Route::patch('users/{id}/lock', [AdminUserController::class, 'lock']);
+    Route::patch('users/{id}/unlock', [AdminUserController::class, 'unlock']);
 });
 
 Route::group([
@@ -48,18 +60,6 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => ['api', AdminMiddleware::class],
-    'prefix' => 'admin',
-],  function () {
-        Route::get('backgrounds', [BackgroundController::class, 'index']);
-        Route::post('backgrounds', [BackgroundController::class, 'store']);
-        Route::get('backgrounds/{id}', [BackgroundController::class, 'show']);
-        Route::put('backgrounds/{id}', [BackgroundController::class, 'update']);
-        Route::patch('backgrounds/{id}/toggle-visibility', [BackgroundController::class, 'toggleVisibility']);
-        Route::delete('backgrounds/{id}', [BackgroundController::class, 'destroy']);
-});
-
-Route::group([
     'middleware' => 'api',
     'prefix' => 'friendship',
 ], function () {
@@ -80,10 +80,6 @@ Route::group([
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
 
-    Route::get('/archived', [PostController::class, 'getArchivedPosts']);
-    Route::post('/{id}/archive', [PostController::class, 'saveToArchive']);
-    Route::delete('/{id}/archive', [PostController::class, 'removeFromArchive']);
-
     Route::post('/{id}/like', [PostController::class, 'likePost']);
 
     Route::get('/{id}/comments', [PostController::class, 'getComments']);
@@ -92,6 +88,15 @@ Route::group([
     Route::delete('/{id}/comments/{commentId}', [PostController::class, 'deleteComment']);
 
     Route::post('/{id}/share', [PostController::class, 'sharePost']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'archived',
+], function () {
+    Route::get('/', [PostController::class, 'getArchivedPosts']);
+    Route::post('/{id}', [PostController::class, 'saveToArchive']);
+    Route::delete('/{id}', [PostController::class, 'removeFromArchive']);
 });
 
 Route::group([

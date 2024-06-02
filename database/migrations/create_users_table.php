@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('password');
             $table->date('date_of_birth')->nullable();
             $table->boolean('is_verified')->default(false);
+            $table->boolean('is_locked')->default(false);
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });

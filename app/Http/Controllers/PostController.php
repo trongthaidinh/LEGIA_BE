@@ -7,50 +7,57 @@ use App\Models\Comment;
 use App\Models\Like;
 use Illuminate\Http\Request;
 use App\Models\Post;
-use App\Models\PostBackground;
 use App\Models\PostImage;
 use App\Models\Share;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class PostController extends Controller
 {
     public function index()
-{
-    try {
-        $posts = Post::with(['images', 'comments', 'likes', 'shares'])
-                    ->where('privacy', 'PUBLIC')
-                    ->get();
-
-        return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
-    }
-}
-
-    
-public function getUserPosts($userId)
-{
-    try {
-        $currentUser = auth()->userOrFail();
-        
-        if ($currentUser->id == $userId) {
+    {
+        try {
             $posts = Post::with(['images', 'comments', 'likes', 'shares'])
-                        ->where('owner_id', $userId)
-                        ->get();
-        } else {
-            $posts = Post::with(['images', 'comments', 'likes', 'shares'])
-                        ->where('owner_id', $userId)
                         ->where('privacy', 'PUBLIC')
+                        ->whereHas('owner', function ($query) {
+                            $query->where('is_locked', false);
+                        })
                         ->get();
+
+            return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
-
-        return responseJson($posts, 200, 'Danh sách bài đăng của người dùng');
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
     }
-}
 
+    public function getUserPosts($userId)
+    {
+        try {
+            $currentUser = auth()->userOrFail();
+
+            $user = User::findOrFail($userId);
+
+            if ($user->is_locked) {
+                return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
+            }
+
+            if ($currentUser->id == $userId) {
+                $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+                            ->where('owner_id', $userId)
+                            ->get();
+            } else {
+                $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+                            ->where('owner_id', $userId)
+                            ->where('privacy', 'PUBLIC')
+                            ->get();
+            }
+
+            return responseJson($posts, 200, 'Danh sách bài đăng của người dùng');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
+        }
+    }
 
     public function store(Request $request)
 {
@@ -113,10 +120,14 @@ public function getUserPosts($userId)
 }
 
 
-    public function show($id)
-    {
+public function show($id)
+{
+    try {
         $post = Post::with(['images', 'comments', 'likes', 'shares'])
                     ->where('privacy', 'PUBLIC')
+                    ->whereHas('owner', function ($query) {
+                        $query->where('is_locked', false);
+                    })
                     ->find($id);
         
         if (!$post) {
@@ -124,7 +135,10 @@ public function getUserPosts($userId)
         }
 
         return responseJson($post, 200, 'Thông tin bài đăng');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
     }
+}
 
     public function update(Request $request, $id)
     {
@@ -192,7 +206,11 @@ public function destroy($id)
 {
     try {
         $user = auth()->userOrFail();
-        $post = Post::findOrFail($postId);
+        $post = Post::find($postId);
+
+        if (!$post) {
+            return responseJson(null, 404, 'Bài đăng không tồn tại');
+        }
 
         $existingArchive = Archive::where('user_id', $user->id)
                                    ->where('post_id', $post->id)
@@ -217,7 +235,11 @@ public function removeFromArchive($postId)
 {
     try {
         $user = auth()->userOrFail();
-        $post = Post::findOrFail($postId);
+        $post = Post::find($postId);
+
+        if (!$post) {
+            return responseJson(null, 404, 'Bài đăng không tồn tại');
+        }
 
         $archive = Archive::where('user_id', $user->id)
                           ->where('post_id', $post->id)
@@ -236,19 +258,23 @@ public function removeFromArchive($postId)
 }
 
 public function getArchivedPosts()
-    {
-        try {
-            $user = auth()->userOrFail();
-            
-            $savedPosts = Archive::where('user_id', $user->id)
-                                 ->with('post')
-                                 ->get();
+{
+    try {
+        $user = auth()->userOrFail();
 
-            return responseJson($savedPosts, 200, 'Danh sách các bài đăng đã lưu');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng đã lưu: ' . $e->getMessage());
-        }
+        $savedPosts = Archive::where('user_id', $user->id)
+                             ->whereHas('post.owner', function($query) {
+                                 $query->where('is_locked', false);
+                             })
+                             ->with('post')
+                             ->get();
+
+        return responseJson($savedPosts, 200, 'Danh sách các bài đăng đã lưu');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng đã lưu: ' . $e->getMessage());
     }
+}
+
 
     public function likePost(Request $request, $postId)
 {
@@ -400,42 +426,46 @@ public function getArchivedPosts()
     }
 
     public function searchPost(Request $request)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'q' => 'required|string|max:255',
-                'page' => 'integer|min:1',
-                'per_page' => 'integer|min:1|max:100',
-            ], [
-                'q.required' => 'Trường tìm kiếm không được để trống.',
-                'q.string' => 'Trường tìm kiếm phải là một chuỗi ký tự.',
-                'q.max' => 'Trường tìm kiếm không được vượt quá :max ký tự.',
-                'page.integer' => 'Trường trang phải là một số nguyên.',
-                'page.min' => 'Giá trị của trường trang phải lớn hơn hoặc bằng 1.',
-                'per_page.integer' => 'Trường số lượng mỗi trang phải là một số nguyên.',
-                'per_page.min' => 'Giá trị của trường số lượng mỗi trang phải lớn hơn hoặc bằng 1.',
-                'per_page.max' => 'Giá trị của trường số lượng mỗi trang không được vượt quá :max.',
-            ]);
+{
+    try {
+        $validator = Validator::make($request->all(), [
+            'q' => 'required|string|max:255',
+            'page' => 'integer|min:1',
+            'per_page' => 'integer|min:1|max:100',
+        ], [
+            'q.required' => 'Trường tìm kiếm không được để trống.',
+            'q.string' => 'Trường tìm kiếm phải là một chuỗi ký tự.',
+            'q.max' => 'Trường tìm kiếm không được vượt quá :max ký tự.',
+            'page.integer' => 'Trường trang phải là một số nguyên.',
+            'page.min' => 'Giá trị của trường trang phải lớn hơn hoặc bằng 1.',
+            'per_page.integer' => 'Trường số lượng mỗi trang phải là một số nguyên.',
+            'per_page.min' => 'Giá trị của trường số lượng mỗi trang phải lớn hơn hoặc bằng 1.',
+            'per_page.max' => 'Giá trị của trường số lượng mỗi trang không được vượt quá :max.',
+        ]);
 
-            if ($validator->fails()) {
-                return responseJson(null, 400, $validator->errors());
-            }
-
-            $query = $request->input('q');
-            $perPage = $request->input('per_page', 2); 
-            $page = $request->input('page', 1);
-
-            $posts = Post::with(['images', 'comments', 'likes', 'shares'])
-                        ->where('content', 'like', '%' . $query . '%')
-                        ->where('privacy', 'PUBLIC')
-                        ->paginate($perPage, ['*'], 'page', $page)
-                        ->appends(['q' => $query]);
-
-            return responseJson($posts, 200, 'Kết quả tìm kiếm bài viết');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi tìm kiếm bài viết: ' . $e->getMessage());
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
         }
+
+        $query = $request->input('q');
+        $perPage = $request->input('per_page', 4);
+        $page = $request->input('page', 1);
+
+        $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+                    ->where('content', 'like', '%' . $query . '%')
+                    ->where('privacy', 'PUBLIC')
+                    ->whereHas('owner', function ($query) {
+                        $query->where('is_locked', false);
+                    })
+                    ->paginate($perPage, ['*'], 'page', $page)
+                    ->appends(['q' => $query]);
+
+        return responseJson($posts, 200, 'Kết quả tìm kiếm bài viết');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi tìm kiếm bài viết: ' . $e->getMessage());
     }
+}
+
 }
 
 ?>
