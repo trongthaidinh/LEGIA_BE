@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\StoryController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::group([
@@ -124,4 +125,15 @@ Route::group([
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
     Route::post('message/mark-is-read/{message_id}', [ChatController::class, 'markIsRead']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'stories',
+], function () {
+    Route::get('/', [StoryController::class, 'index']);
+    Route::post('/', [StoryController::class, 'create']);
+    Route::patch('/{id}/update', [StoryController::class, 'update']);
+    Route::get('/{id}', [StoryController::class, 'show']);
+    Route::delete('/{id}', [StoryController::class, 'delete']);
 });
