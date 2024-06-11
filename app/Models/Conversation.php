@@ -18,4 +18,9 @@ class Conversation extends Model
     public function creator() {
         return $this->belongsTo(User::class, 'creator_id', 'id');
     }
+
+    public function participants()
+    {
+        return $this->hasMany(ConversationParticipant::class, 'conversation_id');
+    }
 }
