@@ -247,8 +247,9 @@ class ChatController extends Controller
 
             $userId = $user->id;
 
-            var_dump($userId);
-            var_dump($partnerId);
+            if($userId == $partnerId){
+                return responseJson(null, 400, 'Không thể trò chuyên với chính mình!');
+            }
 
             $conversation = Conversation::whereHas('participants', function ($query) use ($userId, $partnerId) {
                 $query->where('user_id', $userId)
