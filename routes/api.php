@@ -18,7 +18,11 @@ Route::group([
     Route::patch('update-password', [UserController::class, 'updatePassword']);
     Route::patch('update-information', [UserController::class, 'updateInformation']);
     Route::post('update-avatar', [UserController::class, 'updateAvatar']);
+    Route::post('update-cover-image', [UserController::class, 'updateCoverImage']);
     Route::delete('delete-avatar', [UserController::class, 'deleteAvatar']);
+    Route::delete('delete-cover-image', [UserController::class, 'deleteCoverImage']);
+    Route::get('/profile/{id}', [UserController::class, 'getProfile']);
+
 });
 
 

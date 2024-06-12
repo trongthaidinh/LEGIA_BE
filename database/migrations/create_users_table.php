@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('first_name', 30);
             $table->string('last_name', 20);
             $table->string('avatar')->nullable();
+            $table->string('cover_image')->nullable();
             $table->enum('gender', ['male', 'female', 'other']);
             $table->enum('role', ['admin', 'user'])->default('user');
             $table->string('email', 30)->unique();

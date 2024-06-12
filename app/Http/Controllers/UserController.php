@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,6 +19,22 @@ class UserController extends Controller
         }
 
         return responseJson($user);
+    }
+
+    public function getProfile($id){
+        try{
+            auth()->userOrFail();
+
+            $profile = DB::table('users')
+            ->where('id', $id)
+            ->first();
+
+            return responseJson($profile, 200);
+
+        }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+            var_dump($e);
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
     }
 
     public function updateInformation(Request $request){
@@ -114,6 +132,40 @@ class UserController extends Controller
         }
     }
 
+    public function updateCoverImage(Request $request){
+        try{
+            $user = auth()->userOrFail();
+
+            $dataUpdate = $request->only('cover_image');
+
+            $validator = Validator::make($dataUpdate, [
+                'cover_image' => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
+            ], userValidatorMessages());
+
+            if($validator->fails()){
+                return responseJson(null, 400, $validator->errors());
+            }
+
+            if($oldCoverImage = $user->cover_image){
+                $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
+                Cloudinary::destroy($publicId);
+            }
+
+
+            $result = $request->file('cover_image')->storeOnCloudinary('cover_images');
+            $coverImagePublicId = $result->getPublicId();
+            $coverImagePath = "{$result->getSecurePath()}?public_id={$coverImagePublicId}";
+
+            $user->update(['cover_image' => $coverImagePath]);
+            $user->save();
+
+            return responseJson($user, 200, 'Cập nhật ảnh bìa người dùng thành công!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
     public function deleteAvatar(){
         try{
             $user = auth()->userOrFail();
@@ -129,6 +181,27 @@ class UserController extends Controller
             $user->save();
 
             return responseJson($user, 200, 'Xóa ảnh đại diện người dùng thành công!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
+    public function deleteCoverImage(){
+        try{
+            $user = auth()->userOrFail();
+
+            if(! $oldCoverImage = $user->cover_image){
+                return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
+            }
+
+            $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
+            Cloudinary::destroy($publicId);
+
+            $user->update(['cover_image' => null]);
+            $user->save();
+
+            return responseJson($user, 200, 'Xóa ảnh bìa người dùng thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');

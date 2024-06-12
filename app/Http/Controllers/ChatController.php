@@ -256,7 +256,7 @@ class ChatController extends Controller
                       ->orWhere('user_id', $partnerId);
             }, '=', 2)
             ->where('type', 'individual')
-            ->get();
+            ->first();
 
 
             if(!$conversation){
