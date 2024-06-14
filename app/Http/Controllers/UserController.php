@@ -213,6 +213,17 @@ class UserController extends Controller
             auth()->userOrFail();
 
 
+            $validator = Validator::make($request->all(), [
+                'q' => 'required',
+            ], [
+                'q.required' => 'Vui lý nhập thông tin người dùng cần tìm kiếm!',
+            ]);
+
+            if($validator->fails()){
+                return responseJson(null, 400, $validator->errors());
+            }
+
+
             $users = DB::table('users')
             ->where('first_name', 'like', '%' . $request->q . '%')
             ->orWhere('last_name', 'like', '%' . $request->q . '%')
