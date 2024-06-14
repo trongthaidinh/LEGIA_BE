@@ -208,4 +208,24 @@ class UserController extends Controller
         }
     }
 
+    public function find(Request $request){
+        try{
+            auth()->userOrFail();
+
+
+            $users = DB::table('users')
+            ->where('first_name', 'like', '%' . $request->q . '%')
+            ->orWhere('last_name', 'like', '%' . $request->q . '%')
+            ->orWhere('email', 'like', '%' . $request->q . '%')
+            ->orWhere('phone_number', 'like', '%' . $request->q . '%')
+            ->get();
+
+            return responseJson($users, 200);
+
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
 }

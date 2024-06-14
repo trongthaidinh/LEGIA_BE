@@ -22,6 +22,7 @@ Route::group([
     Route::delete('delete-avatar', [UserController::class, 'deleteAvatar']);
     Route::delete('delete-cover-image', [UserController::class, 'deleteCoverImage']);
     Route::get('/profile/{id}', [UserController::class, 'getProfile']);
+    Route::get('/find', [UserController::class, 'find']);
 
 });
 
