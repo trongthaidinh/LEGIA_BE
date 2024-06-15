@@ -67,66 +67,71 @@ class PostController extends Controller
     }
 
     public function store(Request $request)
-    {
-        try {
-            $user = auth()->user();
+{
+    try {
+        $user = auth()->user();
 
-            $validator = Validator::make($request->all(), [
-                'content' => 'nullable|string|max:300',
-                'privacy' => 'required|in:PUBLIC,PRIVATE',
-                'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-                'background_id' => 'nullable|exists:backgrounds,id',
-                'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
-            ], [
-                'content.required' => 'Nội dung bài viết không được để trống.',
-                'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
-                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
-                'privacy.required' => 'Bạn phải chọn quyền riêng tư cho bài viết.',
-                'privacy.in' => 'Quyền riêng tư không hợp lệ.',
-                'post_type.required' => 'Bạn phải chọn loại bài viết.',
-                'post_type.in' => 'Loại bài viết không hợp lệ.',
-                'background_id.exists' => 'Background không tồn tại.',
-                'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
-                'images.*.image' => 'Tệp phải là hình ảnh.',
-                'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
-                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'content' => 'nullable|string|max:300',
+            'privacy' => 'required|in:PUBLIC,PRIVATE',
+            'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
+            'background_id' => 'nullable|exists:backgrounds,id',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'content.required' => 'Nội dung bài viết không được để trống.',
+            'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
+            'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+            'privacy.required' => 'Bạn phải chọn quyền riêng tư cho bài viết.',
+            'privacy.in' => 'Quyền riêng tư không hợp lệ.',
+            'post_type.required' => 'Bạn phải chọn loại bài viết.',
+            'post_type.in' => 'Loại bài viết không hợp lệ.',
+            'background_id.exists' => 'Background không tồn tại.',
+            'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
+            'images.*.image' => 'Tệp phải là hình ảnh.',
+            'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
+        ]);
 
-            if ($validator->fails()) {
-                return responseJson(null, 400, $validator->errors());
-            }
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
+        }
 
-            $post = Post::create(array_merge(
-                $validator->validated(),
-                ['owner_id' => $user->id]
-            ));
+        $postData = $validator->validated();
+        if ($request->hasFile('images')) {
+            $postData['background_id'] = null;
+        }
 
-            $images = [];
+        $post = Post::create(array_merge(
+            $postData,
+            ['owner_id' => $user->id]
+        ));
 
-            if ($request->allFiles()) {
-                foreach ($request->allFiles() as $file) {
-                    if ($file->isValid()) {
-                        $result = $file->storeOnCloudinary('post_images');
-                        $imagePublicId = $result->getPublicId();
-                        $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+        $images = [];
 
-                        $postImage = PostImage::create([
-                            'post_id' => $post->id,
-                            'url' => $imageUrl,
-                        ]);
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('post_images');
+                    $imagePublicId = $result->getPublicId();
+                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
 
-                        $images[] = $postImage;
-                    }
+                    $postImage = PostImage::create([
+                        'post_id' => $post->id,
+                        'url' => $imageUrl,
+                    ]);
+
+                    $images[] = $postImage;
                 }
             }
-
-            $post->images = $images;
-
-            return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bài đăng: ' . $e->getMessage());
         }
+
+        $post->images = $images;
+
+        return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bài đăng: ' . $e->getMessage());
     }
+}
 
 
 public function show($id)
