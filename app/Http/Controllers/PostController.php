@@ -106,7 +106,7 @@ class PostController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $result = $request->file('images')->storeOnCloudinary('post_images');
+                $result = $request->file($image)->storeOnCloudinary('post_images');
                 $imagePublicId = $result->getPublicId();
                 $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
 
