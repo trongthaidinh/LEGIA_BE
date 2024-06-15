@@ -225,7 +225,7 @@ class UserController extends Controller
 
 
             $users = DB::table('users')
-            ->where('id', '!=', $user->id())
+            ->where('id', '!=', $user->id)
             ->where(function($query) use ($request) {
                 $query->where('first_name', 'like', '%' . $request->q . '%')
                     ->orWhere('last_name', 'like', '%' . $request->q . '%')
