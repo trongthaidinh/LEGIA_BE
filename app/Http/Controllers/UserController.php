@@ -210,7 +210,7 @@ class UserController extends Controller
 
     public function find(Request $request){
         try{
-            auth()->userOrFail();
+            $user = auth()->userOrFail();
 
 
             $validator = Validator::make($request->all(), [
@@ -225,10 +225,13 @@ class UserController extends Controller
 
 
             $users = DB::table('users')
-            ->where('first_name', 'like', '%' . $request->q . '%')
-            ->orWhere('last_name', 'like', '%' . $request->q . '%')
-            ->orWhere('email', 'like', '%' . $request->q . '%')
-            ->orWhere('phone_number', 'like', '%' . $request->q . '%')
+            ->where('id', '!=', $user->id())
+            ->where(function($query) use ($request) {
+                $query->where('first_name', 'like', '%' . $request->q . '%')
+                    ->orWhere('last_name', 'like', '%' . $request->q . '%')
+                    ->orWhere('email', 'like', '%' . $request->q . '%')
+                    ->orWhere('phone_number', 'like', '%' . $request->q . '%');
+            })
             ->get();
 
             return responseJson($users, 200);

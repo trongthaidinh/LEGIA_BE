@@ -75,10 +75,10 @@ class PostController extends Controller
         }
         $validator = Validator::make($request->all(), [
             'content' => 'nullable|string|max:300',
-            'privacy' => 'required|in:PUBLIC,PRIVATE', 
-            'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE', 
+            'privacy' => 'required|in:PUBLIC,PRIVATE',
+            'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
             'background_id' => 'nullable|exists:backgrounds,id',
-            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048', 
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
         ], [
             'content.required' => 'Nội dung bài viết không được để trống.',
             'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
@@ -99,11 +99,11 @@ class PostController extends Controller
         }
 
         $postData = [
-            'owner_id' => auth()->id(), 
+            'owner_id' => auth()->id(),
             'content' => $request->content,
             'privacy' => $request->privacy,
             'post_type' => $request->post_type,
-            'background_id' => $request->background_id, 
+            'background_id' => $request->background_id,
         ];
 
         $post = Post::create($postData);
@@ -111,12 +111,12 @@ class PostController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $result = Cloudinary::upload($image->getRealPath(), [
-                    'folder' => 'postImages', 
+                    'folder' => 'postImages',
                 ]);
 
                 $imagePublicId = $result->getPublicId();
                 $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-        
+
                 PostImage::create([
                     'post_id' => $post->id,
                     'url' => $imageUrl,
@@ -144,7 +144,7 @@ public function show($id)
                         $query->where('is_locked', false);
                     })
                     ->find($id);
-        
+
         if (!$post) {
             return responseJson(null, 404, 'Bài đăng không tồn tại');
         }
@@ -164,16 +164,16 @@ public function show($id)
             }
 
             $post = Post::find($id);
-    
+
             if (!$post) {
                 return responseJson(null, 404, 'Bài đăng không tồn tại');
             }
-    
-    
+
+
             if ($post->owner_id !== $user->id) {
                 return responseJson(null, 403, 'Bạn không có quyền chỉnh sửa bài đăng này');
             }
-    
+
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
@@ -183,23 +183,23 @@ public function show($id)
                 'privacy.required' => 'Bạn phải chọn quyền riêng tư cho bài viết.',
                 'privacy.in' => 'Quyền riêng tư không hợp lệ.',
             ]);
-    
+
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-    
+
             $post->update([
                 'content' => $request->content,
                 'privacy' => $request->privacy,
             ]);
-    
+
             return responseJson($post, 200, 'Bài đăng đã được cập nhật');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi cập nhật bài đăng: ' . $e->getMessage());
         }
     }
-    
-    
+
+
 
 
 public function destroy($id)
@@ -209,7 +209,7 @@ public function destroy($id)
         return responseJson(null, 401, 'Chưa xác thực người dùng');
     }
     $post = Post::find($id);
-    
+
     if (!$post) {
         return responseJson(null, 404, 'Bài đăng không tồn tại');
     }
@@ -334,7 +334,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'type' => $reactionType
             ]);
             return responseJson($newReaction, 201, 'Thêm thành công trạng thái thả cảm xúc cho bài đăng');
-        } 
+        }
     } catch (\Exception $e) {
         return responseJson(null, 500, 'Đã xảy ra lỗi khi thả cảm xúc bài đăng: ' . $e->getMessage());
     }
@@ -369,8 +369,8 @@ public function removeReaction($postId)
             $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-            } 
-            $post = Post::find($postId);        
+            }
+            $post = Post::find($postId);
 
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300',
@@ -402,7 +402,7 @@ public function removeReaction($postId)
         $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-        } 
+        }
         $comments = Comment::where('post_id', $postId)->get();
 
         return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
@@ -417,7 +417,7 @@ public function removeReaction($postId)
             $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-            } 
+            }
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300',
             ], [
@@ -452,7 +452,7 @@ public function removeReaction($postId)
             $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-            } 
+            }
             $comment = Comment::where('post_id', $postId)
                               ->findOrFail($commentId);
 
@@ -474,7 +474,7 @@ public function removeReaction($postId)
             $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-            } 
+            }
 
             $originalPost = Post::find($postId);
 
@@ -483,7 +483,7 @@ public function removeReaction($postId)
             }
 
             $sharedPost = Post::create([
-                'owner_id' => $originalPost->owner_id, 
+                'owner_id' => $originalPost->owner_id,
                 'content' => $originalPost->content,
                 'privacy' => $originalPost->privacy,
                 'post_type' => 'SHARE',
@@ -507,7 +507,7 @@ public function removeReaction($postId)
         $user = auth()->user();
             if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-        } 
+        }
         $validator = Validator::make($request->all(), [
             'q' => 'required|string|max:255',
             'page' => 'integer|min:1',
