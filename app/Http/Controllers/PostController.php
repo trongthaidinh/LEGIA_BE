@@ -50,11 +50,11 @@ class PostController extends Controller
             }
 
             if ($currentUser->id == $userId) {
-                $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+                $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
                             ->get();
             } else {
-                $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+                $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
                             ->where('privacy', 'PUBLIC')
                             ->get();
@@ -138,7 +138,7 @@ public function show($id)
         if(!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
-        $post = Post::with(['images', 'comments', 'likes', 'shares'])
+        $post = Post::with(['images', 'comments', 'reactions', 'shares'])
                     ->where('privacy', 'PUBLIC')
                     ->whereHas('owner', function ($query) {
                         $query->where('is_locked', false);
@@ -531,7 +531,7 @@ public function removeReaction($postId)
         $perPage = $request->input('per_page', 4);
         $page = $request->input('page', 1);
 
-        $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+        $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
                     ->where('content', 'like', '%' . $query . '%')
                     ->where('privacy', 'PUBLIC')
                     ->whereHas('owner', function ($query) {
