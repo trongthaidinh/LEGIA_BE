@@ -103,6 +103,8 @@ class PostController extends Controller
             ['owner_id' => $user->id]
         ));
 
+        $images = [];
+
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $result = Cloudinary::upload($image->getRealPath(), [
@@ -111,13 +113,17 @@ class PostController extends Controller
 
                 $imagePublicId = $result->getPublicId();
                 $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-
-                PostImage::create([
+        
+                $postImage = PostImage::create([
                     'post_id' => $post->id,
                     'url' => $imageUrl,
                 ]);
+
+                $images[] = $postImage;
             }
         }
+
+        $post->images = $images;
 
         return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
     } catch (\Exception $e) {
@@ -500,7 +506,7 @@ public function removeReaction($postId)
 {
     try {
         $user = auth()->user();
-            if (!$user) {
+        if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
         $validator = Validator::make($request->all(), [
