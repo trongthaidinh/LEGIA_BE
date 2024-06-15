@@ -14,7 +14,10 @@ class StoryController extends Controller
     public function create(Request $request)
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            };
 
             $validator = Validator::make($request->all(), [
                 'type' => 'required|in:text,image',
@@ -75,7 +78,10 @@ class StoryController extends Controller
     public function index()
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            };
 
             $myStories = Story::where('expires_at', '>', Carbon::now())
                             ->where('user_id', $user->id)
@@ -110,7 +116,10 @@ class StoryController extends Controller
     public function show($id)
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            };
             $story = Story::findOrFail($id);
 
             $existingView = StoryView::where('story_id', $story->id)
@@ -134,16 +143,19 @@ class StoryController extends Controller
                 'story' => $story,
                 'view_count' => $viewCount,
                 'viewers' => $viewers,
-            ], 200, 'Dữ liệu câu chuyện được truy vấn thành công.');
+            ], 200, 'Dữ liệu tin được truy vấn thành công.');
         } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy dữ liệu câu chuyện: ' . $e->getMessage());
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy dữ liệu tin: ' . $e->getMessage());
         }
     }
 
     public function delete($id)
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            };
             $story = Story::where('id', $id)->where('user_id', $user->id)->firstOrFail();
 
             $story->delete();
@@ -157,7 +169,10 @@ class StoryController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            };
 
             $validator = Validator::make($request->all(), [
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
