@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Archive;
 use App\Models\Comment;
-use App\Models\Like;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostImage;
+use App\Models\Reaction;
 use App\Models\Share;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -18,7 +18,11 @@ class PostController extends Controller
     public function index()
     {
         try {
-            $posts = Post::with(['images', 'comments', 'likes', 'shares'])
+            $user = auth()->user();
+            if(!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+            $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
                         ->where('privacy', 'PUBLIC')
                         ->whereHas('owner', function ($query) {
                             $query->where('is_locked', false);
@@ -34,9 +38,12 @@ class PostController extends Controller
     public function getUserPosts($userId)
     {
         try {
-            $currentUser = auth()->userOrFail();
-
+            $currentUser = auth()->user();
+            if(!$currentUser) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
             $user = User::findOrFail($userId);
+
 
             if ($user->is_locked) {
                 return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
@@ -62,6 +69,10 @@ class PostController extends Controller
     public function store(Request $request)
 {
     try {
+        $user = auth()->user();
+        if(!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
         $validator = Validator::make($request->all(), [
             'content' => 'nullable|string|max:300',
             'privacy' => 'required|in:PUBLIC,PRIVATE', 
@@ -123,6 +134,10 @@ class PostController extends Controller
 public function show($id)
 {
     try {
+        $user = auth()->user();
+        if(!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
         $post = Post::with(['images', 'comments', 'likes', 'shares'])
                     ->where('privacy', 'PUBLIC')
                     ->whereHas('owner', function ($query) {
@@ -143,13 +158,17 @@ public function show($id)
     public function update(Request $request, $id)
     {
         try {
+            $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+
             $post = Post::find($id);
     
             if (!$post) {
                 return responseJson(null, 404, 'Bài đăng không tồn tại');
             }
     
-            $user = auth()->userOrFail();
     
             if ($post->owner_id !== $user->id) {
                 return responseJson(null, 403, 'Bạn không có quyền chỉnh sửa bài đăng này');
@@ -185,15 +204,17 @@ public function show($id)
 
 public function destroy($id)
 {
+    $user = auth()->user();
+    if(!$user) {
+        return responseJson(null, 401, 'Chưa xác thực người dùng');
+    }
     $post = Post::find($id);
     
     if (!$post) {
         return responseJson(null, 404, 'Bài đăng không tồn tại');
     }
 
-    $user = auth()->userOrFail();
-
-    if ($user->id !== $post->owner_id && !$user->hasRole('admin')) {
+    if ($user->id !== $post->owner_id && $user->role !== 'admin') {
         return responseJson(null, 403, 'Bạn không có quyền xóa bài đăng này');
     }
 
@@ -205,7 +226,10 @@ public function destroy($id)
     public function saveToArchive($postId)
 {
     try {
-        $user = auth()->userOrFail();
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
         $post = Post::find($postId);
 
         if (!$post) {
@@ -234,7 +258,10 @@ public function destroy($id)
 public function removeFromArchive($postId)
 {
     try {
-        $user = auth()->userOrFail();
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
         $post = Post::find($postId);
 
         if (!$post) {
@@ -260,7 +287,10 @@ public function removeFromArchive($postId)
 public function getArchivedPosts()
 {
     try {
-        $user = auth()->userOrFail();
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
 
         $savedPosts = Archive::where('user_id', $user->id)
                              ->whereHas('post.owner', function($query) {
@@ -276,29 +306,59 @@ public function getArchivedPosts()
 }
 
 
-    public function likePost(Request $request, $postId)
+public function addOrUpdateReaction(Request $request, $postId)
 {
     try {
-        $user = auth()->userOrFail();
-        $post = Post::findOrFail($postId);
-        
-        $existingLike = Like::where('post_id', $post->id)
-                            ->where('owner_id', $user->id)
-                            ->first();
-
-        if ($existingLike) {
-            $existingLike->delete();
-            return responseJson(null, 200, 'Người dùng đã bỏ thích bài viết này.');
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
 
-        $like = Like::create([
-            'post_id' => $post->id,
-            'owner_id' => 1
-        ]);
+        $reactionType = $request->input('type');
 
-        return responseJson($like, 200,'Người dùng đã thích bài viết này.');
+        $existingReaction = Reaction::where('owner_id', $user->id)
+                                    ->where('post_id', $postId)
+                                    ->first();
+
+        if ($existingReaction) {
+            if ($existingReaction->type === $reactionType) {
+                return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
+            } else {
+                $existingReaction->update(['type' => $reactionType]);
+                return responseJson($existingReaction, 200, 'Cập nhật thành công trạng thái thả cảm xúc của bài đăng');
+            }
+        } else {
+            $newReaction = Reaction::create([
+                'owner_id' => $user->id,
+                'post_id' => $postId,
+                'type' => $reactionType
+            ]);
+            return responseJson($newReaction, 201, 'Thêm thành công trạng thái thả cảm xúc cho bài đăng');
+        } 
     } catch (\Exception $e) {
-        return responseJson($post, 500, 'Đã xảy ra lỗi khi thích/bỏ thích bài viết: ' . $e->getMessage());
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi thả cảm xúc bài đăng: ' . $e->getMessage());
+    }
+}
+
+public function removeReaction($postId)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $reaction = Reaction::where('owner_id', $user->id)
+                            ->where('post_id', $postId)
+                            ->first();
+
+        if ($reaction) {
+            $reaction->delete();
+            return responseJson(null, 200, 'Bỏ trạng thái thả cảm xúc cho bài viết thành công');
+        }
+
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa thả cảm xúc bài đăng: ' . $e->getMessage());
     }
 }
 
@@ -306,8 +366,11 @@ public function getArchivedPosts()
     public function storeComment(Request $request, $postId)
     {
         try {
-            $user = auth()->userOrFail(); 
-            $post = Post::findOrFail($postId);          
+            $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+            } 
+            $post = Post::find($postId);        
 
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300',
@@ -336,6 +399,10 @@ public function getArchivedPosts()
     public function getComments($postId)
 {
     try {
+        $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        } 
         $comments = Comment::where('post_id', $postId)->get();
 
         return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
@@ -347,7 +414,10 @@ public function getArchivedPosts()
     public function updateComment(Request $request, $postId, $commentId)
     {
         try {
-            $user = auth()->userOrFail(); 
+            $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+            } 
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300',
             ], [
@@ -379,7 +449,10 @@ public function getArchivedPosts()
     public function deleteComment($postId, $commentId)
     {
         try {
-            $user = auth()->userOrFail(); 
+            $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+            } 
             $comment = Comment::where('post_id', $postId)
                               ->findOrFail($commentId);
 
@@ -398,7 +471,10 @@ public function getArchivedPosts()
     public function sharePost($postId)
     {
         try {
-            $user = auth()->userOrFail(); 
+            $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+            } 
 
             $originalPost = Post::find($postId);
 
@@ -428,6 +504,10 @@ public function getArchivedPosts()
     public function searchPost(Request $request)
 {
     try {
+        $user = auth()->user();
+            if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        } 
         $validator = Validator::make($request->all(), [
             'q' => 'required|string|max:255',
             'page' => 'integer|min:1',
