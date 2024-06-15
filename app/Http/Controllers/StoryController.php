@@ -60,9 +60,7 @@ class StoryController extends Controller
 
             if ($type == 'image' && $request->hasFile('image')) {
                 $image = $request->file('stories');
-                $result = Cloudinary::upload($image->getRealPath(), [
-                    'folder' => 'stories', 
-                ]);
+                $result = $request->file('image')->storeOnCloudinary('stories');
                 $imagePublicId = $result->getPublicId();
                 $storyData['content_url'] = "{$result->getSecurePath()}?public_id={$imagePublicId}";
             }

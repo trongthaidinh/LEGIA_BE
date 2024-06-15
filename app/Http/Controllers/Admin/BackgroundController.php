@@ -47,7 +47,7 @@ class BackgroundController extends Controller
 
         if (!$isHexColor) {
             if($request->hasFile('value')){
-                $result = $request->file('backgrounds')->storeOnCloudinary();
+                $result = $request->file('value')->storeOnCloudinary('background_images');
                 $backgroundPublicId = $result->getPublicId();
                 $value = "{$result->getSecurePath()}?public_id={$backgroundPublicId}";
             } else {
