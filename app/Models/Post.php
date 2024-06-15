@@ -33,10 +33,10 @@ class Post extends Model
         return $this->hasMany(Comment::class, 'post_id');
     }
 
-    public function likes()
+    public function reactions()
     {
-        return $this->hasMany(Like::class, 'post_id');
-    }
+        return $this->hasMany(Reaction::class, 'post_id');
+    }    
 
     public function shares()
     {

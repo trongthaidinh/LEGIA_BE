@@ -86,7 +86,8 @@ Route::group([
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
 
-    Route::post('/{id}/like', [PostController::class, 'likePost']);
+    Route::post('/{id}/reaction', [PostController::class, 'addOrUpdateReaction']);
+    Route::delete('/{id}/reaction', [PostController::class, 'removeReaction']);
 
     Route::get('/{id}/comments', [PostController::class, 'getComments']);
     Route::post('/{id}/comments', [PostController::class, 'storeComment']);
