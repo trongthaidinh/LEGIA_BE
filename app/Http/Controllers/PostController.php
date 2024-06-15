@@ -98,15 +98,10 @@ class PostController extends Controller
             return responseJson(null, 400, $validator->errors());
         }
 
-        $postData = [
-            'owner_id' => auth()->id(),
-            'content' => $request->content,
-            'privacy' => $request->privacy,
-            'post_type' => $request->post_type,
-            'background_id' => $request->background_id,
-        ];
-
-        $post = Post::create($postData);
+        $post = Post::create(array_merge(
+            $validator->validated(),
+            ['owner_id' => $user->id]
+        ));
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
