@@ -22,7 +22,7 @@ class PostController extends Controller
             if(!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-            $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
+            $posts = Post::with(['images', 'comments', 'reactions', 'shares', 'owner'])
                         ->where('privacy', 'PUBLIC')
                         ->whereHas('owner', function ($query) {
                             $query->where('is_locked', false);
@@ -70,7 +70,7 @@ class PostController extends Controller
     {
         try {
             $user = auth()->user();
-    
+
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
@@ -91,37 +91,37 @@ class PostController extends Controller
                 'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
                 'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
             ]);
-    
+
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-    
+
             $post = Post::create(array_merge(
                 $validator->validated(),
                 ['owner_id' => $user->id]
             ));
-    
+
             $images = [];
-    
+
             if ($request->allFiles()) {
                 foreach ($request->allFiles() as $file) {
                     if ($file->isValid()) {
                         $result = $file->storeOnCloudinary('post_images');
                         $imagePublicId = $result->getPublicId();
                         $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-    
+
                         $postImage = PostImage::create([
                             'post_id' => $post->id,
                             'url' => $imageUrl,
                         ]);
-    
+
                         $images[] = $postImage;
                     }
                 }
             }
-    
+
             $post->images = $images;
-    
+
             return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bài đăng: ' . $e->getMessage());
