@@ -27,6 +27,7 @@ class PostController extends Controller
                         ->whereHas('owner', function ($query) {
                             $query->where('is_locked', false);
                         })
+                        ->orderBy('created_at', 'desc')
                         ->get();
 
             return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
