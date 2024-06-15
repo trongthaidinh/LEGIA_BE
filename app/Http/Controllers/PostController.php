@@ -22,7 +22,7 @@ class PostController extends Controller
             if(!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-            $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
+            $posts = Post::with(['images', 'comments', 'reactions', 'shares', 'owner'])
                         ->where('privacy', 'PUBLIC')
                         ->whereHas('owner', function ($query) {
                             $query->where('is_locked', false);
