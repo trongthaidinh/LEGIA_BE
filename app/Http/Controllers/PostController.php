@@ -70,9 +70,7 @@ class PostController extends Controller
 {
     try {
         $user = auth()->user();
-        if(!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
-        }
+
         $validator = Validator::make($request->all(), [
             'content' => 'nullable|string|max:300',
             'privacy' => 'required|in:PUBLIC,PRIVATE',
@@ -105,6 +103,7 @@ class PostController extends Controller
 
         $images = [];
 
+
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $result = Cloudinary::upload($image->getRealPath(), [
@@ -113,7 +112,7 @@ class PostController extends Controller
 
                 $imagePublicId = $result->getPublicId();
                 $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-        
+
                 $postImage = PostImage::create([
                     'post_id' => $post->id,
                     'url' => $imageUrl,
