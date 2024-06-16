@@ -137,6 +137,23 @@ class ChatController extends Controller
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại nào!');
             }
 
+            $conversations->each(function ($conversation) {
+                $conversation->load('participants');
+                $conversation['partners'] = $conversation->participants
+                ->reject(function ($participant) use ($conversation) {
+                    return $participant->id === $conversation->creator_id;
+                })
+                ->map(function ($participant) {
+                    return [
+                        'user_id' => $participant->user->id,
+                        'first_name' => $participant->user->first_name,
+                        'last_name' => $participant->user->last_name,
+                        'avatar' => $participant->user->avatar
+                    ];
+                })->values()->all();;
+                unset($conversation->participants);
+            });
+
             return responseJson($conversations, 200, 'Truy vấn các cuộc đối thoại của bạn thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, "Người dùng chưa xác thực!");
