@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
-use Illuminate\Support\Str;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
@@ -45,8 +44,7 @@ class ChatController extends Controller
 
             $conversation = Conversation::create(array_merge(
                 $validatorConversation->validated(),
-                ['creator_id' => $user->id,
-                'secret_key' => Str::uuid()->toString()]
+                ['creator_id' => $user->id]
             ));
 
             $conversationParticipantsCreated = DB::table('conversation_participants')

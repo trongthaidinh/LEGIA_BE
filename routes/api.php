@@ -82,9 +82,11 @@ Route::group([
 ], function () {
     Route::get('/', [PostController::class, 'index']);
     Route::post('/', [PostController::class, 'store']);
+    Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
+
 
     Route::post('/{id}/reaction', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('/{id}/reaction', [PostController::class, 'removeReaction']);
@@ -104,13 +106,6 @@ Route::group([
     Route::get('/', [PostController::class, 'getArchivedPosts']);
     Route::post('/{id}', [PostController::class, 'saveToArchive']);
     Route::delete('/{id}', [PostController::class, 'removeFromArchive']);
-});
-
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'user',
-], function () {
-    Route::get('/{id}', [PostController::class, 'getUserPosts']);
 });
 
 Route::group([
