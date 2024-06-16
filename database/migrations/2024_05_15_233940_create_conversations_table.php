@@ -18,7 +18,7 @@ return new class extends Migration
                 table: 'users', indexName: 'conversations_creator_id'
             )->onUpdate('cascade')->onDelete('cascade')->nullable();
             $table->string('name', 40)->nullable();
-            $table->string('secret_key')->default(Str::uuid()->toString());
+            $table->string('secret_key')->unique()->default(Str::uuid()->toString());
             $table->enum('type', ['individual', 'group'])->default('individual');
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
