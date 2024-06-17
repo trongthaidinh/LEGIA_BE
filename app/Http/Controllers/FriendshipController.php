@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\FriendRequestAccepted;
+use App\Events\FriendRequestSent;
 use App\Models\Friendship;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -150,6 +152,8 @@ class FriendshipController extends Controller
                 ['friend_id' => (int)$friend],
             ));
 
+            event(new FriendRequestSent($friendship));
+
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
@@ -187,14 +191,19 @@ class FriendshipController extends Controller
                 return responseJson(null, 400, 'Cả hai đã là bạn bè rồi!');
             }
 
-            $friendship = DB::table('friendships')
+            $update = DB::table('friendships')
                 ->where('id', $id)
                 ->where('friend_id', $user->id)
                 ->update(['status' => 'accepted']);
 
-            if(!$friendship){
+                
+            if(!$update){
                 return responseJson(null, 400, 'Đã xảy ra lỗi, vui lòng thử lại!');
             }
+
+            $friendship = Friendship::find($id);
+
+            event(new FriendRequestAccepted($friendship));
 
             return responseJson(null, 200, 'Chấp nhận lời mời kết bạn thành công!');
 

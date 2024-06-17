@@ -15,4 +15,13 @@ class Friendship extends Model
         'status',
     ];
 
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function friend()
+    {
+        return $this->belongsTo(User::class, 'friend_id');
+    }
 }

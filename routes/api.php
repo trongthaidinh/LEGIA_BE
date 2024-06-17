@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FriendshipController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\StoryController;
 use App\Http\Middleware\AdminMiddleware;
@@ -138,4 +139,12 @@ Route::group([
     Route::patch('/{id}/update', [StoryController::class, 'update']);
     Route::get('/{id}', [StoryController::class, 'show']);
     Route::delete('/{id}', [StoryController::class, 'delete']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'notifications',
+], function () {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
 });
