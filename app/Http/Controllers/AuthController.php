@@ -74,6 +74,7 @@ class AuthController extends Controller
     {
         auth()->logout();
 
+
         return responseJson(null, 200, 'Đăng xuất thành công!');
     }
 
