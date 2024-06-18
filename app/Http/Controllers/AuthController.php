@@ -10,7 +10,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -87,7 +86,9 @@ class AuthController extends Controller
             $refreshToken = request()->refreshToken;
 
             if($decoded = JWTAuth::getJWTProvider()->decode($refreshToken)){
+                var_dump($decoded);
                 $user = User::where('email', $decoded->sub)->first();
+                var_dump($user);
 
                 if (! $newAccessToken = auth()->attempt(['email' => $user->email,
                 'password' => $user->password])) {
@@ -96,7 +97,7 @@ class AuthController extends Controller
             }
 
             return responseJson(['accessToken' => $user, 'expiresAt' => env('JWT_TTL')]);
-        }catch(JWTException $ex){
+        }catch(Exception $ex){
             return responseJson(null, 401, $ex->getMessage());
         }
 
