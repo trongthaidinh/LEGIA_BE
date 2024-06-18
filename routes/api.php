@@ -87,20 +87,22 @@ Route::group([
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
-    
+
     Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
-    
-    Route::get('/{id}/reaction-detail', [PostController::class, 'getReactionsDetail']);
-    Route::get('{id}/user-reaction', [PostController::class, 'getUserReaction']);
-    Route::post('/{id}/reaction', [PostController::class, 'addOrUpdateReaction']);
-    Route::delete('/{id}/reaction', [PostController::class, 'removeReaction']);
 
-    Route::get('/{id}/comments', [PostController::class, 'getComments']);
-    Route::post('/{id}/comments', [PostController::class, 'storeComment']);
-    Route::put('/{id}/comments/{commentId}', [PostController::class, 'updateComment']);
-    Route::delete('/{id}/comments/{commentId}', [PostController::class, 'deleteComment']);
+    Route::get('reaction-detail/{id}', [PostController::class, 'getReactionsDetail']);
+    Route::get('user-reaction/{id}', [PostController::class, 'getUserReaction']);
+    Route::post('reaction/{id}', [PostController::class, 'addOrUpdateReaction']);
+    Route::delete('reaction/{id}', [PostController::class, 'removeReaction']);
 
-    Route::post('/{id}/share', [PostController::class, 'sharePost']);
+
+
+    Route::get('/comments/{id}', [PostController::class, 'getComments']);
+    Route::post('/comments/{id}', [PostController::class, 'storeComment']);
+    Route::put('/comments/{id}/{commentId}', [PostController::class, 'updateComment']);
+    Route::delete('/comments/{id}/{commentId}', [PostController::class, 'deleteComment']);
+
+    Route::post('/share/{id}', [PostController::class, 'sharePost']);
 });
 
 Route::group([
