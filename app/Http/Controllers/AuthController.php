@@ -68,8 +68,10 @@ class AuthController extends Controller
             return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
         }
 
+        $email = request('email');
+
         $data = [
-            'sub' => auth()->user()->id,
+            'sub' => $email,
             'random' => rand() . time(),
             'exp' => time() + env('JWT_REFRESH_TTL')
         ];
