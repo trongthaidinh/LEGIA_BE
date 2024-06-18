@@ -69,6 +69,7 @@ class AuthController extends Controller
         }
 
         $data = [
+            'sub' => auth()->user()->id,
             'random' => rand() . time(),
             'exp' => time() + env('JWT_REFRESH_TTL')
         ];
