@@ -81,7 +81,9 @@ class AuthController extends Controller
     public function refresh(){
         $refreshToken = request()->refreshToken;
 
-        return responseJson(['refreshToken' => $refreshToken, 'expiresAt' => env('JWT_REFRESH_TTL')]);
+        $decoded = JWTAuth::getJWTProvider()->decode($refreshToken);
+
+        return responseJson(['refreshToken' => $decoded, 'expiresAt' => env('JWT_REFRESH_TTL')]);
     }
 
     public function logout()
