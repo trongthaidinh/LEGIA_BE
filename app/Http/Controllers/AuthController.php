@@ -69,19 +69,19 @@ class AuthController extends Controller
 
         $data = [
             'random' => rand() . time(),
-            'exp' => time() + env('JWT_REFRESH_TTL', 20160)
+            'exp' => time() + env('JWT_REFRESH_TTL')
         ];
 
         $refreshToken = JWTAuth::getJWTProvider()->encode($data);
 
-        return responseJson(['accessToken' => $token, 'refreshToken' => $refreshToken ,'expires_at' => env('JWT_TTL', 60)],
+        return responseJson(['accessToken' => $token, 'refreshToken' => $refreshToken ,'expiresAt' => env('JWT_TTL', 60)],
         200, 'Đăng nhập thành công!');
     }
 
     public function refresh(){
-        if ($token = auth()->refresh(true, true)) {
-            return responseJson(['accessToken' => $token, 'expires_at' => env('JWT_TTL', 60)]);
-        }
+        $refreshToken = request()->refreshToken;
+
+        return responseJson(['refreshToken' => $refreshToken, 'expiresAt' => env('JWT_REFRESH_TTL')]);
     }
 
     public function logout()
