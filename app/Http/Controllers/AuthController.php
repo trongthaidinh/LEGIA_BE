@@ -86,8 +86,8 @@ class AuthController extends Controller
         return responseJson([
             'accessToken' => $token,
             'refreshToken' => $refreshToken,
-            'accessTokenExpiresAt' => config('jwt.ttl'),
-            'refreshTokenExpiresAt' =>  config('jwt.refresh_ttl')
+            'accessTokenExpiresAt' => time() + config('jwt.ttl'),
+            'refreshTokenExpiresAt' => time() + config('jwt.refresh_ttl')
         ], 200, 'Đăng nhập thành công!');
 
 
@@ -114,8 +114,8 @@ class AuthController extends Controller
             return responseJson([
                 'accessToken' => $newAccessToken,
                 'refreshToken' => $newRefreshToken,
-                'accessTokenExpiresAt' => config('jwt.ttl'),
-                'refreshTokenExpiresAt' =>  config('jwt.refresh_ttl')
+                'accessTokenExpiresAt' => time() + config('jwt.ttl'),
+                'refreshTokenExpiresAt' => time() +  config('jwt.refresh_ttl')
             ]);
         } catch (Exception $ex) {
             return responseJson(null, 401, $ex->getMessage());
