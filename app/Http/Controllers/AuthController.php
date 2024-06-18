@@ -108,6 +108,7 @@ class AuthController extends Controller
                 return responseJson(null, 401);
             }
 
+
             $newRefreshToken = $this->_generateRefreshToken($user->email);
 
             return responseJson([
