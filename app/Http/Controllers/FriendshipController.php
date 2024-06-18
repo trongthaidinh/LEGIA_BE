@@ -253,4 +253,39 @@ class FriendshipController extends Controller
         }
     }
 
+    public function getFriendListOfUser($userId){
+        try{
+
+            $friendships = Friendship::where(function ($query) use ($userId) {
+                $query->where('friend_id', $userId)
+                      ->orWhere('owner_id', $userId);
+            })
+            ->where('status', 'accepted')
+            ->with(['friend' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->with(['owner' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->get();
+
+            $friendships->transform(function ($friendship) {
+                $friendship->user_info = $friendship->friend ? $friendship->friend : $friendship->owner;
+                unset($friendship->friend);
+                unset($friendship->owner);
+                return $friendship;
+            });
+
+        if($friendships->isEmpty()){
+            return responseJson(null, 404);
+        }
+
+
+        return responseJson($friendships, 200);
+
+
+        } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
 }
