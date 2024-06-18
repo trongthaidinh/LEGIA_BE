@@ -96,7 +96,7 @@ class AuthController extends Controller
     public function refresh(Request $request)
     {
         try {
-            $refreshToken = $request->refreshToken;
+            $refreshToken = $request->refresh_token;
             $decodedToken = JWTAuth::getJWTProvider()->decode($refreshToken);
             $user = User::where('email', $decodedToken['sub'])->first();
 
