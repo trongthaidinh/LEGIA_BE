@@ -86,8 +86,13 @@ class AuthController extends Controller
         try{
             $refreshToken = request()->refreshToken;
 
-            if(JWTAuth::getJWTProvider()->decode($refreshToken)){
-                $newAccessToken = auth()->refresh(true, true);
+            if($decoded = JWTAuth::getJWTProvider()->decode($refreshToken)){
+                $user = User::where('email', $decoded->sub)->first();
+
+                if (! $newAccessToken = auth()->attempt(['email' => $user->email,
+                'password' => $user->password])) {
+                    return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
+                }
             }
 
             return responseJson(['accessToken' => $newAccessToken, 'expiresAt' => env('JWT_TTL')]);
