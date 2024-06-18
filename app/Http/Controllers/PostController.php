@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CommentAdded;
+use App\Events\PostShared;
+use App\Events\ReactionAdded;
+use App\Events\ShareAdded;
 use App\Models\Archive;
 use App\Models\Comment;
 use Illuminate\Http\Request;
@@ -329,6 +333,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
             } else {
                 $existingReaction->update(['type' => $reactionType]);
+                event(new ReactionAdded($existingReaction));
                 return responseJson($existingReaction, 200, 'Cập nhật thành công trạng thái thả cảm xúc của bài đăng');
             }
         } else {
@@ -337,6 +342,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'post_id' => $postId,
                 'type' => $reactionType
             ]);
+            event(new ReactionAdded($newReaction));
             return responseJson($newReaction, 201, 'Thêm thành công trạng thái thả cảm xúc cho bài đăng');
         }
     } catch (\Exception $e) {
@@ -393,6 +399,8 @@ public function removeReaction($postId)
                 'owner_id' => $user->id,
                 'content' => $request->content,
             ]);
+
+            event(new CommentAdded($comment));
 
             return responseJson($comment, 201, 'Bình luận đã được tạo thành công');
         } catch (\Exception $e) {
@@ -498,6 +506,8 @@ public function removeReaction($postId)
                 'owner_id' => $user->id,
                 'post_id' => $postId,
             ]);
+
+            event(new ShareAdded($share));
 
             return responseJson($sharedPost, 200, 'Bài viết đã được chia sẻ');
         } catch (\Exception $e) {
