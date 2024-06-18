@@ -67,7 +67,8 @@ class AuthController extends Controller
         }
 
 
-        return responseJson(['accessToken' => $token], 200, 'Đăng nhập thành công!');
+        return responseJson(['accessToken' => $token, 'expires_at' => env('JWT_TTL', 60)],
+        200, 'Đăng nhập thành công!');
     }
 
     public function logout()
