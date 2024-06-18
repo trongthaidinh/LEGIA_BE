@@ -26,6 +26,7 @@ return [
     */
 
     'secret' => env('JWT_SECRET'),
+    'secret_refresh' => env('JWT_REFRESH_SECRET'),
 
     /*
     |--------------------------------------------------------------------------

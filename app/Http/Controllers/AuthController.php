@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Mail\ResetPasswordMail;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
@@ -66,9 +67,21 @@ class AuthController extends Controller
             return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
         }
 
+        $data = [
+            'random' => rand() . time(),
+            'exp' => time() + env('JWT_REFRESH_TTL', 20160)
+        ];
 
-        return responseJson(['accessToken' => $token, 'expires_at' => env('JWT_TTL', 60)],
+        $refreshToken = JWTAuth::getJWTProvider()->encode($data);
+
+        return responseJson(['accessToken' => $token, 'refreshToken' => $refreshToken ,'expires_at' => env('JWT_TTL', 60)],
         200, 'Đăng nhập thành công!');
+    }
+
+    public function refresh(){
+        if ($token = auth()->refresh(true, true)) {
+            return responseJson(['accessToken' => $token, 'expires_at' => env('JWT_TTL', 60)]);
+        }
     }
 
     public function logout()
