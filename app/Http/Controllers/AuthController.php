@@ -95,7 +95,7 @@ class AuthController extends Controller
                 }
             }
 
-            return responseJson(['accessToken' => $newAccessToken, 'expiresAt' => env('JWT_TTL')]);
+            return responseJson(['accessToken' => $user, 'expiresAt' => env('JWT_TTL')]);
         }catch(JWTException $ex){
             return responseJson(null, 401, $ex->getMessage());
         }
