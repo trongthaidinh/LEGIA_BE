@@ -26,7 +26,6 @@ return [
     */
 
     'secret' => env('JWT_SECRET'),
-    'secret_refresh' => env('JWT_REFRESH_SECRET'),
 
     /*
     |--------------------------------------------------------------------------
@@ -101,8 +100,7 @@ return [
     | Notice: If you set this to null you should remove 'exp' element from 'required_claims' list.
     |
     */
-    // chinh lai sau
-    'ttl' => env('JWT_TTL', 60),
+    'ttl' => intval(env('JWT_TTL', 60)),
 
     /*
     |--------------------------------------------------------------------------
@@ -121,7 +119,7 @@ return [
     |
     */
 
-    'refresh_ttl' => env('JWT_REFRESH_TTL', 20160),
+    'refresh_ttl' => intval(env('JWT_REFRESH_TTL', 20160)),
 
     /*
     |--------------------------------------------------------------------------

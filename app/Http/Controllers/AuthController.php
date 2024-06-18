@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Mail\ResetPasswordMail;
@@ -50,9 +51,9 @@ class AuthController extends Controller
         return responseJson($user, 201, 'Đăng ký người dùng mới thành công!');
     }
 
-    public function login()
+    public function login(Request $request)
     {
-        $credentials = request(['email', 'password']);
+        $credentials = $request->only('email', 'password');
 
         $validator = Validator::make($credentials, [
             'email' => 'required|email',
@@ -63,49 +64,66 @@ class AuthController extends Controller
             return responseJson(null, 400, $validator->errors());
         }
 
-        if (! $token = auth()->attempt($credentials)) {
-            return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
+        if(! $user = User::where('email', $credentials['email'])->first()) {
+            return responseJson(null, 404, 'Sai email đăng nhập');
         }
 
-        $email = request('email');
 
-        $data = [
-            'sub' => $email,
-            'random' => rand() . time(),
-            'exp' => time() + env('JWT_REFRESH_TTL')
-        ];
+        if (password_verify($credentials['password'], $user->password) == false) {
+            return responseJson(null, 404, 'Sai mật khẩu đăng nhập');
+        }
 
-        $refreshToken = JWTAuth::getJWTProvider()->encode($data);
 
-        return responseJson(['accessToken' => $token, 'refreshToken' => $refreshToken ,'expiresAt' => env('JWT_TTL', 60)],
-        200, 'Đăng nhập thành công!');
+        if (! $token = auth()->attempt($credentials)) {
+
+            return responseJson(null, 404, 'Không tìm thấy người dùng');
+        }
+
+        $email = $credentials['email'];
+
+        $refreshToken = $this->_generateRefreshToken($email);
+
+        return responseJson([
+            'accessToken' => $token,
+            'refreshToken' => $refreshToken,
+            'accessTokenExpiresAt' => env(('JWT_TTL')),
+            'refreshTokenExpiresAt' => env('JWT_REFRESH_TTL')
+        ], 200, 'Đăng nhập thành công!');
+
+
     }
 
-    public function refresh(){
-        try{
-            $refreshToken = request()->refreshToken;
+    public function refresh(Request $request)
+    {
+        try {
+            $refreshToken = $request->refreshToken;
+            $decodedToken = JWTAuth::getJWTProvider()->decode($refreshToken);
+            $user = User::where('email', $decodedToken['sub'])->first();
 
-            if($decoded = JWTAuth::getJWTProvider()->decode($refreshToken)){
-                var_dump($decoded);
-                $user = User::where('email', $decoded->sub)->first();
-                var_dump($user);
-
-                if (! $newAccessToken = auth()->attempt(['email' => $user->email,
-                'password' => $user->password])) {
-                    return responseJson(['error' => 'Không tìm thấy người dùng!'], 401);
-                }
+            if (! $user) {
+                return responseJson(['error' => 'Không tìm thấy người dùng'], 404);
             }
 
-            return responseJson(['accessToken' => $user, 'expiresAt' => env('JWT_TTL')]);
-        }catch(Exception $ex){
+            if (! $newAccessToken = auth()->login($user)) {
+                return responseJson(null, 401);
+            }
+
+            $newRefreshToken = $this->_generateRefreshToken($user->email);
+
+            return responseJson([
+                'accessToken' => $newAccessToken,
+                'refreshToken' => $newRefreshToken,
+                'accessTokenExpiresAt' => env(('JWT_TTL')),
+                'refreshTokenExpiresAt' => env('JWT_REFRESH_TTL')
+            ]);
+        } catch (Exception $ex) {
             return responseJson(null, 401, $ex->getMessage());
         }
-
     }
 
     public function logout()
     {
-        auth()->logout();
+        auth()->logout(true);
 
 
         return responseJson(null, 200, 'Đăng xuất thành công!');
@@ -165,6 +183,16 @@ class AuthController extends Controller
         }
 
         return responseJson(null, 200, 'Mật khẩu đã được đặt lại thành công.');
+    }
+
+    private function _generateRefreshToken($email){
+        $data = [
+            'sub' => $email,
+            'random' => rand() . time(),
+            'exp' => time() + config('jwt.JWT_TTL')
+        ];
+
+        return JWTAuth::getJWTProvider()->encode($data);
     }
 
 }

@@ -1,5 +1,4 @@
 <?php
-use Illuminate\Http\Request;
 
 function responseJson($data, $status = 200, $message = null) {
     $messages = [
