@@ -196,7 +196,7 @@ class FriendshipController extends Controller
                 ->where('friend_id', $user->id)
                 ->update(['status' => 'accepted']);
 
-                
+
             if(!$update){
                 return responseJson(null, 400, 'Đã xảy ra lỗi, vui lòng thử lại!');
             }
@@ -267,6 +267,7 @@ class FriendshipController extends Controller
             ->with(['owner' => function ($query) use ($userId) {
                 $query->where('id', '!=', $userId);
             }])
+            ->limit(9)
             ->get();
 
             $friendships->transform(function ($friendship) {
