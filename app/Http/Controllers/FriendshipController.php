@@ -161,47 +161,36 @@ class FriendshipController extends Controller
         }
     }
 
-    public function accept($id) {
+    public function accept($senderId) {
         try{
             $user = auth()->userOrFail();
 
             $validator = Validator::make([
-                'id' => $id
+                'senderId' => $senderId
             ], [
-                'id' => 'exists:friendships,id',
+                'senderId' => 'exists:users,id',
             ], [
-                'id.exists' => 'Không tìm thấy lời mời kết bạn!',
+                'senderId.exists' => 'Không tìm thấy người cần hủy kết bạn!',
             ]);
-
 
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
 
-            $isFriend = DB::table('friendships')
-                ->where('id', '=', $id)
-                ->where('status', 'accepted')
-                ->where(function (Builder $query) use ($user) {
-                    $query->orWhere('friend_id', $user->id)
-                          ->orWhere('owner_id', $user->id);
-                })
+            $friendship = Friendship::where('friend_id', $user->id)
+                ->where('owner_id', $senderId)
                 ->first();
 
-            if($isFriend){
-                return responseJson(null, 400, 'Cả hai đã là bạn bè rồi!');
+            if(!$friendship){
+                return responseJson(null, 400);
             }
 
-            $update = DB::table('friendships')
-                ->where('id', $id)
-                ->where('friend_id', $user->id)
-                ->update(['status' => 'accepted']);
-
-
-            if(!$update){
-                return responseJson(null, 400, 'Đã xảy ra lỗi, vui lòng thử lại!');
+            if($friendship->status == 'accepted'){
+                return responseJson(null, 400, 'Cả 2 đã là bạn bè rồi!');
             }
 
-            $friendship = Friendship::find($id);
+            $friendship->update(['status' => 'accepted']);
+
 
             event(new FriendRequestAccepted($friendship));
 
