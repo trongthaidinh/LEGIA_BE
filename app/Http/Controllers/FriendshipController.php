@@ -279,7 +279,7 @@ class FriendshipController extends Controller
 
 
         if($friendships->isEmpty()){
-            return responseJson(null, 404);
+            return responseJson(null, 404, 'Người dùng chưa có bạn bè');
         }
 
         $data = [
