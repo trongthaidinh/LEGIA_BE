@@ -29,6 +29,9 @@ class UserController extends Controller
             ->where('id', $id)
             ->first();
 
+            if( ! $profile ) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
+
+
             return responseJson($profile, 200);
 
         }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
