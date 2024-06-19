@@ -591,13 +591,18 @@ public function removeReaction($postId)
     {
         try {
             $user = auth()->user();
+
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
             $reaction = Reaction::where('post_id', $postId)
                                 ->where('owner_id', $user->id)
-                                ->first(['type']);
+                                ->first('type');
+
+            if(! $reaction){
+                return responseJson(null, 200, 'Người dùng chưa phản ứng với bài viết này');
+            }
 
             return responseJson($reaction, 200, 'Lấy phản ứng của người dùng thành công');
         } catch (\Exception $e) {

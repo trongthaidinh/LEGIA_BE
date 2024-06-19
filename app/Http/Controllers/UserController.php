@@ -24,6 +24,7 @@ class UserController extends Controller
     public function getProfile($id){
         try{
             auth()->userOrFail();
+
             $profile = DB::table('users')
             ->where('id', $id)
             ->first();
