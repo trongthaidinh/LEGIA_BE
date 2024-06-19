@@ -182,7 +182,7 @@ class FriendshipController extends Controller
                 ->first();
 
             if(!$friendship){
-                return responseJson(null, 400);
+                return responseJson(null, 404);
             }
 
             if($friendship->status == 'accepted'){
