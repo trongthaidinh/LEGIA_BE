@@ -277,12 +277,17 @@ class FriendshipController extends Controller
                 return $friendship;
             });
 
+
         if($friendships->isEmpty()){
             return responseJson(null, 404);
         }
 
+        $data = [
+            'list' => $friendships,
+            'count' => $friendships->count()
+        ];
 
-        return responseJson($friendships, 200);
+        return responseJson($data, 200);
 
 
         } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
