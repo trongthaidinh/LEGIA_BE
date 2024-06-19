@@ -240,6 +240,11 @@ class FriendshipController extends Controller
                 })
                 ->first();
 
+            if(! $friendship){
+                return responseJson(null, 400, 'Cả 2 chưa tương tác bạn bè!');
+
+            }
+
 
             if ($friendship->status == 'accepted') {
                 DB::table('friendships')->where('id', $friendship->id)->delete();
