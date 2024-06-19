@@ -86,7 +86,7 @@ class PostController extends Controller
     public function store(Request $request)
     {
         try {
-            $user = auth()->user();
+            $user = auth()->userOrFail();
 
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
