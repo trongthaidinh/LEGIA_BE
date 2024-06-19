@@ -312,7 +312,7 @@ class FriendshipController extends Controller
                     $query->where('friend_id', $userId)
                           ->where('owner_id', $user->id);
                 });
-            })->first('status');
+            })->first();
 
             if(!$friendship){
                 return responseJson(null, 404, 'Chưa có tương tác bạn bè với người dùng này');
