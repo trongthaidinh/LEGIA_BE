@@ -212,41 +212,45 @@ class FriendshipController extends Controller
         }
     }
 
-    public function delete($id) {
+    public function delete($userId) {
         try{
             $user = auth()->userOrFail();
 
             $validator = Validator::make([
-                'id' => $id
+                'userId' => $userId
             ], [
-                'id' => 'exists:friendships,id',
+                'userId' => 'exists:users,id',
             ], [
-                'id.exists' => 'Không tìm thấy lời mời kết bạn hoặc hai bạn chưa thành bạn bè!',
+                'userId.exists' => 'Không tìm thấy người cần hủy kết bạn!',
             ]);
 
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
 
-            $friendship = DB::table('friendships')
-                ->where('id', $id)
-                ->where(function (Builder $query) use ($user) {
-                    $query->orWhere('friend_id', $user->id)
-                          ->orWhere('owner_id', $user->id);
+            $friendship = Friendship::where(function ($query) use ($userId, $user) {
+                    $query->where(function ($query) use ($userId, $user) {
+                        $query->where('friend_id', $userId)
+                              ->where('owner_id', $user->id);
+                    })
+                    ->orWhere(function ($query) use ($userId, $user) {
+                        $query->where('friend_id', $user->id)
+                              ->where('owner_id', $userId);
+                    });
                 })
                 ->first();
 
 
             if ($friendship->status == 'accepted') {
-                $deleted = DB::table('friendships')->where('id', $id)->delete();
+                DB::table('friendships')->where('id', $friendship->id)->delete();
 
-                return responseJson($deleted, 200, 'Hủy kết bạn thành công!');
+                return responseJson(null, 200, 'Hủy kết bạn thành công!');
             }
 
 
-            $deleted = DB::table('friendships')->where('id', $id)->delete();
+            DB::table('friendships')->where('id', $friendship->id)->delete();
 
-            return responseJson($deleted, 200, 'Từ chối lời mời kết bạn thành công!');
+            return responseJson(null, 200, 'Từ chối lời mời kết bạn thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
