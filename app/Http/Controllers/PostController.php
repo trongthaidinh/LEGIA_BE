@@ -60,11 +60,13 @@ class PostController extends Controller
             if ($currentUser->id == $userId) {
                 $posts = Post::with('images')
                             ->withCount(['comments', 'reactions', 'shares'])
+                            ->with('owner')
                             ->where('owner_id', $userId)
                             ->get();
             } else {
                 $posts = Post::with('images')
                             ->withCount(['comments', 'reactions', 'shares'])
+                            ->with('owner')
                             ->where('owner_id', $userId)
                             ->where('privacy', 'PUBLIC')
                             ->get();
