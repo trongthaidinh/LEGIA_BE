@@ -23,7 +23,7 @@ class CommentAddedListener
                 'message' => "{$fullName} đã bình luận bài viết của bạn",
                 'comment_id' => $comment->id,
                 'post_id' => $comment->post_id,
-            ]),
+            ],JSON_UNESCAPED_UNICODE),
         ]);
     }
 }
