@@ -96,8 +96,6 @@ Route::group([
     Route::post('reaction/{id}', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('reaction/{id}', [PostController::class, 'removeReaction']);
 
-
-
     Route::get('/comments/{id}', [PostController::class, 'getComments']);
     Route::post('/comments/{id}', [PostController::class, 'storeComment']);
     Route::put('/comments/{id}/{commentId}', [PostController::class, 'updateComment']);
@@ -142,7 +140,7 @@ Route::group([
 ], function () {
     Route::get('/', [StoryController::class, 'index']);
     Route::post('/', [StoryController::class, 'create']);
-    Route::patch('/{id}/update', [StoryController::class, 'update']);
+    Route::patch('/update/{id}', [StoryController::class, 'update']);
     Route::get('/{id}', [StoryController::class, 'show']);
     Route::delete('/{id}', [StoryController::class, 'delete']);
 });
@@ -152,5 +150,5 @@ Route::group([
     'prefix' => 'notifications',
 ], function () {
     Route::get('/', [NotificationController::class, 'index']);
-    Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
 });

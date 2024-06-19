@@ -21,15 +21,15 @@ class FriendRequestAcceptedListener
         $sender = $friendship->friend;
         $receiver = $friendship->owner;
 
-        $fullName = $sender->last_name . ' ' . $sender->first_name;
+        $senderName = $sender->last_name . ' ' . $sender->first_name;
 
         Notification::create([
-            'user_id' => $receiver->id,
-            'type' => 'friend_request_accepted',
-            'data' => json_encode([
-                'message' => "{$fullName} đã chấp nhận lời mời kết bạn của bạn",
-                'friendship_id' => $friendship->id,
-            ],JSON_UNESCAPED_UNICODE),
+            'owner_id' => $receiver->id,
+            'emitter_id' => $sender->id,
+            'type' => 'friend_request_accept',
+            'content' => "{$senderName} đã chấp nhận lời mời kết bạn của bạn",
+            'read' => false,
         ]);
     }
 }
+

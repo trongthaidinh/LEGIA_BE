@@ -12,24 +12,23 @@ class FriendRequestSentListener
     /**
      * Handle the event.
      *
-     * @param  FriendRequestSent  $event
+     * @param FriendRequestSent $event
      * @return void
      */
     public function handle(FriendRequestSent $event)
     {
         $friendRequest = $event->friendRequest;
         $receiver = $friendRequest->friend;
-        $sender = $friendRequest->owner;
+        $sender = $friendRequest->owner; 
 
-        $fullName = $sender->last_name . ' ' . $sender->first_name;
+        $senderName = $sender->last_name . ' ' . $sender->first_name;
 
         Notification::create([
-            'user_id' => $receiver->id,
-            'type' => 'friend_request_sent',
-            'data' => json_encode([
-                'message' => "{$fullName} đã gửi cho bạn một lời mời kết bạn",
-                'friend_request_id' => $friendRequest->id,
-            ],JSON_UNESCAPED_UNICODE),
+            'owner_id' => $receiver->id,
+            'emitter_id' => $sender->id,
+            'type' => 'friend_request',
+            'content' => "{$senderName} đã gửi cho bạn một lời mời kết bạn",
+            'read' => false,
         ]);
     }
 }

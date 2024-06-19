@@ -20,16 +20,15 @@ class ShareAddedListener
         $shareAdded = $event->shareAdded;
         $postOwner = $shareAdded->post->owner;
 
-        $fullName = $postOwner->last_name . ' ' . $postOwner->first_name;
+        $emitterName = $shareAdded->owner->last_name . ' ' . $shareAdded->owner->first_name;
 
         Notification::create([
-            'user_id' => $postOwner->id,
-            'type' => 'post_shared',
-            'data' => json_encode([
-                'message' => "{$fullName} đã chia sẻ một bài viết của bạn",
-                'post_id' => $shareAdded->post_id,
-                'share_id' => $shareAdded->id,
-            ],JSON_UNESCAPED_UNICODE),
+            'owner_id' => $postOwner->id,
+            'emitter_id' => $shareAdded->owner->id,
+            'type' => 'your_post_shared',
+            'content' => "{$emitterName} đã chia sẻ một bài viết của bạn",
+            'read' => false,
         ]);
     }
 }
+
