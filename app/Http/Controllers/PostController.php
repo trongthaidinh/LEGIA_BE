@@ -23,16 +23,18 @@ class PostController extends Controller
     {
         try {
             $user = auth()->user();
-            if(!$user) {
+            if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-            $posts = Post::with(['images', 'comments', 'reactions', 'shares', 'owner'])
-                        ->where('privacy', 'PUBLIC')
-                        ->whereHas('owner', function ($query) {
-                            $query->where('is_locked', false);
-                        })
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+
+            $posts = Post::with('images')
+                ->withCount(['comments', 'reactions', 'shares'])
+                ->where('privacy', 'PUBLIC')
+                ->whereHas('owner', function ($query) {
+                    $query->where('is_locked', false);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
 
             return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
@@ -55,11 +57,13 @@ class PostController extends Controller
             }
 
             if ($currentUser->id == $userId) {
-                $posts = Post::with(['images', 'comments', 'reactions', 'shares', 'owner'])
+                $posts = Post::with('images')
+                            ->withCount(['comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
                             ->get();
             } else {
-                $posts = Post::with(['images', 'comments', 'reactions', 'shares', 'owner'])
+                $posts = Post::with('images')
+                            ->withCount(['comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
                             ->where('privacy', 'PUBLIC')
                             ->get();
@@ -155,7 +159,8 @@ public function show($id)
         if(!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
-        $post = Post::with(['images', 'comments', 'reactions', 'shares'])
+        $post = Post::with('images')
+                    ->withCount(['comments', 'reactions', 'shares'])
                     ->where('privacy', 'PUBLIC')
                     ->whereHas('owner', function ($query) {
                         $query->where('is_locked', false);
@@ -418,19 +423,23 @@ public function removeReaction($postId)
     }
 
     public function getComments($postId)
-{
-    try {
-        $user = auth()->user();
+    {
+        try {
+            $user = auth()->user();
             if (!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
-        }
-        $comments = Comment::where('post_id', $postId)->get();
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
 
-        return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
+            $comments = Comment::where('post_id', $postId)
+                        ->with(['owner:id,first_name,last_name,avatar'])
+                        ->orderBy('created_at', 'desc')
+                        ->paginate(10);
+
+            return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
+        }
     }
-}
 
     public function updateComment(Request $request, $postId, $commentId)
     {
@@ -554,7 +563,8 @@ public function removeReaction($postId)
         $perPage = $request->input('per_page', 4);
         $page = $request->input('page', 1);
 
-        $posts = Post::with(['images', 'comments', 'reactions', 'shares'])
+        $posts = Post::with('images')
+                    ->withCount(['comments', 'reactions', 'shares'])
                     ->where('content', 'like', '%' . $query . '%')
                     ->where('privacy', 'PUBLIC')
                     ->whereHas('owner', function ($query) {
@@ -568,7 +578,27 @@ public function removeReaction($postId)
         return responseJson(null, 500, 'Đã xảy ra lỗi khi tìm kiếm bài viết: ' . $e->getMessage());
     }
 }
-    public function getReactions($postId)
+
+    public function getUserReaction($postId)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+
+            $reaction = Reaction::where('post_id', $postId)
+                                ->where('owner_id', $user->id)
+                                ->first(['type']);
+
+            return responseJson($reaction, 200, 'Lấy phản ứng của người dùng thành công');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy phản ứng của người dùng: ' . $e->getMessage());
+        }
+    }
+
+
+    public function getReactionsDetail($postId)
     {
         try {
             $user = auth()->user();
@@ -578,30 +608,26 @@ public function removeReaction($postId)
 
             $post = Post::findOrFail($postId);
 
-            $reactions = $post->reactions()->with('owner')->get();
+            $reactions = $post->reactions()->with('owner:id,first_name,last_name,avatar')->get();
 
             $reactionCounts = $reactions->groupBy('type')->map(function ($group) {
                 return [
                     'count' => $group->count(),
-                    'users' => $group->pluck('owner')
+                    'users' => $group->map(function ($reaction) {
+                        return [
+                            'id' => $reaction->owner->id,
+                            'name' => $reaction->owner->last_name . ' ' . $reaction->owner->first_name,
+                            'avatar' => $reaction->owner->avatar
+                        ];
+                    })
                 ];
             });
 
-            $totalReactions = $reactions->count();
-
-            $userReaction = $reactions->where('owner_id', $user->id)->first();
-            $userReactionType = $userReaction ? $userReaction->type : null;
-
-            return responseJson([
-                'reaction_counts' => $reactionCounts,
-                'total_reactions' => $totalReactions,
-                'user_reaction' => $userReactionType
-            ], 200, 'Lấy thông tin reaction thành công');
+            return responseJson($reactionCounts, 200, 'Lấy thông tin reaction thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
         }
     }
-
 
 }
 

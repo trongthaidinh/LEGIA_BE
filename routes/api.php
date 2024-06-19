@@ -89,7 +89,8 @@ Route::group([
     
     Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
     
-    Route::get('/{id}/reaction', [PostController::class, 'getReactions']);
+    Route::get('/{id}/reaction-detail', [PostController::class, 'getReactionsDetail']);
+    Route::get('{id}/user-reaction', [PostController::class, 'getUserReaction']);
     Route::post('/{id}/reaction', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('/{id}/reaction', [PostController::class, 'removeReaction']);
 
