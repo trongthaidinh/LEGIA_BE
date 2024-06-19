@@ -9,20 +9,24 @@ class Notification extends Model
 {
     use HasFactory;
 
+    protected $table = 'notifications';
+
     protected $fillable = [
-        'user_id',
+        'owner_id',
+        'emitter_id',
         'type',
-        'data',
+        'content',
         'read',
     ];
 
-    protected $casts = [
-        'data' => 'array',
-    ];
-
-    public function user()
+    public function owner()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function emitter()
+    {
+        return $this->belongsTo(User::class, 'emitter_id');
     }
 }
 

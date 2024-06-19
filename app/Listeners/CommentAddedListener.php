@@ -12,18 +12,17 @@ class CommentAddedListener
     public function handle(CommentAdded $event)
     {
         $comment = $event->comment;
-        $postOwner = $comment->post->owner;
+        $post = $comment->post;
+        $postOwner = $post->owner;
 
-        $fullName = $postOwner->last_name . ' ' . $postOwner->first_name;
+        $emitterName = $comment->owner->last_name . ' ' . $comment->owner->first_name;
 
         Notification::create([
-            'user_id' => $postOwner->id,
-            'type' => 'comment_added',
-            'data' => json_encode([
-                'message' => "{$fullName} đã bình luận bài viết của bạn",
-                'comment_id' => $comment->id,
-                'post_id' => $comment->post_id,
-            ],JSON_UNESCAPED_UNICODE),
+            'owner_id' => $postOwner->id,
+            'emitter_id' => $comment->owner->id,
+            'type' => 'post_comment',
+            'content' => "{$emitterName} đã bình luận bài viết của bạn",
+            'read' => false,
         ]);
     }
 }
