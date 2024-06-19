@@ -83,12 +83,14 @@ Route::group([
 ], function () {
     Route::get('/', [PostController::class, 'index']);
     Route::post('/', [PostController::class, 'store']);
-    Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
     Route::get('/{id}', [PostController::class, 'show']);
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
-
-
+    
+    Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
+    
+    Route::get('/{id}/reaction-detail', [PostController::class, 'getReactionsDetail']);
+    Route::get('{id}/user-reaction', [PostController::class, 'getUserReaction']);
     Route::post('/{id}/reaction', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('/{id}/reaction', [PostController::class, 'removeReaction']);
 
