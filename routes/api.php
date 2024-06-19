@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Middleware\AdminMiddleware;
 
@@ -37,6 +38,15 @@ Route::group([
     Route::get('users/{id}', [AdminUserController::class, 'show']);
     Route::patch('users/{id}/lock', [AdminUserController::class, 'lock']);
     Route::patch('users/{id}/unlock', [AdminUserController::class, 'unlock']);
+
+    Route::group([
+        'prefix' => 'reports',
+    ], function () {
+        Route::get('/', [ReportController::class, 'index']);
+        Route::put('/approve/{id}', [ReportController::class, 'approve']);
+        Route::put('/reject/{id}', [ReportController::class, 'reject']);
+        Route::delete('/delete/{id}', [ReportController::class, 'destroy']);
+    });
 });
 
 Route::group([
@@ -151,4 +161,12 @@ Route::group([
 ], function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'reports',
+], function () {
+    Route::get('/', [ReportController::class, 'index']);
+    Route::post('/', [ReportController::class, 'store']);
 });
