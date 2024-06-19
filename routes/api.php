@@ -99,7 +99,7 @@ Route::group([
     Route::put('/{id}', [PostController::class, 'update']);
     Route::delete('/{id}', [PostController::class, 'destroy']);
 
-    Route::get('/user/{id}', [PostController::class, 'getUserPosts']);
+    Route::get('user/{id}', [PostController::class, 'getUserPosts']);
 
     Route::get('reaction-detail/{id}', [PostController::class, 'getReactionsDetail']);
     Route::get('user-reaction/{id}', [PostController::class, 'getUserReaction']);

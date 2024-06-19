@@ -46,7 +46,7 @@ class PostController extends Controller
     public function getUserPosts($userId)
     {
         try {
-            $currentUser = auth()->user();
+            $currentUser = auth()->userOrFail();
             if(!$currentUser) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
@@ -72,9 +72,14 @@ class PostController extends Controller
                             ->get();
             }
 
+            if($posts->isEmpty()) {
+                return responseJson(null, 404, 'Người dùng không tìm thấy bài đăng');
+            }
+
             return responseJson($posts, 200, 'Danh sách bài đăng của người dùng');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
+
+        } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
@@ -149,8 +154,8 @@ class PostController extends Controller
             $post->images = $images;
 
             return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bài đăng: ' . $e->getMessage());
+        } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
