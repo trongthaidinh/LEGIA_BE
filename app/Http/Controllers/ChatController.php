@@ -137,11 +137,11 @@ class ChatController extends Controller
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại nào!');
             }
 
-            $conversations->each(function ($conversation) {
+            $conversations->each(function ($conversation) use ($user) {
                 $conversation->load('participants');
                 $conversation['partners'] = $conversation->participants
-                ->reject(function ($participant) use ($conversation) {
-                    return $participant->id === $conversation->creator_id;
+                ->reject(function ($participant) use ($user) {
+                    return $participant->user_id === $user->id;
                 })
                 ->map(function ($participant) {
                     return [
