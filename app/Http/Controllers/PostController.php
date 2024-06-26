@@ -29,7 +29,7 @@ class PostController extends Controller
 
             $posts = Post::with('images')
                 ->withCount(['comments', 'reactions', 'shares'])
-                ->with('owner')
+                ->with(['owner','background'])
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
