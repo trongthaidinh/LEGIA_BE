@@ -21,13 +21,12 @@ class FriendRequestSentListener
         $receiver = $friendRequest->friend;
         $sender = $friendRequest->owner; 
 
-        $senderName = $sender->last_name . ' ' . $sender->first_name;
 
         Notification::create([
             'owner_id' => $receiver->id,
             'emitter_id' => $sender->id,
             'type' => 'friend_request',
-            'content' => "{$senderName} đã gửi cho bạn một lời mời kết bạn",
+            'content' => "đã gửi cho bạn lời mời kết bạn",
             'read' => false,
         ]);
     }

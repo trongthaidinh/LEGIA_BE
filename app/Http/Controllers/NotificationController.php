@@ -17,12 +17,13 @@ class NotificationController extends Controller
             }
 
             $notifications = Notification::where('owner_id', $user->id)
+                ->with('user')
                 ->orderByDesc('created_at')
                 ->get();
 
             return responseJson($notifications, 200, "Lấy thành công danh sách thông báo");
         } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách thông báo' . $e->getMessage());
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách thông báo: ' . $e->getMessage());
         }
     }
 

@@ -7,6 +7,7 @@ use App\Events\PostShared;
 use App\Events\ReactionAdded;
 use App\Events\ShareAdded;
 use App\Models\Archive;
+use App\Models\Background;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 use App\Models\Post;
@@ -86,13 +87,15 @@ class PostController extends Controller
     public function store(Request $request)
     {
         try {
-            $user = auth()->userOrFail();
+            $user = auth()->user();
+            if(!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
 
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-                'background_id' => 'nullable|exists:backgrounds,id',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
@@ -101,7 +104,6 @@ class PostController extends Controller
                 'privacy.in' => 'Quyền riêng tư không hợp lệ.',
                 'post_type.required' => 'Bạn phải chọn loại bài viết.',
                 'post_type.in' => 'Loại bài viết không hợp lệ.',
-                'background_id.exists' => 'Background không tồn tại.',
                 'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
                 'images.*.image' => 'Tệp phải là hình ảnh.',
                 'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
@@ -113,6 +115,14 @@ class PostController extends Controller
             }
 
             $postData = $validator->validated();
+
+            if (is_null($request->background_id)) {
+                $background = Background::find($request->background_id);
+                if (!$background) {
+                    return $request->background_id;
+                }
+                $postData['background_id'] = $request->background_id;
+            }
 
             if (!$request->hasFile('images')) {
                 if (empty($postData['content']) && empty($postData['background_id'])) {
@@ -156,7 +166,7 @@ class PostController extends Controller
             return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
         } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
+        } 
     }
 
 

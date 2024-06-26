@@ -63,18 +63,14 @@ Route::group([
 
 Route::group([
     'middleware' => ['api'],
+    'prefix' => 'backgrounds'
 ], function () {
-    Route::get('backgrounds', [BackgroundController::class, 'index']);
-    Route::group([
-        'middleware' => [AdminMiddleware::class],
-        'prefix' => 'admin',
-    ], function () {
-        Route::post('backgrounds', [BackgroundController::class, 'store']);
-        Route::get('backgrounds/{id}', [BackgroundController::class, 'show']);
-        Route::put('backgrounds/{id}', [BackgroundController::class, 'update']);
-        Route::patch('backgrounds/{id}/toggle-visibility', [BackgroundController::class, 'toggleVisibility']);
-        Route::delete('backgrounds/{id}', [BackgroundController::class, 'destroy']);
-    });
+    Route::get('/', [BackgroundController::class, 'index']);
+    Route::post('/', [BackgroundController::class, 'store']);
+    Route::get('/{id}', [BackgroundController::class, 'show']);
+    Route::put('/{id}', [BackgroundController::class, 'update']);
+    Route::put('/toggle-visibility/{id}', [BackgroundController::class, 'toggleVisibility']);
+    Route::delete('/{id}', [BackgroundController::class, 'destroy']);
 });
 
 Route::group([
