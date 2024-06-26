@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+
 use MessageSent;
 
 class ChatController extends Controller
@@ -42,9 +44,11 @@ class ChatController extends Controller
                 }
             }
 
+            $secret_key = Str::uuid()->toString();
+
             $conversation = Conversation::create(array_merge(
                 $validatorConversation->validated(),
-                ['creator_id' => $user->id]
+                ['creator_id' => $user->id, 'secret_key' => $secret_key]
             ));
 
             $conversationParticipantsCreated = DB::table('conversation_participants')
@@ -117,24 +121,27 @@ class ChatController extends Controller
         }
     }
 
-    public function getMyConversations(){
+    public function getMyConversations(Request $request) {
         try {
             $user = auth()->userOrFail();
 
-            $conversationParticipants = ConversationParticipant::where('user_id', $user->id)
-            ->get();
+            $q = strtolower($request->q) ?? '';
 
-            if ($conversationParticipants->isEmpty()) {
-                return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại nào!');
-            }
+            $conversationParticipants = DB::table('conversation_participants')
+            ->join('users', 'users.id', '=', 'conversation_participants.user_id')
+            ->where(function ($query) use ($q) {
+                $query->where(DB::raw('LOWER(users.first_name)'), 'like', '%' . $q . '%')
+                      ->orWhere(DB::raw('LOWER(users.last_name)'), 'like', '%' . $q . '%');
+            })
+            ->select('conversation_participants.conversation_id')
+            ->distinct()
+            ->get()
+            ->pluck('conversation_id');
 
-            $conversations = Conversation::whereIn('id', $conversationParticipants
-            ->pluck('conversation_id'))
-            ->with('creator')
-            ->get();
+            $conversations = Conversation::whereIn('id', $conversationParticipants)->get();
 
             if ($conversations->isEmpty()) {
-                return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại nào!');
+                return responseJson(null, 400, 'Không có cuộc đối thoại hợp lệ!');
             }
 
             $conversations->each(function ($conversation) use ($user) {
@@ -255,6 +262,5 @@ class ChatController extends Controller
             return responseJson(null, 404, "Người dùng chưa xác thực!");
         }
     }
-
 
 }
