@@ -60,12 +60,12 @@ class UserController extends Controller
                         $query->where('friend_id', $userId)
                               ->where('owner_id', $partnerId);
                     });
-                })->first('status');
+                })->first();
 
                 if($friendship){
-                    $profile->friendship_status = $friendship->status;
+                    $profile->friendship = $friendship;
                 }else{
-                    $profile->friendship_status = null;
+                    $profile->friendship = null;
                 }
 
             }
