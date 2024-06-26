@@ -27,7 +27,7 @@ class FriendRequestAcceptedListener
             'owner_id' => $receiver->id,
             'emitter_id' => $sender->id,
             'type' => 'friend_request_accept',
-            'content' => "{$senderName} đã chấp nhận lời mời kết bạn của bạn",
+            'content' => "đã chấp nhận lời mời kết bạn của bạn",
             'read' => false,
         ]);
     }

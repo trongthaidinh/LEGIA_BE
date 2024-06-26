@@ -21,7 +21,7 @@ class CommentAddedListener
             'owner_id' => $postOwner->id,
             'emitter_id' => $comment->owner->id,
             'type' => 'post_comment',
-            'content' => "{$emitterName} đã bình luận bài viết của bạn",
+            'content' => "đã bình luận bài viết của bạn",
             'read' => false,
         ]);
     }

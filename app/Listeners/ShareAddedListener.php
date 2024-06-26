@@ -20,13 +20,11 @@ class ShareAddedListener
         $shareAdded = $event->shareAdded;
         $postOwner = $shareAdded->post->owner;
 
-        $emitterName = $shareAdded->owner->last_name . ' ' . $shareAdded->owner->first_name;
-
         Notification::create([
             'owner_id' => $postOwner->id,
             'emitter_id' => $shareAdded->owner->id,
             'type' => 'your_post_shared',
-            'content' => "{$emitterName} đã chia sẻ một bài viết của bạn",
+            'content' => "đã chia sẻ một bài viết của bạn",
             'read' => false,
         ]);
     }
