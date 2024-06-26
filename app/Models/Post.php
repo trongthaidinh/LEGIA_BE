@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Post extends Model
 {
     use HasFactory, SoftDeletes;
-    
+
     protected $fillable = [
-        'owner_id', 
-        'content', 
-        'privacy', 
-        'background_id', 
-        'post_type', 
+        'owner_id',
+        'content',
+        'privacy',
+        'background_id',
+        'post_type',
     ];
 
     public function owner()
@@ -36,7 +36,7 @@ class Post extends Model
     public function reactions()
     {
         return $this->hasMany(Reaction::class, 'post_id');
-    }    
+    }
 
     public function shares()
     {

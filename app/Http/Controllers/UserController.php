@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conversation;
+use App\Models\Friendship;
 use App\Models\User;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
@@ -23,7 +25,7 @@ class UserController extends Controller
 
     public function getProfile($id){
         try{
-            auth()->userOrFail();
+            $user = auth()->userOrFail();
 
             $profile = DB::table('users')
             ->where('id', $id)
@@ -31,6 +33,42 @@ class UserController extends Controller
 
             if( ! $profile ) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
 
+            $partnerId = $id;
+            $userId = $user->id;
+
+            if($partnerId != $userId){
+                $conversation = Conversation::whereHas('participants', function ($query) use ($userId, $partnerId) {
+                    $query->where('user_id', $userId)
+                          ->orWhere('user_id', $partnerId);
+                }, '=', 2)
+                ->where('type', 'individual')
+                ->first('id');
+
+                if($conversation){
+                    $profile->conversation_id = $conversation->id;
+
+                }else{
+                    $profile->conversation_id = null;
+                }
+
+
+                $friendship = Friendship::where(function ($query) use ($partnerId, $userId) {
+                    $query->where(function ($query) use ($partnerId, $userId) {
+                        $query->where('friend_id', $partnerId)
+                              ->where('owner_id', $userId);
+                    })->orWhere(function ($query) use ($partnerId, $userId) {
+                        $query->where('friend_id', $userId)
+                              ->where('owner_id', $partnerId);
+                    });
+                })->first('status');
+
+                if($friendship){
+                    $profile->friendship_status = $friendship->status;
+                }else{
+                    $profile->friendship_status = null;
+                }
+
+            }
 
             return responseJson($profile, 200);
 

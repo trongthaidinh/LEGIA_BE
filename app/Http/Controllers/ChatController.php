@@ -256,31 +256,5 @@ class ChatController extends Controller
         }
     }
 
-    public function getConversationIndividualId($partnerId){
-        try{
-            $user = auth()->userOrFail();
 
-            $userId = $user->id;
-
-            if($userId == $partnerId){
-                return responseJson(null, 400, 'Không thể trò chuyên với chính mình!');
-            }
-
-            $conversation = Conversation::whereHas('participants', function ($query) use ($userId, $partnerId) {
-                $query->where('user_id', $userId)
-                      ->orWhere('user_id', $partnerId);
-            }, '=', 2)
-            ->where('type', 'individual')
-            ->first();
-
-
-            if(!$conversation){
-                return responseJson(null, 400, 'Không tìm thấy cuộc đối thoại!');
-            }
-            return responseJson($conversation);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
-        }
-    }
 }

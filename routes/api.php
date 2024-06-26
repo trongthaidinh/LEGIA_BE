@@ -84,7 +84,6 @@ Route::group([
     Route::get('get-accepted-list', [FriendshipController::class, 'getAcceptedList']);
     Route::get('get-pending-list', [FriendshipController::class, 'getPendingList']);
     Route::get('user/{user_id}', [FriendshipController::class, 'getFriendListOfUser']);
-    Route::get('user/status/{user_id}', [FriendshipController::class, 'getFriendRequestStatus']);
     Route::post('add/{friend}', [FriendshipController::class, 'add']);
     Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
     Route::delete('{id}', [FriendshipController::class, 'delete']);
@@ -142,7 +141,6 @@ Route::group([
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
     Route::post('message/mark-is-read/{message_id}', [ChatController::class, 'markIsRead']);
-    Route::get('get-conversation-individual-id/{partner_id}', [ChatController::class, 'getConversationIndividualId']);
 });
 
 Route::group([

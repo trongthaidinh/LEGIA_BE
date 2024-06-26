@@ -293,30 +293,6 @@ class FriendshipController extends Controller
         }
     }
 
-    public function getFriendRequestStatus($userId){
-        try{
-            $user = auth()->userOrFail();
 
-
-            $friendship = Friendship::where(function ($query) use ($user, $userId) {
-                $query->where(function ($query) use ($user, $userId) {
-                    $query->where('friend_id', $user->id)
-                          ->where('owner_id', $userId);
-                })->orWhere(function ($query) use ($user, $userId) {
-                    $query->where('friend_id', $userId)
-                          ->where('owner_id', $user->id);
-                });
-            })->first();
-
-            if(!$friendship){
-                return responseJson(null, 404, 'Chưa có tương tác bạn bè với người dùng này');
-            }
-
-            return responseJson($friendship, 200);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
-    }
 
 }
