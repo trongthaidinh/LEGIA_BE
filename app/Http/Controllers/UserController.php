@@ -283,4 +283,18 @@ class UserController extends Controller
         }
     }
 
+    public function getSuggestionList() {
+        try{
+            $user = auth()->userOrFail();
+
+            $users = User::where('id', '!=', $user->id)->inRandomOrder()->limit(10)->get();
+
+
+            return responseJson($users, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
 }

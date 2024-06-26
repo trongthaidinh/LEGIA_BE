@@ -26,6 +26,7 @@ Route::group([
     Route::delete('delete-cover-image', [UserController::class, 'deleteCoverImage']);
     Route::get('/profile/{id}', [UserController::class, 'getProfile']);
     Route::get('/find', [UserController::class, 'find']);
+    Route::get('/get-suggestion-list', [UserController::class, 'getSuggestionList']);
 
 });
 
@@ -108,6 +109,7 @@ Route::group([
     Route::delete('/comments/{id}/{commentId}', [PostController::class, 'deleteComment']);
 
     Route::post('/share/{id}', [PostController::class, 'sharePost']);
+
 });
 
 Route::group([
