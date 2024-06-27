@@ -24,7 +24,7 @@ class Notification extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function emitter()
+    public function user()
     {
         return $this->belongsTo(User::class, 'emitter_id');
     }

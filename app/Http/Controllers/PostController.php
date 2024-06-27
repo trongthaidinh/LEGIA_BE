@@ -3,23 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Events\CommentAdded;
-use App\Events\PostShared;
-use App\Events\ReactionAdded;
 use App\Events\ShareAdded;
 use App\Models\Archive;
 use App\Models\Background;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostImage;
 use App\Models\Reaction;
 use App\Models\Share;
 use App\Models\User;
+use App\Share\Pushers\NotificationAdded;
 use Illuminate\Support\Facades\Validator;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class PostController extends Controller
 {
+    private $NotificationAdded;
+
+    public function __construct() {
+        $this->NotificationAdded = new NotificationAdded();
+    }
+
     public function index()
     {
         try {
@@ -116,10 +121,10 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-            if (is_null($request->background_id)) {
+            if (!is_null($request->background_id)) {
                 $background = Background::find($request->background_id);
                 if (!$background) {
-                    return $request->background_id;
+                    return responseJson(null, 404, 'Background không tồn tại');
                 }
                 $postData['background_id'] = $request->background_id;
             }
@@ -356,6 +361,11 @@ public function addOrUpdateReaction(Request $request, $postId)
 
         $reactionType = $request->input('type');
 
+        $post = Post::find($postId);
+        if (!$post) {
+            return responseJson(null, 404, 'Bài viết không tồn tại');
+        }
+
         $existingReaction = Reaction::where('owner_id', $user->id)
                                     ->where('post_id', $postId)
                                     ->first();
@@ -365,7 +375,22 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
             } else {
                 $existingReaction->update(['type' => $reactionType]);
-                event(new ReactionAdded($existingReaction));
+
+                $postOwner = $post->owner;
+                if (!$postOwner) {
+                    return responseJson(null, 404, 'Chủ sở hữu bài viết không tồn tại');
+                }
+
+                $notification = Notification::create([
+                    'owner_id' => $postOwner->id,
+                    'emitter_id' => $user->id,
+                    'type' => 'post_like',
+                    'content' => "đã bày tỏ cảm xúc bài viết của bạn",
+                    'read' => false,
+                ]);
+
+                $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
+
                 return responseJson($existingReaction, 200, 'Cập nhật thành công trạng thái thả cảm xúc của bài đăng');
             }
         } else {
@@ -374,7 +399,22 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'post_id' => $postId,
                 'type' => $reactionType
             ]);
-            event(new ReactionAdded($newReaction));
+
+            $postOwner = $post->owner;
+            if (!$postOwner) {
+                return responseJson(null, 404, 'Chủ sở hữu bài viết không tồn tại');
+            } 
+
+            $notification = Notification::create([
+                'owner_id' => $postOwner->id,
+                'emitter_id' => $user->id,
+                'type' => 'post_like',
+                'content' => "đã bày tỏ cảm xúc bài viết của bạn",
+                'read' => false,
+            ]);
+
+            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
+
             return responseJson($newReaction, 201, 'Thêm thành công trạng thái thả cảm xúc cho bài đăng');
         }
     } catch (\Exception $e) {
@@ -432,7 +472,18 @@ public function removeReaction($postId)
                 'content' => $request->content,
             ]);
 
-            event(new CommentAdded($comment));
+            $post = $comment->post;
+            $postOwner = $post->owner;
+
+            $notification = Notification::create([
+                'owner_id' => $postOwner->id,
+                'emitter_id' => $user->id,
+                'type' => 'post_comment',
+                'content' => "đã bình luận bài viết của bạn.",
+                'read' => false,
+            ]);
+
+            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
             return responseJson($comment, 201, 'Bình luận đã được tạo thành công');
         } catch (\Exception $e) {
@@ -543,7 +594,18 @@ public function removeReaction($postId)
                 'post_id' => $postId,
             ]);
 
-            event(new ShareAdded($share));
+            $post = $share->post;
+            $postOwner = $post->owner;
+
+            $notification = Notification::create([
+                'owner_id' => $postOwner->id,
+                'emitter_id' => $user->id,
+                'type' => 'your_post_shared',
+                'content' => "đã chia sẻ bài viết của bạn.",
+                'read' => false,
+            ]);
+
+            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
             return responseJson($sharedPost, 200, 'Bài viết đã được chia sẻ');
         } catch (\Exception $e) {
