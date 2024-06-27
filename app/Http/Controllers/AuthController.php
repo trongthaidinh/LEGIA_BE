@@ -40,6 +40,14 @@ class AuthController extends Controller
             $result = $request->file('avatar')->storeOnCloudinary();
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
+        }else {
+            if($request->gender == 'male'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarMale_ixpufu.jpg?_s=public-apps";
+            }else if($request->gender == 'female'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarFemale_olfayu.jpg?_s=public-apps";
+            }else if($request->gender == 'other'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarOther_ftskmk.jpg?_s=public-apps";
+            }
         }
 
         $user = User::create(array_merge(
