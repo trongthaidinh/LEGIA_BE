@@ -17,7 +17,7 @@ class Comment extends Model
 
     public function post()
     {
-        return $this->belongsTo(Post::class);
+        return $this->belongsTo(Post::class, 'owner_id');
     }
 
     public function owner()

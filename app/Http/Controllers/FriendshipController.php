@@ -5,12 +5,21 @@ namespace App\Http\Controllers;
 use App\Events\FriendRequestAccepted;
 use App\Events\FriendRequestSent;
 use App\Models\Friendship;
+use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Query\Builder;
+use App\Share\Pushers\NotificationAdded;
 
 class FriendshipController extends Controller
 {
+    private $NotificationAdded;
+
+    public function __construct() {
+        $this->NotificationAdded = new NotificationAdded();
+    }
+
+
     public function getAcceptedList() {
         try{
             $user = auth()->userOrFail();
@@ -152,7 +161,15 @@ class FriendshipController extends Controller
                 ['friend_id' => (int)$friend],
             ));
 
-            event(new FriendRequestSent($friendship));
+            $notification = Notification::create([
+                'owner_id' => $friend,
+                'emitter_id' => $user->id,
+                'type' => 'friend_request',
+                'content' => "đã gửi cho bạn lời mời kết bạn.",
+                'read' => false,
+            ]);
+
+            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
 
@@ -192,7 +209,18 @@ class FriendshipController extends Controller
             $friendship->update(['status' => 'accepted']);
 
 
-            event(new FriendRequestAccepted($friendship));
+            $friend = $friendship->friends;
+
+            $notification = Notification::create([
+                'owner_id' => $user->id,
+                'emitter_id' => $senderId,
+                'type' => 'friend_request_accept',
+                'content' => "đã chấp nhận lời mời kết bạn.",
+                'read' => false,
+            ]);
+
+            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
+
 
             return responseJson(null, 200, 'Chấp nhận lời mời kết bạn thành công!');
 
