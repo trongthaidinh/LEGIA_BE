@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Events\NotificationRead;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Contracts\Providers\JWT;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class NotificationController extends Controller
 {
@@ -50,5 +52,13 @@ class NotificationController extends Controller
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi đánh dấu là đã đọc thông báo: ' . $e->getMessage());
         }
+    }
+
+    public function getSecretKey(Request $request)
+    {
+        $user = auth()->user();
+        $secretKey = JWTAuth::fromUser($user);
+
+        return responseJson($secretKey, 200, "Lấy thành công khóa bảo mật.");
     }
 }

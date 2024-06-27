@@ -98,17 +98,19 @@ Route::group([
 
     Route::get('user/{id}', [PostController::class, 'getUserPosts']);
 
-    Route::get('reaction-detail/{id}', [PostController::class, 'getReactionsDetail']);
-    Route::get('user-reaction/{id}', [PostController::class, 'getUserReaction']);
-    Route::post('reaction/{id}', [PostController::class, 'addOrUpdateReaction']);
+    Route::get('reaction-detail/{postId}', [PostController::class, 'getReactionsDetail']);
+    Route::get('user-reaction/{postId}', [PostController::class, 'getUserReaction']);
+    Route::get('top-reactions/{postId}', [PostController::class, 'getTopReactions']);
+    Route::post('reaction/{postId}', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('reaction/{id}', [PostController::class, 'removeReaction']);
 
-    Route::get('/comments/{id}', [PostController::class, 'getComments']);
-    Route::post('/comments/{id}', [PostController::class, 'storeComment']);
-    Route::put('/comments/{id}/{commentId}', [PostController::class, 'updateComment']);
-    Route::delete('/comments/{id}/{commentId}', [PostController::class, 'deleteComment']);
+    Route::get('/comments/{postId}', [PostController::class, 'getAllComments']);
+    Route::get('/top-comments/{postId}', [PostController::class, 'getTopComments']);
+    Route::post('/comments/{commentId}', [PostController::class, 'storeComment']);
+    Route::put('/comments/{postId}/{commentId}', [PostController::class, 'updateComment']);
+    Route::delete('/comments/{postId}/{commentId}', [PostController::class, 'deleteComment']);
 
-    Route::post('/share/{id}', [PostController::class, 'sharePost']);
+    Route::post('/share/{postId}', [PostController::class, 'sharePost']);
 
 });
 
@@ -158,7 +160,15 @@ Route::group([
 ], function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
+    
 });
+
+Route::group([
+    'middleware' => 'api',
+], function () {
+    Route::get('/get-secret-key', [NotificationController::class, 'getSecretKey']);  
+});
+
 
 Route::group([
     'middleware' => 'api',
