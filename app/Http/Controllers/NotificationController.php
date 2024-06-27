@@ -44,7 +44,7 @@ class NotificationController extends Controller
             $notification->read = true;
             $notification->save();
 
-            event(new NotificationRead($notification));
+            
 
             return responseJson($notification, 200, "Thông báo được đánh dấu là đã đọc");
         } catch (\Exception $e) {
