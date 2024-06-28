@@ -110,6 +110,7 @@ class PostController extends Controller
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
+                'background_id' => 'nullable|exists:backgrounds,id'
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
                 'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
@@ -129,13 +130,13 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-            if (!is_null($request->background_id)) {
-                $background = Background::find($request->background_id);
-                if (!$background) {
-                    return responseJson(null, 404, 'Background không tồn tại');
+                if (!$request->background_id === 'null') {            
+                    $background = Background::find($request->background_id);
+                    if (!$background) {
+                        return responseJson(null, 404, 'Background không tồn tại');
+                    }
+                    $postData['background_id'] = $request->background_id;
                 }
-                $postData['background_id'] = $request->background_id;
-            }
 
             if (!$request->hasFile('images')) {
                 if (empty($postData['content']) && empty($postData['background_id'])) {
