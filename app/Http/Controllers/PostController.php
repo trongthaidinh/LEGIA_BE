@@ -51,7 +51,15 @@ class PostController extends Controller
                     return $post;
                 });
 
-            return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
+                $response = [
+                    'data' => $posts->items(),
+                    'total_page' => $posts->total() / $posts->perPage(),
+                    'current_page' => $posts->currentPage(),
+                    'per_page' => $posts->perPage(),
+                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                ];
+
+            return responseJson($response, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
@@ -110,6 +118,7 @@ class PostController extends Controller
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
+                'background_id' => 'nullable|exists:backgrounds,id'
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
                 'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
@@ -129,13 +138,13 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-            if (!is_null($request->background_id)) {
-                $background = Background::find($request->background_id);
-                if (!$background) {
-                    return responseJson(null, 404, 'Background không tồn tại');
+                if (!$request->background_id === 'null') {            
+                    $background = Background::find($request->background_id);
+                    if (!$background) {
+                        return responseJson(null, 404, 'Background không tồn tại');
+                    }
+                    $postData['background_id'] = $request->background_id;
                 }
-                $postData['background_id'] = $request->background_id;
-            }
 
             if (!$request->hasFile('images')) {
                 if (empty($postData['content']) && empty($postData['background_id'])) {
