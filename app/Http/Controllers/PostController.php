@@ -33,7 +33,7 @@ class PostController extends Controller
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
-            $perPage = 5;
+            $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
 
             $posts = Post::with(['owner', 'background', 'images'])
