@@ -17,11 +17,11 @@ class Comment extends Model
 
     public function post()
     {
-        return $this->belongsTo(Post::class, 'owner_id');
+        return $this->belongsTo(Post::class, 'post_id');
     }
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'post_id');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 }
