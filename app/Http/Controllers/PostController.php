@@ -50,13 +50,15 @@ class PostController extends Controller
                     return $post;
                 });
 
-                $response = [
-                    'data' => $posts->items(),
-                    'total_page' => $posts->lastPage(),
+            $response = [
+                'posts' => $posts->items(),
+                'page_info' => [
+                    'total_page' => (int) ceil($posts->total() / $posts->perPage()),
                     'current_page' => $posts->currentPage(),
                     'per_page' => $posts->perPage(),
-                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
-                ];
+                    'next_page' => $posts->hasMorePages() ? $posts->currentPage() + 1 : null,
+                ],
+            ];
 
             return responseJson($response, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
