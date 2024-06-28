@@ -169,6 +169,12 @@ class FriendshipController extends Controller
                 'read' => false,
             ]);
 
+            $notification->user = [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar
+            ];
+
             $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
@@ -218,6 +224,12 @@ class FriendshipController extends Controller
                 'content' => "đã chấp nhận lời mời kết bạn.",
                 'read' => false,
             ]);
+
+            $notification->user = [
+                'first_name' => $friend->first_name,
+                'last_name' => $friend->last_name,
+                'avatar' => $friend->avatar
+            ];
 
             $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 

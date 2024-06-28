@@ -52,7 +52,7 @@ class PostController extends Controller
 
                 $response = [
                     'data' => $posts->items(),
-                    'total_page' => $posts->total() / $posts->perPage(),
+                    'total_page' => $posts->lastPage(),
                     'current_page' => $posts->currentPage(),
                     'per_page' => $posts->perPage(),
                     'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
@@ -403,6 +403,12 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'read' => false,
                 ]);
 
+                $notification->user = [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'avatar' => $user->avatar
+                ];
+
                 $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
                 return responseJson($existingReaction, 200, 'Cập nhật thành công trạng thái thả cảm xúc của bài đăng');
@@ -426,6 +432,12 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'content' => "đã bày tỏ cảm xúc bài viết của bạn",
                 'read' => false,
             ]);
+
+            $notification->user = [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar
+            ];
 
             $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
@@ -496,6 +508,12 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'content' => "đã bình luận bài viết của bạn.",
                 'read' => false,
             ]);
+
+            $notification->user = [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar
+            ];
 
             $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
@@ -639,6 +657,12 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'content' => "đã chia sẻ bài viết của bạn.",
                 'read' => false,
             ]);
+
+            $notification->user = [
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar
+            ];
 
             $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
 
