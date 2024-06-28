@@ -54,6 +54,7 @@ class PostController extends Controller
                 'posts' => $posts->items(),
                 'page_info' => [
                     'total_page' => (int) ceil($posts->total() / $posts->perPage()),
+                    'total' => $posts->total(),
                     'current_page' => $posts->currentPage(),
                     'per_page' => $posts->perPage(),
                 ],
