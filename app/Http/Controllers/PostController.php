@@ -51,7 +51,15 @@ class PostController extends Controller
                     return $post;
                 });
 
-            return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
+                $response = [
+                    'data' => $posts->items(),
+                    'total_page' => $posts->total() / $posts->perPage(),
+                    'current_page' => $posts->currentPage(),
+                    'per_page' => $posts->perPage(),
+                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                ];
+
+            return responseJson($response, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
