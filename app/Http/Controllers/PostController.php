@@ -56,7 +56,6 @@ class PostController extends Controller
                     'total_page' => (int) ceil($posts->total() / $posts->perPage()),
                     'current_page' => $posts->currentPage(),
                     'per_page' => $posts->perPage(),
-                    'next_page' => $posts->hasMorePages() ? $posts->currentPage() + 1 : null,
                 ],
             ];
 
