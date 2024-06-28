@@ -22,6 +22,6 @@ class Comment extends Model
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(User::class, 'post_id');
     }
 }

@@ -25,7 +25,7 @@ class PostController extends Controller
         $this->NotificationAdded = new NotificationAdded();
     }
 
-    public function index()
+    public function index(Request $request)
     {
         try {
             $user = auth()->user();
@@ -33,15 +33,23 @@ class PostController extends Controller
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
+            $perPage = 5;
+            $page = $request->input('page', 1);
+
             $posts = Post::with('images')
                 ->withCount(['comments', 'reactions', 'shares'])
-                ->with(['owner','background'])
+                ->with(['owner', 'background'])
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->through(function ($post) use ($user) {
+                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+                    return $post;
+                });
 
             return responseJson($posts, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
@@ -422,27 +430,27 @@ public function addOrUpdateReaction(Request $request, $postId)
     }
 }
 
-public function removeReaction($postId)
-{
-    try {
-        $user = auth()->user();
-        if (!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
+    public function removeReaction($postId)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+
+            $reaction = Reaction::where('owner_id', $user->id)
+                                ->where('post_id', $postId)
+                                ->first();
+
+            if ($reaction) {
+                $reaction->delete();
+                return responseJson(null, 200, 'Bỏ trạng thái thả cảm xúc cho bài viết thành công');
+            }
+
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa thả cảm xúc bài đăng: ' . $e->getMessage());
         }
-
-        $reaction = Reaction::where('owner_id', $user->id)
-                            ->where('post_id', $postId)
-                            ->first();
-
-        if ($reaction) {
-            $reaction->delete();
-            return responseJson(null, 200, 'Bỏ trạng thái thả cảm xúc cho bài viết thành công');
-        }
-
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa thả cảm xúc bài đăng: ' . $e->getMessage());
     }
-}
 
 
     public function storeComment(Request $request, $postId)
@@ -491,7 +499,7 @@ public function removeReaction($postId)
         }
     }
 
-    public function getComments($postId)
+    public function getAllComments($postId)
     {
         try {
             $user = auth()->user();
@@ -502,13 +510,34 @@ public function removeReaction($postId)
             $comments = Comment::where('post_id', $postId)
                         ->with(['owner:id,first_name,last_name,avatar'])
                         ->orderBy('created_at', 'desc')
-                        ->paginate(10);
+                        ->paginate(5);
 
             return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
         }
     }
+
+    public function getTopComments($postId)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $comments = Comment::where('post_id', $postId)
+                    ->with(['owner:id,first_name,last_name,avatar'])
+                    ->orderBy('created_at', 'desc')
+                    ->take(3)
+                    ->get();
+
+        return responseJson($comments, 200, '3 bình luận mới nhất của bài viết');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy bình luận mới nhất: ' . $e->getMessage());
+    }
+}
+
 
     public function updateComment(Request $request, $postId, $commentId)
     {
@@ -713,6 +742,31 @@ public function removeReaction($postId)
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
         }
     }
+
+    public function getTopReactions($postId)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+
+            $post = Post::findOrFail($postId);
+
+            $reactions = $post->reactions()->get();
+
+            $reactionCounts = $reactions->groupBy('type')->map(function ($group) {
+                return $group->count();
+            })->sortDesc()->take(3);
+
+            return responseJson($reactionCounts, 200, 'Lấy thông tin 3 reaction có số lượng nhiều nhất thành công');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
+        }
+    }
+
+
+
 
 }
 
