@@ -36,9 +36,8 @@ class PostController extends Controller
             $perPage = 5;
             $page = $request->input('page', 1);
 
-            $posts = Post::with('images')
+            $posts = Post::with(['owner', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
-                ->with(['owner', 'background'])
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
@@ -80,15 +79,13 @@ class PostController extends Controller
             }
 
             if ($currentUser->id == $userId) {
-                $posts = Post::with('images')
+                $posts = Post::with(['images','background','owner'])
                             ->withCount(['comments', 'reactions', 'shares'])
-                            ->with('owner')
                             ->where('owner_id', $userId)
                             ->get();
             } else {
-                $posts = Post::with('images')
+                $posts = Post::with(['images','background','owner'])
                             ->withCount(['comments', 'reactions', 'shares'])
-                            ->with('owner')
                             ->where('owner_id', $userId)
                             ->where('privacy', 'PUBLIC')
                             ->get();
@@ -138,7 +135,7 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-                if (!$request->background_id === 'null') {            
+                if (!$request->background_id === 'null') {
                     $background = Background::find($request->background_id);
                     if (!$background) {
                         return responseJson(null, 404, 'Background không tồn tại');
@@ -188,7 +185,7 @@ class PostController extends Controller
             return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
         } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        } 
+        }
     }
 
 
@@ -420,7 +417,7 @@ public function addOrUpdateReaction(Request $request, $postId)
             $postOwner = $post->owner;
             if (!$postOwner) {
                 return responseJson(null, 404, 'Chủ sở hữu bài viết không tồn tại');
-            } 
+            }
 
             $notification = Notification::create([
                 'owner_id' => $postOwner->id,

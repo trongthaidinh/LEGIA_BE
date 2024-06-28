@@ -50,6 +50,6 @@ class Post extends Model
 
     public function background()
     {
-        return $this->belongsTo(Background::class, 'background_id');
+        return $this->belongsTo(Background::class);
     }
 }
