@@ -118,7 +118,6 @@ class PostController extends Controller
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
-                'background_id' => 'nullable|exists:backgrounds,id'
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
                 'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
