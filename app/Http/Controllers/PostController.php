@@ -83,12 +83,14 @@ class PostController extends Controller
                 $posts = Post::with(['images','background','owner'])
                             ->withCount(['comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
+                            ->orderBy('created_at', 'desc')
                             ->get();
             } else {
                 $posts = Post::with(['images','background','owner'])
                             ->withCount(['comments', 'reactions', 'shares'])
                             ->where('owner_id', $userId)
                             ->where('privacy', 'PUBLIC')
+                            ->orderBy('created_at', 'desc')
                             ->get();
             }
 
