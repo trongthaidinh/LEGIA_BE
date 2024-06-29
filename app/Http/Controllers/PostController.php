@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\CommentAdded;
-use App\Events\ShareAdded;
 use App\Models\Archive;
 use App\Models\Background;
 use App\Models\Comment;
