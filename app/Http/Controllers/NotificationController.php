@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\NotificationRead;
 use App\Models\Notification;
+use App\Share\Pushers\NotificationAdded;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Contracts\Providers\JWT;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -46,7 +47,9 @@ class NotificationController extends Controller
             $notification->read = true;
             $notification->save();
 
-            
+            $notificationAdded = new NotificationAdded();
+            $notificationAdded->pusherMakeReadNotification($notification->id, $user->id);
+
 
             return responseJson($notification, 200, "Thông báo được đánh dấu là đã đọc");
         } catch (\Exception $e) {

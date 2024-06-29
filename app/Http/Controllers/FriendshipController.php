@@ -161,21 +161,23 @@ class FriendshipController extends Controller
                 ['friend_id' => (int)$friend],
             ));
 
-            $notification = Notification::create([
-                'owner_id' => $friend,
-                'emitter_id' => $user->id,
-                'type' => 'friend_request',
-                'content' => "đã gửi cho bạn lời mời kết bạn.",
-                'read' => false,
-            ]);
+            if ($user->id != $friend) {
+                $notification = Notification::create([
+                    'owner_id' => $friend,
+                    'emitter_id' => $user->id,
+                    'type' => 'friend_request',
+                    'content' => "đã gửi cho bạn lời mời kết bạn.",
+                    'read' => false,
+                ]);
+    
+                $notification->user = [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'avatar' => $user->avatar
+                ];
+            }
 
-            $notification->user = [
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'avatar' => $user->avatar
-            ];
-
-            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
+            $this->NotificationAdded->pusherNotificationAdded($notification, $friend);
 
             return responseJson($friendship, 201, 'Gửi lời mời kết bạn thành công!');
 
@@ -217,21 +219,24 @@ class FriendshipController extends Controller
 
             $friend = $friendship->friends;
 
-            $notification = Notification::create([
-                'owner_id' => $user->id,
-                'emitter_id' => $senderId,
-                'type' => 'friend_request_accept',
-                'content' => "đã chấp nhận lời mời kết bạn.",
-                'read' => false,
-            ]);
+            if ($user->id != $senderId) {
+                $notification = Notification::create([
+                    'owner_id' => $user->id,
+                    'emitter_id' => $senderId,
+                    'type' => 'friend_request_accept',
+                    'content' => "đã chấp nhận lời mời kết bạn.",
+                    'read' => false,
+                ]);
+    
+                $notification->user = [
+                    'first_name' => $friend->first_name,
+                    'last_name' => $friend->last_name,
+                    'avatar' => $friend->avatar
+                ];
+            }
 
-            $notification->user = [
-                'first_name' => $friend->first_name,
-                'last_name' => $friend->last_name,
-                'avatar' => $friend->avatar
-            ];
-
-            $this->NotificationAdded->pusherNotificationAdded($notification, $user->id);
+            $this->NotificationAdded->pusherMakeReadNotification($notification->id, $friend);
+            $this->NotificationAdded->pusherNotificationAdded($notification, $senderId);
 
 
             return responseJson(null, 200, 'Chấp nhận lời mời kết bạn thành công!');
