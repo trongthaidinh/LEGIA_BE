@@ -78,8 +78,6 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'friendship',
 ], function () {
-    Route::get('get-accepted-list', [FriendshipController::class, 'getAcceptedList']);
-    Route::get('get-pending-list', [FriendshipController::class, 'getPendingList']);
     Route::get('user/{user_id}', [FriendshipController::class, 'getFriendListOfUser']);
     Route::post('add/{friend}', [FriendshipController::class, 'add']);
     Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
@@ -160,13 +158,13 @@ Route::group([
 ], function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
-    
+
 });
 
 Route::group([
     'middleware' => 'api',
 ], function () {
-    Route::get('/get-secret-key', [NotificationController::class, 'getSecretKey']);  
+    Route::get('/get-secret-key', [NotificationController::class, 'getSecretKey']);
 });
 
 

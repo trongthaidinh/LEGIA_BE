@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Query\Builder;
 use App\Share\Pushers\NotificationAdded;
+use Illuminate\Http\Request;
 
 class FriendshipController extends Controller
 {
@@ -19,103 +20,6 @@ class FriendshipController extends Controller
         $this->NotificationAdded = new NotificationAdded();
     }
 
-
-    public function getAcceptedList() {
-        try{
-            $user = auth()->userOrFail();
-
-            $friendships = DB::table('friendships')
-                ->where('status', 'accepted')
-                ->join('users', function ($join) use ($user) {
-                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend_id= '.$user->id.' THEN  friendships.owner_id ELSE friendships.friend_idEND)'));
-                })
-                ->where(function ($query) use ($user) {
-                    $query->orWhere('friendships.owner_id', $user->id)
-                          ->orWhere('friendships.friend_id', $user->id);
-                })
-                ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
-                ->get()
-                ->map(function($friendship) use ($user) {
-                    if($friendship->owner == $user->id) {
-                        $friendship->friend_info = (object) [
-                            'id' => $friendship->friend,
-                            'first_name' => $friendship->first_name,
-                            'last_name' => $friendship->last_name,
-                            'avatar' => $friendship->avatar,
-                        ];
-                    } else if($friendship->friend == $user->id) {
-                        $friendship->owner_info = (object) [
-                            'id' => $friendship->owner,
-                            'first_name' => $friendship->first_name,
-                            'last_name' => $friendship->last_name,
-                            'avatar' => $friendship->avatar,
-                        ];
-                    }
-                    unset($friendship->first_name);
-                    unset($friendship->last_name);
-                    unset($friendship->avatar);
-                    return $friendship;
-                });
-
-
-            if($friendships->isEmpty()){
-                return responseJson(null, 404, 'Bạn không có bạn bè :(');
-            }
-
-            return responseJson($friendships);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
-    }
-
-    public function getPendingList() {
-        try{
-            $user = auth()->userOrFail();
-
-            $friendships = DB::table('friendships')
-                ->where('status', 'pending')
-                ->join('users', function ($join) use ($user) {
-                    $join->on('users.id', '=', DB::raw('(CASE WHEN friendships.friend_id = '.$user->id.' THEN  friendships.owner_id ELSE friendships.friend_id END)'));
-                })
-                ->where(function ($query) use ($user) {
-                    $query->orWhere('friendships.owner_id', $user->id)
-                          ->orWhere('friendships.friend_id', $user->id);
-                })
-                ->select('friendships.*', 'users.avatar', 'users.last_name', 'users.first_name', 'users.id')
-                ->get()
-                ->map(function($friendship) use ($user) {
-                    if($friendship->owner == $user->id) {
-                        $friendship->friend_info = (object) [
-                            'id' => $friendship->friend,
-                            'first_name' => $friendship->first_name,
-                            'last_name' => $friendship->last_name,
-                            'avatar' => $friendship->avatar,
-                        ];
-                    } else if($friendship->friend == $user->id) {
-                        $friendship->owner_info = (object) [
-                            'id' => $friendship->owner,
-                            'first_name' => $friendship->first_name,
-                            'last_name' => $friendship->last_name,
-                            'avatar' => $friendship->avatar,
-                        ];
-                    }
-                    unset($friendship->first_name);
-                    unset($friendship->last_name);
-                    unset($friendship->avatar);
-                    return $friendship;
-                });
-
-            if($friendships->isEmpty()){
-                return responseJson(null, 404, 'Lời mời kết bạn trống');
-            }
-
-            return responseJson($friendships);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
-    }
 
     public function add($friend) {
         try{
@@ -169,7 +73,7 @@ class FriendshipController extends Controller
                     'content' => "đã gửi cho bạn lời mời kết bạn.",
                     'read' => false,
                 ]);
-    
+
                 $notification->user = [
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
@@ -227,7 +131,7 @@ class FriendshipController extends Controller
                     'content' => "đã chấp nhận lời mời kết bạn.",
                     'read' => false,
                 ]);
-    
+
                 $notification->user = [
                     'first_name' => $friend->first_name,
                     'last_name' => $friend->last_name,
@@ -296,22 +200,65 @@ class FriendshipController extends Controller
         }
     }
 
-    public function getFriendListOfUser($userId){
+    public function getFriendListOfUser(Request $request, $userId){
         try{
+            $user = auth()->userOrFail();
 
-            $friendships = Friendship::where(function ($query) use ($userId) {
-                $query->where('friend_id', $userId)
-                      ->orWhere('owner_id', $userId);
-            })
-            ->where('status', 'accepted')
-            ->with(['friend' => function ($query) use ($userId) {
-                $query->where('id', '!=', $userId);
-            }])
-            ->with(['owner' => function ($query) use ($userId) {
-                $query->where('id', '!=', $userId);
-            }])
-            ->limit(9)
-            ->get();
+            $validator = Validator::make($request->all(), [
+                'userId' => 'exists:users,id',
+                'status' => 'required|in:accepted,sent,received',
+            ], [
+                'userId.exists' => 'Không tìm thấy người dùng!',
+                'status.in' => 'Không tìm thấy trạng thái yêu cầu!',
+            ]);
+
+            if($validator->fails()){
+                return responseJson(null, 400, $validator->errors());
+            }
+
+            $status = $request->status;
+            $limit = $request->per_page;
+
+            if ($user->id != $userId && $status != 'accepted') {
+                return responseJson(null, 400, 'Không thể xem danh sách chờ kết bạn của người dùng khác!');
+            }
+
+            $friendships = [];
+
+            if($status == 'accepted'){
+                $friendships = Friendship::where(function ($query) use ($userId) {
+                    $query->where('friend_id', $userId)
+                          ->orWhere('owner_id', $userId);
+                })
+                ->where('status', 'accepted')
+                ->with(['friend' => function ($query) use ($userId) {
+                    $query->where('id', '!=', $userId);
+                }])
+                ->with(['owner' => function ($query) use ($userId) {
+                    $query->where('id', '!=', $userId);
+                }])
+                ->limit($limit)
+                ->get();
+            }else if ($status == 'sent'){
+                $friendships = Friendship::where(function ($query) use ($userId) {
+                    $query->where('owner_id', $userId);
+                })
+                ->where('status', 'pending')
+                ->with('friend')
+                ->limit($limit)
+                ->get();
+
+            }else if( $status == 'received'){
+                $friendships = Friendship::where(function ($query) use ($userId) {
+                    $query->where('friend_id', $userId);
+                })
+                ->where('status', 'pending')
+                ->with('owner')
+                ->limit($limit)
+                ->get();
+            }
+
+
 
             $friendships->transform(function ($friendship) {
                 $friendship->user_info = $friendship->friend ? $friendship->friend : $friendship->owner;
@@ -322,12 +269,12 @@ class FriendshipController extends Controller
 
 
         if($friendships->isEmpty()){
-            return responseJson(null, 404, 'Người dùng chưa có bạn bè');
+            return responseJson(null, 404);
         }
 
         $data = [
             'list' => $friendships,
-            'count' => $friendships->count()
+            'count' => $friendships->where('status', 'accepted')->count()
         ];
 
         return responseJson($data, 200);
