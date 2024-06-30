@@ -218,7 +218,17 @@ class UserController extends Controller
             $publicId = getPublicIdFromAvatarUrl($oldAvatar);
             Cloudinary::destroy($publicId);
 
-            $user->update(['avatar' => null]);
+            $avatarPath = null;
+
+            if($user->gender == 'male'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarMale_ixpufu.jpg?_s=public-apps";
+            }else if($user->gender == 'female'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarFemale_olfayu.jpg?_s=public-apps";
+            }else if($user->gender == 'other'){
+                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarOther_ftskmk.jpg?_s=public-apps";
+            }
+
+            $user->update(['avatar' => $avatarPath]);
             $user->save();
 
             return responseJson($user, 200, 'Xóa ảnh đại diện người dùng thành công!');
