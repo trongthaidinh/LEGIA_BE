@@ -33,9 +33,9 @@ class PostController extends Controller
 
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-
-            $posts = Post::with(['owner', 'background', 'images'])
-                ->withCount(['comments', 'reactions', 'shares'])
+    
+            $posts = Post::with(['background', 'images'])
+                ->withCount(['comments', 'shares'])
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
@@ -43,8 +43,26 @@ class PostController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page)
                 ->through(function ($post) use ($user) {
+    
+                    $reactionCounts = $post->reactions()
+                        ->selectRaw('type, COUNT(*) as count')
+                        ->groupBy('type')
+                        ->orderByDesc('count')
+                        ->limit(3)
+                        ->pluck('type');
+    
+                    $totalReactions = $post->reactions()->count();
+    
+                    $post->top_reactions = [
+                        'list' => $reactionCounts,
+                        'total_count' => $totalReactions,
+                    ];
+
                     $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
                     $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+
+                    $post->owner = $post->owner()->select('id', 'first_name', 'last_name', 'avatar', 'gender')->first();
+    
                     return $post;
                 });
 
@@ -58,49 +76,82 @@ class PostController extends Controller
                     'per_page' => $posts->perPage(),
                 ],
             ];
-
+    
             return responseJson($response, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
     }
 
-    public function getUserPosts($userId)
+    public function getUserPosts($userId, Request $request)
     {
         try {
             $currentUser = auth()->userOrFail();
-            if(!$currentUser) {
+            if (!$currentUser) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
+    
             $user = User::findOrFail($userId);
-
+    
 
             if ($user->is_locked) {
                 return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
             }
-
-            if ($currentUser->id == $userId) {
-                $posts = Post::with(['images','background','owner'])
-                            ->withCount(['comments', 'reactions', 'shares'])
-                            ->where('owner_id', $userId)
-                            ->orderBy('created_at', 'desc')
-                            ->get();
-            } else {
-                $posts = Post::with(['images','background','owner'])
-                            ->withCount(['comments', 'reactions', 'shares'])
-                            ->where('owner_id', $userId)
-                            ->where('privacy', 'PUBLIC')
-                            ->orderBy('created_at', 'desc')
-                            ->get();
+    
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+    
+            $query = Post::with(['background', 'images'])
+                ->withCount(['comments', 'shares'])
+                ->where('owner_id', $userId)
+                ->whereHas('owner', function ($query) {
+                    $query->where('is_locked', false);
+                })
+                ->orderBy('created_at', 'desc');
+    
+            $totalPosts = $query->count();
+    
+            $posts = $query->paginate($perPage, ['*'], 'page', $page)
+                ->through(function ($post) use ($user) {
+                    $reactionCounts = $post->reactions()
+                        ->selectRaw('type, COUNT(*) as count')
+                        ->groupBy('type')
+                        ->orderByDesc('count')
+                        ->limit(3)
+                        ->pluck('type');
+    
+                    $totalReactions = $post->reactions()->count();
+    
+                    $post->top_reactions = [
+                        'list' => $reactionCounts,
+                        'total_count' => $totalReactions,
+                    ];
+    
+                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
+                    $post->owner = $post->owner()->select('id', 'first_name', 'last_name', 'avatar', 'gender')->first();
+    
+                    return $post;
+                });
+    
+            if ($posts->isEmpty()) {
+                return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
             }
-
-            if($posts->isEmpty()) {
-                return responseJson(null, 404, 'Người dùng không tìm thấy bài đăng');
-            }
-
-            return responseJson($posts, 200, 'Danh sách bài đăng của người dùng');
-
-        } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+    
+            $response = [
+                'posts' => $posts->items(),
+                'page_info' => [
+                    'total' => $totalPosts,
+                    'total_page' => (int) ceil($totalPosts / $posts->perPage()),
+                    'current_page' => $posts->currentPage(),
+                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                    'per_page' => $posts->perPage(),
+                ],
+            ];
+    
+            return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
@@ -189,30 +240,50 @@ class PostController extends Controller
     }
 
 
-public function show($id)
-{
-    try {
-        $user = auth()->user();
-        if(!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
+    public function show($id)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+    
+            $post = Post::with(['background', 'images', 'owner:id,first_name,last_name,avatar,gender'])
+                ->withCount(['comments', 'shares'])
+                ->where('id', $id)
+                ->where('privacy', 'PUBLIC')
+                ->whereHas('owner', function ($query) {
+                    $query->where('is_locked', false);
+                })
+                ->first();
+    
+            if (!$post) {
+                return responseJson(null, 404, 'Bài đăng không tồn tại');
+            }
+    
+            $reactionCounts = $post->reactions()
+                ->selectRaw('type, COUNT(*) as count')
+                ->groupBy('type')
+                ->orderByDesc('count')
+                ->limit(3)
+                ->pluck('type');
+    
+            $totalReactions = $post->reactions()->count();
+    
+            $post->top_reactions = [
+                'list' => $reactionCounts,
+                'total_count' => $totalReactions,
+            ];
+    
+            $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
+            $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
+            return responseJson($post, 200, 'Thông tin bài đăng');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
         }
-        $post = Post::with('images')
-                    ->withCount(['comments', 'reactions', 'shares'])
-                    ->where('privacy', 'PUBLIC')
-                    ->whereHas('owner', function ($query) {
-                        $query->where('is_locked', false);
-                    })
-                    ->find($id);
-
-        if (!$post) {
-            return responseJson(null, 404, 'Bài đăng không tồn tại');
-        }
-
-        return responseJson($post, 200, 'Thông tin bài đăng');
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
     }
-}
+    
 
     public function update(Request $request, $id)
     {
@@ -528,24 +599,39 @@ public function addOrUpdateReaction(Request $request, $postId)
         }
     }
 
-    public function getAllComments($postId)
+    public function getAllComments($postId, Request $request)
     {
         try {
             $user = auth()->user();
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+    
             $comments = Comment::where('post_id', $postId)
-                        ->with(['owner:id,first_name,last_name,avatar'])
-                        ->orderBy('created_at', 'desc')
-                        ->paginate(5);
-
-            return responseJson($comments, 200, 'Danh sách bình luận của bài viết');
+                ->with(['owner:id,first_name,last_name,avatar,gender'])
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+    
+            $response = [
+                'comments' => $comments->items(),
+                'page_info' => [
+                    'total' => $comments->total(),
+                    'total_page' => (int) ceil($comments->total() / $comments->perPage()),
+                    'current_page' => $comments->currentPage(),
+                    'next_page' => $comments->currentPage() < $comments->lastPage() ? $comments->currentPage() + 1 : null,
+                    'per_page' => $comments->perPage(),
+                ],
+            ];
+    
+            return responseJson($response, 200, 'Danh sách bình luận của bài viết');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
         }
     }
+    
 
     public function getTopComments($postId)
 {
@@ -700,26 +786,61 @@ public function addOrUpdateReaction(Request $request, $postId)
             'per_page.min' => 'Giá trị của trường số lượng mỗi trang phải lớn hơn hoặc bằng 1.',
             'per_page.max' => 'Giá trị của trường số lượng mỗi trang không được vượt quá :max.',
         ]);
-
+        
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
-
+        
         $query = $request->input('q');
-        $perPage = $request->input('per_page', 4);
-        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+    
+            $posts = Post::with(['background', 'images'])
+                ->withCount(['comments', 'shares'])
+                ->where('content', 'like', '%' . $query . '%')
+                ->where('privacy', 'PUBLIC')
+                ->whereHas('owner', function ($query) {
+                    $query->where('is_locked', false);
+                })
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->through(function ($post) use ($user) {
+    
+                    $reactionCounts = $post->reactions()
+                        ->selectRaw('type, COUNT(*) as count')
+                        ->groupBy('type')
+                        ->orderByDesc('count')
+                        ->limit(3)
+                        ->pluck('type');
+    
+                    $totalReactions = $post->reactions()->count();
+    
+                    $post->top_reactions = [
+                        'list' => $reactionCounts,
+                        'total_count' => $totalReactions,
+                    ];
 
-        $posts = Post::with('images')
-                    ->withCount(['comments', 'reactions', 'shares'])
-                    ->where('content', 'like', '%' . $query . '%')
-                    ->where('privacy', 'PUBLIC')
-                    ->whereHas('owner', function ($query) {
-                        $query->where('is_locked', false);
-                    })
-                    ->paginate($perPage, ['*'], 'page', $page)
-                    ->appends(['q' => $query]);
+                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
 
-        return responseJson($posts, 200, 'Kết quả tìm kiếm bài viết');
+                    $post->owner = $post->owner()->select('id', 'first_name', 'last_name', 'avatar', 'gender')->first();
+    
+                    return $post;
+                })
+                ->appends(['q' => $query]);
+    
+            $response = [
+                'posts' => $posts->items(),
+                'page_info' => [
+                    'total' => $posts->total(),
+                    'total_page' => (int) ceil($posts->total() / $posts->perPage()),
+                    'current_page' => $posts->currentPage(),
+                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                    'per_page' => $posts->perPage(),
+                ],
+            ];
+
+        return responseJson($response, 200, 'Kết quả tìm kiếm bài viết');
     } catch (\Exception $e) {
         return responseJson(null, 500, 'Đã xảy ra lỗi khi tìm kiếm bài viết: ' . $e->getMessage());
     }
@@ -750,35 +871,53 @@ public function addOrUpdateReaction(Request $request, $postId)
 
 
     public function getReactionsDetail($postId)
-    {
-        try {
-            $user = auth()->user();
-            if (!$user) {
-                return responseJson(null, 401, 'Chưa xác thực người dùng');
-            }
-
-            $post = Post::findOrFail($postId);
-
-            $reactions = $post->reactions()->with('owner:id,first_name,last_name,avatar')->get();
-
-            $reactionCounts = $reactions->groupBy('type')->map(function ($group) {
-                return [
-                    'count' => $group->count(),
-                    'users' => $group->map(function ($reaction) {
-                        return [
-                            'id' => $reaction->owner->id,
-                            'name' => $reaction->owner->last_name . ' ' . $reaction->owner->first_name,
-                            'avatar' => $reaction->owner->avatar
-                        ];
-                    })
-                ];
-            });
-
-            return responseJson($reactionCounts, 200, 'Lấy thông tin reaction thành công');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
+
+        $post = Post::findOrFail($postId);
+
+        $reactionTypes = $post->reactions()
+            ->select('type')
+            ->distinct()
+            ->pluck('type');
+
+        $reactionDetails = [];
+
+        foreach ($reactionTypes as $type) {
+            $reactions = $post->reactions()
+                ->where('type', $type)
+                ->with('owner:id,first_name,last_name,avatar')
+                ->paginate(10);
+
+            $reactionDetails[$type] = [
+                'count' => $reactions->total(),
+                'users' => $reactions->map(function ($reaction) {
+                    return [
+                        'id' => $reaction->owner->id,
+                        'name' => $reaction->owner->last_name . ' ' . $reaction->owner->first_name,
+                        'avatar' => $reaction->owner->avatar
+                    ];
+                }),
+                'pagination' => [
+                    'total' => $reactions->total(),
+                    'per_page' => $reactions->perPage(),
+                    'current_page' => $reactions->currentPage(),
+                    'last_page' => $reactions->lastPage(),
+                    'next_page' => $reactions->currentPage() < $reactions->lastPage() ? $reactions->currentPage() + 1 : null,
+                ]
+            ];
+        }
+
+        return responseJson($reactionDetails, 200, 'Lấy thông tin reaction thành công');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
     }
+}
+
 
     public function getTopReactions($postId)
     {
