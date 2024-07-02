@@ -96,57 +96,55 @@ class PostController extends Controller
             if (!$currentUser) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
             $user = User::findOrFail($userId);
-
 
             if ($user->is_locked) {
                 return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
             }
-
+    
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-
-            $query = Post::with(['background', 'images'])
-                ->withCount(['comments', 'shares'])
+    
+            $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+                ->withCount(['comments', 'reactions', 'shares'])
                 ->where('owner_id', $userId)
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
                 ->orderBy('created_at', 'desc');
-
+    
             $totalPosts = $query->count();
-
+    
             $posts = $query->paginate($perPage, ['*'], 'page', $page)
-                ->through(function ($post) use ($user) {
+                ->through(function ($post) use ($currentUser) {
+                    $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
                     $reactionCounts = $post->reactions()
-                        ->selectRaw('type, COUNT(*) as count')
+                        ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
                         ->orderByDesc('count')
                         ->limit(3)
-                        ->pluck('type');
-
-                    $totalReactions = $post->reactions()->count();
-
-                    $post->reactions_count = $totalReactions;
-
-                    $post->top_reactions = [
-                        'list' => $reactionCounts,
-                        'total_count' => $totalReactions,
-                    ];
-
-                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
-                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
-                    $post->owner = $post->owner()->select('id', 'first_name', 'last_name', 'avatar', 'gender')->first();
-
+                        ->pluck('count', 'type')
+                        ->toArray();
+    
+                    $topReactions = [];
+                    foreach ($reactionCounts as $type => $count) {
+                        $topReactions[] = [
+                            'type' => $type,
+                            'count' => $count,
+                        ];
+                    }
+                    $post->top_reactions = $topReactions;
+    
                     return $post;
                 });
-
+    
             if ($posts->isEmpty()) {
                 return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
             }
-
+    
             $response = [
                 'posts' => $posts->items(),
                 'page_info' => [
@@ -157,7 +155,7 @@ class PostController extends Controller
                     'per_page' => $posts->perPage(),
                 ],
             ];
-
+    
             return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
@@ -255,44 +253,45 @@ class PostController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
             $post = Post::with(['background', 'images', 'owner:id,first_name,last_name,avatar,gender'])
-                ->withCount(['comments', 'shares'])
+                ->withCount(['comments','reactions', 'shares'])
                 ->where('id', $id)
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
                 ->first();
-
+    
             if (!$post) {
                 return responseJson(null, 404, 'Bài đăng không tồn tại');
             }
-
+    
             $reactionCounts = $post->reactions()
-                ->selectRaw('type, COUNT(*) as count')
+                ->select('type', DB::raw('COUNT(*) as count'))
                 ->groupBy('type')
                 ->orderByDesc('count')
                 ->limit(3)
-                ->pluck('type');
-
-            $totalReactions = $post->reactions()->count();
-
-            $post->reactions_count = $totalReactions;
-
-            $post->top_reactions = [
-                'list' => $reactionCounts,
-                'total_count' => $totalReactions,
-            ];
-
-            $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
+                ->pluck('count', 'type')
+                ->toArray();
+    
+            $topReactions = [];
+            foreach ($reactionCounts as $type => $count) {
+                $topReactions[] = [
+                    'type' => $type,
+                    'count' => $count,
+                ];
+            }
+            $post->top_reactions = $topReactions;
+    
+            $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
             $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
+    
             return responseJson($post, 200, 'Thông tin bài đăng');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
         }
-    }
+    }    
 
 
     public function update(Request $request, $id)
