@@ -18,6 +18,14 @@ class Post extends Model
         'post_type',
     ];
 
+    protected $appends = [
+        'top_reactions',
+    ];
+
+    protected $casts = [
+        'top_reactions' => 'array',
+    ];
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -36,6 +44,16 @@ class Post extends Model
     public function reactions()
     {
         return $this->hasMany(Reaction::class, 'post_id');
+    }
+
+    public function getTopReactionsAttribute()
+    {
+        return $this->attributes['top_reactions'] ?? [];
+    }
+
+    public function setTopReactionsAttribute($value)
+    {
+        $this->attributes['top_reactions'] = $value;
     }
 
     public function shares()
