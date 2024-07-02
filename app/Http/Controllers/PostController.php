@@ -14,6 +14,7 @@ use App\Models\Share;
 use App\Models\User;
 use App\Share\Pushers\NotificationAdded;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class PostController extends Controller
 {
@@ -30,12 +31,12 @@ class PostController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-
-            $posts = Post::with(['background', 'images'])
-                ->withCount(['comments', 'shares'])
+    
+            $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+                ->withCount(['comments', 'reactions', 'shares'])
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
@@ -43,31 +44,29 @@ class PostController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page)
                 ->through(function ($post) use ($user) {
-
+                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
                     $reactionCounts = $post->reactions()
-                        ->selectRaw('type, COUNT(*) as count')
+                        ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
                         ->orderByDesc('count')
                         ->limit(3)
-                        ->pluck('type');
-
-                    $totalReactions = $post->reactions()->count();
-
-                    $post->reactions_count = $totalReactions;
-
-                    $post->top_reactions = [
-                        'list' => $reactionCounts,
-                        'total_count' => $totalReactions,
-                    ];
-
-                    $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->first();
-                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
-                    $post->owner = $post->owner()->select('id', 'first_name', 'last_name', 'avatar', 'gender')->first();
-
+                        ->pluck('count', 'type')
+                        ->toArray();
+    
+                    $topReactions = [];
+                    foreach ($reactionCounts as $type => $count) {
+                        $topReactions[] = [
+                            'type' => $type,
+                            'count' => $count,
+                        ];
+                    }
+                    $post->top_reactions = $topReactions;
+    
                     return $post;
                 });
-
+    
             $response = [
                 'posts' => $posts->items(),
                 'page_info' => [
@@ -78,12 +77,17 @@ class PostController extends Controller
                     'per_page' => $posts->perPage(),
                 ],
             ];
-
+    
             return responseJson($response, 200, 'Danh sách các bài đăng công khai');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
     }
+    
+    
+    
+    
+    
 
     public function getUserPosts($userId, Request $request)
     {
