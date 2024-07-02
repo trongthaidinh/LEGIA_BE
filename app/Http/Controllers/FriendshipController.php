@@ -72,6 +72,7 @@ class FriendshipController extends Controller
                     'type' => 'friend_request',
                     'content' => "đã gửi cho bạn lời mời kết bạn.",
                     'read' => false,
+                    'icon' => 'FRIEND_REQUEST'
                 ]);
 
                 $notification->user = [
@@ -130,6 +131,7 @@ class FriendshipController extends Controller
                     'type' => 'friend_request_accept',
                     'content' => "đã chấp nhận lời mời kết bạn.",
                     'read' => false,
+                    'icon' => 'FRIEND_REQUEST_ACCEPT'
                 ]);
 
                 $notification->user = [
@@ -151,9 +153,9 @@ class FriendshipController extends Controller
     }
 
     public function delete($userId) {
-        try{
+        try {
             $user = auth()->userOrFail();
-
+    
             $validator = Validator::make([
                 'userId' => $userId
             ], [
@@ -161,11 +163,11 @@ class FriendshipController extends Controller
             ], [
                 'userId.exists' => 'Không tìm thấy người cần hủy kết bạn!',
             ]);
-
-            if($validator->fails()){
+    
+            if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-
+    
             $friendship = Friendship::where(function ($query) use ($userId, $user) {
                     $query->where(function ($query) use ($userId, $user) {
                         $query->where('friend_id', $userId)
@@ -177,25 +179,41 @@ class FriendshipController extends Controller
                     });
                 })
                 ->first();
-
-            if(! $friendship){
+    
+            if (! $friendship) {
                 return responseJson(null, 400, 'Cả 2 chưa tương tác bạn bè!');
-
             }
-
-
+    
+            if ($friendship->status !== 'accepted') {
+                $notification = Notification::where(function ($query) use ($userId, $user) {
+                    $query->where('owner_id', $userId)
+                          ->where('emitter_id', $user->id)
+                          ->where('type', 'friend_request')
+                          ->orWhere(function ($query) use ($userId, $user) {
+                              $query->where('owner_id', $user->id)
+                                    ->where('emitter_id', $userId)
+                                    ->where('type', 'friend_request');
+                          });
+                })->first();
+    
+                if ($notification) {
+                    $notificationId = $notification->id;
+                    $notification->delete();
+    
+                    $notificationPusher = new NotificationAdded();
+                    $notificationPusher->pusherNotificationDeleted($notificationId, $userId);
+                }
+            }
+    
+            DB::table('friendships')->where('id', $friendship->id)->delete();
+    
             if ($friendship->status == 'accepted') {
-                DB::table('friendships')->where('id', $friendship->id)->delete();
-
                 return responseJson(null, 200, 'Hủy kết bạn thành công!');
             }
-
-
-            DB::table('friendships')->where('id', $friendship->id)->delete();
-
+    
             return responseJson(null, 200, 'Từ chối lời mời kết bạn thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+    
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }

@@ -17,6 +17,7 @@ class Notification extends Model
         'type',
         'content',
         'read',
+        'icon',
     ];
 
     public function owner()
