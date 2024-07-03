@@ -152,7 +152,7 @@ class ChatController extends Controller
                 })
                 ->map(function ($participant) {
                     return [
-                        'user_id' => $participant->user->id,
+                        'id' => $participant->user->id,
                         'first_name' => $participant->user->first_name,
                         'last_name' => $participant->user->last_name,
                         'avatar' => $participant->user->avatar
