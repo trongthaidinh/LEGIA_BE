@@ -31,7 +31,7 @@ class ChatController extends Controller
                 'name' => 'nullable',
                 'type' => 'nullable|in:individual,group',
                 'targets_id' => 'required|array|min:1',
-                'targets_id.*' => 'required|number|exists:users,id',
+                'targets_id.*' => 'required|exists:users,id',
             ], chatValidatorMessages());
 
             if($validatorConversation->fails()){
