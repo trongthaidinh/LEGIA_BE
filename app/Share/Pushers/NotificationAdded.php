@@ -24,4 +24,7 @@ class NotificationAdded {
         $this->pusher->trigger('notification' . $userId, 'MakeReadNotification', ['id' => $notificationId]);
     }
 
+    public function pusherNotificationDeleted($notificationId, $userId) {
+        $this->pusher->trigger('notification' . $userId, 'NotificationDeleted', ['id' => $notificationId]);
+    }
 }

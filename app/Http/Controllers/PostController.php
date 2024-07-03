@@ -468,9 +468,22 @@ public function addOrUpdateReaction(Request $request, $postId)
             if ($existingReaction->type === $reactionType) {
                 return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
             } else {
+                $postOwner = $post->owner;
+                
+                $notification = Notification::where('owner_id', $postOwner->id)
+                    ->where('emitter_id', $user->id)
+                    ->where('type', 'post_like')
+                    ->where('icon', $existingReaction->type)
+                    ->first();
+
+                if ($notification) {
+                    $notification->delete();
+                    $this->NotificationAdded->pusherMakeReadNotification($notification->id, $postOwner->id);
+                    $this->NotificationAdded->pusherNotificationDeleted($notification->id, $postOwner->id);
+                }
+
                 $existingReaction->update(['type' => $reactionType]);
 
-                $postOwner = $post->owner;
                 if (!$postOwner) {
                     return responseJson(null, 404, 'Chủ sở hữu bài viết không tồn tại');
                 }
@@ -482,6 +495,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                         'type' => 'post_like',
                         'content' => "đã bày tỏ cảm xúc bài viết của bạn.",
                         'read' => false,
+                        'icon' => $reactionType
                     ]);
 
                     $notification->user = [
@@ -489,9 +503,9 @@ public function addOrUpdateReaction(Request $request, $postId)
                         'last_name' => $user->last_name,
                         'avatar' => $user->avatar
                     ];
-                }
 
-                $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
+                    $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
+                }
 
                 return responseJson($existingReaction, 200, 'Cập nhật thành công trạng thái thả cảm xúc của bài đăng');
             }
@@ -507,22 +521,24 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson(null, 404, 'Chủ sở hữu bài viết không tồn tại');
             }
 
-                if ($postOwner->id != $user->id) {
-                    $notification = Notification::create([
-                        'owner_id' => $postOwner->id,
-                        'emitter_id' => $user->id,
-                        'type' => 'post_like',
-                        'content' => "đã bày tỏ cảm xúc bài viết của bạn.",
-                        'read' => false,
-                    ]);
+            if ($postOwner->id != $user->id) {
+                $notification = Notification::create([
+                    'owner_id' => $postOwner->id,
+                    'emitter_id' => $user->id,
+                    'type' => 'post_like',
+                    'content' => "đã bày tỏ cảm xúc bài viết của bạn.",
+                    'read' => false,
+                    'icon' => $reactionType
+                ]);
 
-                    $notification->user = [
-                        'first_name' => $user->first_name,
-                        'last_name' => $user->last_name,
-                        'avatar' => $user->avatar
-                    ];
-                }
+                $notification->user = [
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'avatar' => $user->avatar
+                ];
+
                 $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
+            }
 
             return responseJson($newReaction, 201, 'Thêm thành công trạng thái thả cảm xúc cho bài đăng');
         }
@@ -539,15 +555,30 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
+            $post = Post::find($postId);
+            $postOwner = $post->owner;
+    
             $reaction = Reaction::where('owner_id', $user->id)
                                 ->where('post_id', $postId)
                                 ->first();
-
+    
             if ($reaction) {
+                $notification = Notification::where('owner_id', $postOwner->id)
+                            ->where('emitter_id', $user->id)
+                            ->where('type', 'post_like')
+                            ->where('icon', $reaction->type)
+                            ->first();
+    
+                if ($notification) {
+                    $notification->delete();
+                    $this->NotificationAdded->pusherNotificationDeleted($notification->id, $postOwner->id);
+                }
+    
                 $reaction->delete();
                 return responseJson(null, 200, 'Bỏ trạng thái thả cảm xúc cho bài viết thành công');
             }
-
+    
+            return responseJson(null, 404, 'Không tìm thấy trạng thái thả cảm xúc');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa thả cảm xúc bài đăng: ' . $e->getMessage());
         }
