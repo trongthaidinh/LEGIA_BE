@@ -70,7 +70,7 @@ class FriendshipController extends Controller
                     'owner_id' => $friend,
                     'emitter_id' => $user->id,
                     'type' => 'friend_request',
-                    'content' => "đã gửi cho bạn lời mời kết bạn.",
+                    'content' => "friendRequest",
                     'read' => false,
                     'icon' => 'FRIEND_REQUEST'
                 ]);
@@ -129,7 +129,7 @@ class FriendshipController extends Controller
                     'owner_id' => $user->id,
                     'emitter_id' => $senderId,
                     'type' => 'friend_request_accept',
-                    'content' => "đã chấp nhận lời mời kết bạn.",
+                    'content' => "friendRequestAccept",
                     'read' => false,
                     'icon' => 'FRIEND_REQUEST_ACCEPT'
                 ]);

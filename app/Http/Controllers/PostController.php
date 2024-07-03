@@ -493,7 +493,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                         'owner_id' => $postOwner->id,
                         'emitter_id' => $user->id,
                         'type' => 'post_like',
-                        'content' => "đã bày tỏ cảm xúc bài viết của bạn.",
+                        'content' => "reactionpost",
                         'read' => false,
                         'icon' => $reactionType
                     ]);
@@ -526,7 +526,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'owner_id' => $postOwner->id,
                     'emitter_id' => $user->id,
                     'type' => 'post_like',
-                    'content' => "đã bày tỏ cảm xúc bài viết của bạn.",
+                    'content' => "reactionpost",
                     'read' => false,
                     'icon' => $reactionType
                 ]);
@@ -620,7 +620,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'owner_id' => $postOwner->id,
                     'emitter_id' => $user->id,
                     'type' => 'post_like',
-                    'content' => "đã bình luận đến bài viết của bạn.",
+                    'content' => "commentpost",
                     'read' => false,
                 ]);
 
@@ -786,7 +786,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'owner_id' => $postOwner->id,
                     'emitter_id' => $user->id,
                     'type' => 'post_share',
-                    'content' => "đã chia sẻ bài viết của bạn.",
+                    'content' => "sharepost",
                     'read' => false,
                 ]);
 
