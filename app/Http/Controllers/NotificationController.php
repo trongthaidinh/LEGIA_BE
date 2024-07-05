@@ -18,48 +18,32 @@ class NotificationController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+    
             $notifications = Notification::where('owner_id', $user->id)
-                ->with('user')
+                ->with(['user' => function ($query) {
+                    $query->select('id', 'first_name', 'last_name', 'avatar', 'gender');
+                }])
                 ->orderByDesc('created_at')
-                ->get();
-
-            return responseJson($notifications, 200, "Lấy thành công danh sách thông báo");
+                ->paginate($perPage, ['*'], 'page', $page);
+    
+            $response = [
+                'notifications' => $notifications->items(),
+                'page_info' => [
+                    'total' => $notifications->total(),
+                    'total_page' => (int) ceil($notifications->total() / $notifications->perPage()),
+                    'current_page' => $notifications->currentPage(),
+                    'next_page' => $notifications->currentPage() < $notifications->lastPage() ? $notifications->currentPage() + 1 : null,
+                    'per_page' => $notifications->perPage(),
+                ],
+            ];
+    
+            return responseJson($response, 200, "Lấy thành công danh sách thông báo");
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách thông báo: ' . $e->getMessage());
         }
-        //Phân trang notification
-        // try {
-        //     $user = auth()->user();
-        //     if (!$user) {
-        //         return responseJson(null, 401, 'Chưa xác thực người dùng');
-        //     }
-    
-        //     $perPage = $request->input('per_page', 10);
-        //     $page = $request->input('page', 1);
-    
-        //     $notifications = Notification::where('owner_id', $user->id)
-        //         ->with(['user' => function ($query) {
-        //             $query->select('id', 'first_name', 'last_name', 'avatar', 'gender');
-        //         }])
-        //         ->orderByDesc('created_at')
-        //         ->paginate($perPage, ['*'], 'page', $page);
-    
-        //     $response = [
-        //         'notifications' => $notifications->items(),
-        //         'page_info' => [
-        //             'total' => $notifications->total(),
-        //             'total_page' => (int) ceil($notifications->total() / $notifications->perPage()),
-        //             'current_page' => $notifications->currentPage(),
-        //             'next_page' => $notifications->currentPage() < $notifications->lastPage() ? $notifications->currentPage() + 1 : null,
-        //             'per_page' => $notifications->perPage(),
-        //         ],
-        //     ];
-    
-        //     return responseJson($response, 200, "Lấy thành công danh sách thông báo");
-        // } catch (\Exception $e) {
-        //     return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách thông báo: ' . $e->getMessage());
-        // }
     }
 
     public function markAsRead($id)
