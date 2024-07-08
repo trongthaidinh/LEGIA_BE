@@ -190,5 +190,6 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'pusher',
 ], function () {
-    Route::post('presence/{user_id}', [PusherAuthController::class, 'presenceAuth']);
+    Route::post('user-auth', [PusherAuthController::class, 'userAuth']);
+    Route::post('channel-auth', [PusherAuthController::class, 'channelAuth']);
 });
