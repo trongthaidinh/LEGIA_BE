@@ -91,6 +91,8 @@ class AuthController extends Controller
 
         $refreshToken = $this->_generateRefreshToken($email);
 
+        $user->markOnline();
+
         return responseJson([
             'accessToken' => $token,
             'refreshToken' => $refreshToken,

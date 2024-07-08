@@ -2,14 +2,20 @@
 
 namespace App\Models;
 
+use App\Share\Pushers\UserStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements JWTSubject
 {
+    private $userStatus;
+
+    public function __construct() {
+        $this->userStatus = new UserStatus();
+    }
+
     use HasFactory, Notifiable;
 
     protected $fillable = [
@@ -24,6 +30,8 @@ class User extends Authenticatable implements JWTSubject
         'phone_number',
         'address',
         'date_of_birth',
+        'status',
+        'last_activity',
         'is_verified',
         'is_locked'
     ];
@@ -48,9 +56,32 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsToMany(User::class, 'friendships', 'owner_id', 'friend_id')
                     ->wherePivot('status', 'accepted');
     }
-    
+
     public function postImages()
     {
         return $this->hasMany(PostImage::class);
     }
+
+    public function isOnline()
+    {
+        return $this->status === 'online';
+    }
+
+    public function markOnline()
+    {
+        $this->last_activity = now();
+        $this->status = 'online';
+        $this->save();
+
+        $this->userStatus->pusherMarkOnline($this);
+    }
+
+    public function markOffline()
+    {
+        $this->status = 'offline';
+        $this->save();
+
+        $this->userStatus->pusherMakeOffline($this);
+    }
+
 }

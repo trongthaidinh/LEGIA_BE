@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StoryController;
 use App\Http\Middleware\AdminMiddleware;
@@ -174,4 +175,19 @@ Route::group([
 ], function () {
     Route::get('/', [ReportController::class, 'index']);
     Route::post('/', [ReportController::class, 'store']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'reports',
+], function () {
+    Route::get('/', [ReportController::class, 'index']);
+    Route::post('/', [ReportController::class, 'store']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'pusher',
+], function () {
+    Route::post('presence/{user_id}', [PusherAuthController::class, 'presenceAuth']);
 });
