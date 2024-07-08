@@ -33,7 +33,7 @@ class PusherAuthController extends Controller
                     'last_name' => $user->last_name,
                     'avatar' => $user->avatar,
                 ],
-                'watchlist' => []
+                // 'watchlist' => []
             ];
 
             $authResponse = $this->pusher->authenticateUser($socketId, $userData);
