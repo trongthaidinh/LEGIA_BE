@@ -465,9 +465,9 @@ public function addOrUpdateReaction(Request $request, $postId)
                                     ->first();
 
         if ($existingReaction) {
-            if ($existingReaction->type == $reactionType) {
-                return responseJson($existingReaction, 200, 'Xóa bày tỏ cảm xúc bài đăng thành công');
-            }  else {
+            if ($existingReaction->type === $reactionType) {
+                return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
+            } else {
                 $postOwner = $post->owner;
                 
                 $notification = Notification::where('owner_id', $postOwner->id)
@@ -478,7 +478,6 @@ public function addOrUpdateReaction(Request $request, $postId)
 
                 if ($notification) {
                     $notification->delete();
-                    $this->NotificationAdded->pusherMakeReadNotification($notification->id, $postOwner->id);
                     $this->NotificationAdded->pusherNotificationDeleted($notification->id, $postOwner->id);
                 }
 
