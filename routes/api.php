@@ -158,6 +158,7 @@ Route::group([
     'prefix' => 'notifications',
 ], function () {
     Route::get('/', [NotificationController::class, 'index']);
+    Route::get('/unread-count', [NotificationController::class, 'getUnreadCountNotifications']);
     Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
 
 });
