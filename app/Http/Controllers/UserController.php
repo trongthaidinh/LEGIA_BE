@@ -293,7 +293,14 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $users = User::where('id', '!=', $user->id)->inRandomOrder()->limit(10)->get();
+            $users = User::where('id', '!=', $user->id)
+                ->whereDoesntHave('friends', function ($query) use ($user) {
+                    $query->where('owner_id', $user->id)
+                        ->orWhere('friend_id', $user->id);
+                })
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
 
 
             return responseJson($users, 200);
