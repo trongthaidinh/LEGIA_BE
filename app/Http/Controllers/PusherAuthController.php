@@ -28,13 +28,15 @@ class PusherAuthController extends Controller
 
             $userData = [
                 'id' => $user->id,
-                'user_info'=> [
+                'user_info' => [
+                    'id' => $user->id,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'avatar' => $user->avatar,
                 ],
-                // 'watchlist' => []
+                'watchlist' => [3]
             ];
+
 
             $authResponse = $this->pusher->authenticateUser($socketId, $userData);
 
@@ -48,12 +50,19 @@ class PusherAuthController extends Controller
     public function channelAuth(Request $request)
     {
         try {
-            auth()->userOrFail();
+            $user = auth()->userOrFail();
 
             $socketId = $request->input('socket_id');
             $channel = $request->input('channel_name');
+            $userId = $user->id;
+            $userInfo = [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar,
+            ];
 
-            $authResponse = $this->pusher->authorizeChannel($channel, $socketId);
+            $authResponse = $this->pusher->authorizePresenceChannel($channel, $socketId, $userId, $userInfo);
 
             return $authResponse;
 

@@ -14,6 +14,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function __construct() {
         $this->userStatus = new UserStatus();
+
     }
 
     use HasFactory, Notifiable;
@@ -40,7 +41,6 @@ class User extends Authenticatable implements JWTSubject
         'password',
     ];
 
-
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -57,6 +57,11 @@ class User extends Authenticatable implements JWTSubject
                     ->wherePivot('status', 'accepted');
     }
 
+    public function isMyFriend($userId)
+    {
+        return $this->friends()->where('users.id', $userId)->exists();
+    }
+
     public function postImages()
     {
         return $this->hasMany(PostImage::class);
@@ -66,6 +71,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->status === 'online';
     }
+
 
     public function markOnline()
     {

@@ -67,7 +67,6 @@ class UserController extends Controller
                 }else{
                     $profile->friendship = null;
                 }
-
             }
 
             return responseJson($profile, 200);
@@ -263,18 +262,6 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-
-            $validator = Validator::make($request->all(), [
-                'q' => 'required',
-            ], [
-                'q.required' => 'Vui lý nhập thông tin người dùng cần tìm kiếm!',
-            ]);
-
-            if($validator->fails()){
-                return responseJson(null, 400, $validator->errors());
-            }
-
-
             $users = DB::table('users')
             ->where('id', '!=', $user->id)
             ->where(function($query) use ($request) {
@@ -284,6 +271,15 @@ class UserController extends Controller
                     ->orWhere('phone_number', 'like', '%' . $request->q . '%');
             })
             ->get();
+
+
+            // Lặp qua từng user trong danh sách và thêm thuộc tính is_my_friend để biết người dùng đang xem có là bạn bè với user đó không
+            // Vì is_my_friend là một thuộc tính của user, chúng ta cần gọi User::find($u->id) để lấy ra user thật để gọi phương thức isMyFriend
+            $users->transform(function ($u) use ($user) {
+                $userModel = User::find($u->id);
+                $u->is_my_friend = $userModel->isMyFriend($user->id);
+                return $u;
+            });
 
             return responseJson($users, 200);
 
@@ -314,32 +310,32 @@ class UserController extends Controller
             if (!$authUser) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-    
+
             $user = User::findOrFail($id);
-    
+
             $perPage = $request->input('per_page', 9);
             $page = $request->input('page', 1);
-    
+
             $images = collect();
-    
+
             if ($user->avatar) {
                 $images->push($user->avatar);
             }
-    
+
             if ($user->cover_image) {
                 $images->push($user->cover_image);
             }
-    
+
             $postImages = DB::table('post_images')
                 ->where('user_id', $id)
                 ->pluck('url');
-    
+
             if ($postImages->isNotEmpty()) {
                 $images = $images->merge($postImages);
             }
-    
+
             $imagesCollection = $images->forPage($page, $perPage);
-    
+
             $response = [
                 'images' => $imagesCollection->values()->all(),
                 'page_info' => [
@@ -350,7 +346,7 @@ class UserController extends Controller
                     'per_page' => $perPage,
                 ],
             ];
-    
+
             return responseJson($response, 200, 'Lấy tất cả ảnh của người dùng thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
@@ -360,5 +356,15 @@ class UserController extends Controller
             return responseJson(null, 500, 'Đã xảy ra lỗi: ' . $e->getMessage());
         }
     }
-             
+
+    public function markOnline(){
+        try{
+            $user = auth()->userOrFail();
+
+            return $user->markOnline();
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
 }
