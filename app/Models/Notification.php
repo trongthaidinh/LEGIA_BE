@@ -20,6 +20,10 @@ class Notification extends Model
         'icon',
     ];
 
+    protected $casts = [
+        'read' => 'boolean',
+    ];
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
