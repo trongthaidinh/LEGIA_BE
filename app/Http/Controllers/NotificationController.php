@@ -78,4 +78,22 @@ class NotificationController extends Controller
 
         return responseJson($secretKey, 200, "Lấy thành công khóa bảo mật.");
     }
+
+    public function getUnreadCountNotifications(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+
+            $unreadCount = Notification::where('owner_id', $user->id)
+                ->where('read', false)
+                ->count();
+
+            return responseJson(['unread_count' => $unreadCount], 200, "Lấy thành công số lượng thông báo chưa đọc");
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy số lượng thông báo chưa đọc: ' . $e->getMessage());
+        }
+    }
 }

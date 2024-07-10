@@ -192,7 +192,7 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-                if ($request->background_id != 'null') {
+                if ($request->background_id != null) {
                     $background = Background::find($request->background_id);
                     if (!$background) {
                         return responseJson(null, 404, 'Background không tồn tại');
@@ -478,7 +478,6 @@ public function addOrUpdateReaction(Request $request, $postId)
 
                 if ($notification) {
                     $notification->delete();
-                    $this->NotificationAdded->pusherMakeReadNotification($notification->id, $postOwner->id);
                     $this->NotificationAdded->pusherNotificationDeleted($notification->id, $postOwner->id);
                 }
 
@@ -619,9 +618,10 @@ public function addOrUpdateReaction(Request $request, $postId)
                 $notification = Notification::create([
                     'owner_id' => $postOwner->id,
                     'emitter_id' => $user->id,
-                    'type' => 'post_like',
+                    'type' => 'post_comment',
                     'content' => "commentpost",
                     'read' => false,
+                    'icon' => "COMMENT"
                 ]);
 
                 $notification->user = [
@@ -629,11 +629,10 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'last_name' => $user->last_name,
                     'avatar' => $user->avatar
                 ];
-            }
 
             $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
-
-            return responseJson($comment, 201, 'Bình luận đã được tạo thành công');
+            }
+            return responseJson($postOwner, 201, 'Bình luận đã được tạo thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bình luận: ' . $e->getMessage());
         }
