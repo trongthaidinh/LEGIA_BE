@@ -6,6 +6,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -192,4 +193,15 @@ Route::group([
 ], function () {
     Route::post('user-auth', [PusherAuthController::class, 'userAuth']);
     Route::post('channel-auth', [PusherAuthController::class, 'channelAuth']);
+});
+
+Route::group([
+    'middleware' => ['api', AdminMiddleware::class],
+    'prefix' => 'dashboard',
+], function () {
+    Route::get('overview-users', [DashboardController::class, 'overviewUsers']);
+    Route::get('overview-posts', [DashboardController::class, 'overviewPosts']);
+    Route::get('sex-ratio', [DashboardController::class, 'sexRatio']);
+    Route::get('quantity-post', [DashboardController::class, 'detailedPosts']);
+    Route::get('quantity-user', [DashboardController::class, 'detailedUsers']);
 });
