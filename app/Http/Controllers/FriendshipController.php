@@ -155,7 +155,7 @@ class FriendshipController extends Controller
     public function delete($userId) {
         try {
             $user = auth()->userOrFail();
-    
+
             $validator = Validator::make([
                 'userId' => $userId
             ], [
@@ -163,11 +163,11 @@ class FriendshipController extends Controller
             ], [
                 'userId.exists' => 'Không tìm thấy người cần hủy kết bạn!',
             ]);
-    
+
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-    
+
             $friendship = Friendship::where(function ($query) use ($userId, $user) {
                     $query->where(function ($query) use ($userId, $user) {
                         $query->where('friend_id', $userId)
@@ -179,11 +179,11 @@ class FriendshipController extends Controller
                     });
                 })
                 ->first();
-    
+
             if (! $friendship) {
                 return responseJson(null, 400, 'Cả 2 chưa tương tác bạn bè!');
             }
-    
+
             if ($friendship->status !== 'accepted') {
                 $notification = Notification::where(function ($query) use ($userId, $user) {
                     $query->where('owner_id', $userId)
@@ -195,24 +195,24 @@ class FriendshipController extends Controller
                                     ->where('type', 'friend_request');
                           });
                 })->first();
-    
+
                 if ($notification) {
                     $notificationId = $notification->id;
                     $notification->delete();
-    
+
                     $notificationPusher = new NotificationAdded();
                     $notificationPusher->pusherNotificationDeleted($notificationId, $userId);
                 }
             }
-    
+
             DB::table('friendships')->where('id', $friendship->id)->delete();
-    
+
             if ($friendship->status == 'accepted') {
                 return responseJson(null, 200, 'Hủy kết bạn thành công!');
             }
-    
+
             return responseJson(null, 200, 'Từ chối lời mời kết bạn thành công!');
-    
+
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
@@ -277,7 +277,6 @@ class FriendshipController extends Controller
             }
 
 
-
             $friendships->transform(function ($friendship) {
                 $friendship->user_info = $friendship->friend ? $friendship->friend : $friendship->owner;
                 unset($friendship->friend);
@@ -303,8 +302,57 @@ class FriendshipController extends Controller
         }
     }
 
+    public function findFriends(Request $request){
+        try{
+            $user = auth()->userOrFail();
+            $limit = $request->per_page;
+
+            $validator = Validator::make($request->all(), [
+                'q' => 'required',
+            ]);
+
+            if($validator->fails()){
+                return responseJson(null, 400, $validator->errors());
+            }
+
+            $q = $request->q;
+            $userId = $user->id;
+
+            $friendships = Friendship::where(function ($query) use ($userId, $q) {
+                $query->where('friend_id', $userId)
+                      ->orWhere('owner_id', $userId);
+            })
+            ->where('status', 'accepted')
+            ->where(function ($query) use ($q) {
+                $query->whereHas('friend', function ($query) use ($q) {
+                    $query->where('first_name', 'LIKE', "%{$q}%")
+                          ->orWhere('last_name', 'LIKE', "%{$q}%");
+                })->orWhereHas('owner', function ($query) use ($q) {
+                    $query->where('first_name', 'LIKE', "%{$q}%")
+                          ->orWhere('last_name', 'LIKE', "%{$q}%");
+                });
+            })
+            ->with(['friend' => function ($query) use ($q) {
+                $query->where('first_name', 'LIKE', "%{$q}%")
+                      ->orWhere('last_name', 'LIKE', "%{$q}%");
+            }])
+            ->with(['owner' => function ($query) use ($q) {
+                $query->where('first_name', 'LIKE', "%{$q}%")
+                      ->orWhere('last_name', 'LIKE', "%{$q}%");
+            }])
+            ->limit($limit)
+            ->get();
 
 
+            if($friendships->isEmpty()){
+                return responseJson(null, 404);
+            }
 
+            return responseJson($friendships);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
 
 }
