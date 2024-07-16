@@ -19,10 +19,14 @@ class Conversation extends Model
         return $this->belongsTo(User::class, 'creator_id', 'id');
     }
 
-
-
     public function participants()
     {
         return $this->hasMany(ConversationParticipant::class, 'conversation_id');
     }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'conversation_id', 'id');
+    }
+
 }

@@ -59,6 +59,7 @@ class ChatController extends Controller
             if(!$conversationParticipantsCreated->isEmpty()){
                 return responseJson(null, 400, 'Cuộc đối thoại và những người tham gia đã được tạo từ trước!');
             }
+
             $participants = [];
 
             $myConversationParticipant = ConversationParticipant::create([
@@ -138,7 +139,9 @@ class ChatController extends Controller
             ->get()
             ->pluck('conversation_id');
 
-            $conversations = Conversation::whereIn('id', $conversationParticipants)->get();
+            $conversations = Conversation::whereIn('id', $conversationParticipants)
+            ->whereHas('messages')
+            ->get();
 
             if ($conversations->isEmpty()) {
                 return responseJson(null, 400, 'Không có cuộc đối thoại hợp lệ!');
@@ -157,7 +160,7 @@ class ChatController extends Controller
                         'last_name' => $participant->user->last_name,
                         'avatar' => $participant->user->avatar
                     ];
-                })->values()->all();;
+                })->values()->all();
                 unset($conversation->participants);
             });
 
@@ -182,6 +185,7 @@ class ChatController extends Controller
 
             $messages = DB::table('messages')
             ->where('conversation_id', $conversationParticipants->conversation_id)
+            ->where('deleted_by', '!=', $user->id)
             ->get();
 
             if($messages->isEmpty()){
@@ -257,6 +261,33 @@ class ChatController extends Controller
             $message->save();
 
             return responseJson($message, 200, 'Thành công!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function deleteConversation($conversationId){
+        try{
+            $user = auth()->userOrFail();
+
+            $userId = $user->id;
+
+            $messages = Message::where('user_id', $user->id)
+            ->where('conversation_id', $conversationId)
+            ->get();
+
+
+            foreach($messages as $message){
+                if($message->deleted_by != null){
+                    $message->delete();
+                }else{
+                    $message->deleted_by = $userId;
+                    $message->save();
+                }
+            }
+
+           return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
