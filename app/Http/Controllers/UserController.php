@@ -307,21 +307,27 @@ class UserController extends Controller
         }
     }
 
-    public function getUserImages($id)
+    public function getUserImages(Request $request, $id)
     {
         try {
-            $authUser = auth()->userOrFail();
+            $authUser = auth()->user();
+            if (!$authUser) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
     
             $user = User::findOrFail($id);
     
-            $images = [];
+            $perPage = $request->input('per_page', 9);
+            $page = $request->input('page', 1);
+    
+            $images = collect();
     
             if ($user->avatar) {
-                $images[] = $user->avatar;
+                $images->push($user->avatar);
             }
     
             if ($user->cover_image) {
-                $images[] = $user->cover_image;
+                $images->push($user->cover_image);
             }
     
             $postImages = DB::table('post_images')
@@ -329,14 +335,29 @@ class UserController extends Controller
                 ->pluck('url');
     
             if ($postImages->isNotEmpty()) {
-                $images = array_merge($postImages->toArray(), $images);
+                $images = $images->merge($postImages);
             }
     
-            return responseJson($images, 200, 'Lấy tất cả ảnh của người dùng thành công!');
+            $imagesCollection = $images->forPage($page, $perPage);
+    
+            $response = [
+                'images' => $imagesCollection->values()->all(),
+                'page_info' => [
+                    'total' => $images->count(),
+                    'total_page' => (int) ceil($images->count() / $perPage),
+                    'current_page' => $page,
+                    'next_page' => $page < (int) ceil($images->count() / $perPage) ? $page + 1 : null,
+                    'per_page' => $perPage,
+                ],
+            ];
+    
+            return responseJson($response, 200, 'Lấy tất cả ảnh của người dùng thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi: ' . $e->getMessage());
         }
     }
              
