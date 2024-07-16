@@ -140,30 +140,32 @@ class ChatController extends Controller
             ->get()
             ->pluck('conversation_id');
 
+            $messagesDeletedByMeCount = DB::table('conversations')
+            ->whereHas('messages', function ($query) use ($userId) {
+                $query->where('deleted_by', $userId);
+            })
+            ->count();
+
+            $allMessageCount = DB::table('conversations')
+            ->whereHas('messages')
+            ->count();
+
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->whereHas('messages', function ($query) use ($userId) {
                 $query->where('deleted_by', '!=', $userId)
                       ->orWhereNull('deleted_by');
             })
-            ->whereNotIn('id', function ($query) use ($userId) {
-                $query->select('conversation_id')
-                      ->from('messages')
-                      ->where('deleted_by', '!=', $userId)
-                      ->orWhereNull('deleted_by')
-                      ->groupBy('conversation_id')
-                      ->havingRaw('COUNT(*) = 0');
-            })
             ->get();
 
-            if ($conversations->isEmpty()) {
+            if ($messagesDeletedByMeCount == $allMessageCount) {
                 return responseJson(null, 400, 'Không có cuộc đối thoại hợp lệ!');
             }
 
-            $conversations->each(function ($conversation) use ($user) {
+            $conversations->each(function ($conversation) use ($userId) {
                 $conversation->load('participants');
                 $conversation['partners'] = $conversation->participants
-                ->reject(function ($participant) use ($user) {
-                    return $participant->user_id === $user->id;
+                ->reject(function ($participant) use ($userId) {
+                    return $participant->user_id === $userId;
                 })
                 ->map(function ($participant) {
                     return [
