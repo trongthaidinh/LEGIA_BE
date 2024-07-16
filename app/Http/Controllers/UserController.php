@@ -307,4 +307,37 @@ class UserController extends Controller
         }
     }
 
+    public function getUserImages($id)
+    {
+        try {
+            $authUser = auth()->userOrFail();
+    
+            $user = User::findOrFail($id);
+    
+            $images = [];
+    
+            if ($user->avatar) {
+                $images[] = $user->avatar;
+            }
+    
+            if ($user->cover_image) {
+                $images[] = $user->cover_image;
+            }
+    
+            $postImages = DB::table('post_images')
+                ->where('user_id', $id)
+                ->pluck('url');
+    
+            if ($postImages->isNotEmpty()) {
+                $images = array_merge($postImages->toArray(), $images);
+            }
+    
+            return responseJson($images, 200, 'Lấy tất cả ảnh của người dùng thành công!');
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
+        }
+    }
+             
 }

@@ -28,7 +28,7 @@ Route::group([
     Route::get('/profile/{id}', [UserController::class, 'getProfile']);
     Route::get('/find', [UserController::class, 'find']);
     Route::get('/get-suggestion-list', [UserController::class, 'getSuggestionList']);
-
+    Route::get('/images/{id}', [UserController::class, 'getUserImages']);
 });
 
 
