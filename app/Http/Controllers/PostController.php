@@ -228,6 +228,7 @@ class PostController extends Controller
                         $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
 
                         $postImage = PostImage::create([
+                            'user_id' => $user->id,
                             'post_id' => $post->id,
                             'url' => $imageUrl,
                         ]);
