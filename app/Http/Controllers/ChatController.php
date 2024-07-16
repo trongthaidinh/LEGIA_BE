@@ -125,6 +125,7 @@ class ChatController extends Controller
     public function getMyConversations(Request $request) {
         try {
             $user = auth()->userOrFail();
+            $userId = $user->id;
 
             $q = strtolower($request->q) ?? '';
 
@@ -140,7 +141,18 @@ class ChatController extends Controller
             ->pluck('conversation_id');
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
-            ->whereHas('messages')
+            ->whereHas('messages', function ($query) use ($userId) {
+                $query->where('deleted_by', '!=', $userId)
+                      ->orWhereNull('deleted_by');
+            })
+            ->whereNotIn('id', function ($query) use ($userId) {
+                $query->select('conversation_id')
+                      ->from('messages')
+                      ->where('deleted_by', '!=', $userId)
+                      ->orWhereNull('deleted_by')
+                      ->groupBy('conversation_id')
+                      ->havingRaw('COUNT(*) = 0');
+            })
             ->get();
 
             if ($conversations->isEmpty()) {
@@ -173,11 +185,13 @@ class ChatController extends Controller
     public function getMessagesByConversationId($conversationId) {
         try{
             $user = auth()->userOrFail();
+            $userId = $user->id;
 
             $conversationParticipants = DB::table('conversation_participants')
-            ->where('user_id', $user->id)
+            ->where('user_id', $userId)
             ->where('conversation_id', $conversationId)
             ->first();
+
 
             if(!$conversationParticipants){
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
@@ -185,11 +199,14 @@ class ChatController extends Controller
 
             $messages = DB::table('messages')
             ->where('conversation_id', $conversationParticipants->conversation_id)
-            ->where('deleted_by', '!=', $user->id)
+            ->where(function($query) use ($userId) {
+                $query->where('deleted_by', '!=', $userId)
+                    ->orWhereNull('deleted_by');
+            })
             ->get();
 
             if($messages->isEmpty()){
-                return responseJson(null, 400, 'Không có tin nhắn trong cuộc đối thoại này!');
+                return responseJson($messages, 200, 'Không có tin nhắn trong cuộc đối thoại này!');
             }
 
             return responseJson($messages, 200, 'Lấy tin nhắn trong cuộc đối thoại thành công');
@@ -273,13 +290,11 @@ class ChatController extends Controller
 
             $userId = $user->id;
 
-            $messages = Message::where('user_id', $user->id)
-            ->where('conversation_id', $conversationId)
-            ->get();
+            $messages = Message::where('conversation_id', $conversationId)->get();
 
 
             foreach($messages as $message){
-                if($message->deleted_by != null){
+                if($message->deleted_by != null && $message->deleted_by != $userId){
                     $message->delete();
                 }else{
                     $message->deleted_by = $userId;
