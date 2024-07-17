@@ -436,7 +436,7 @@ public function getArchivedPosts()
                              ->whereHas('post.owner', function($query) {
                                  $query->where('is_locked', false);
                              })
-                             ->with('post')
+                             ->with(['post.owner:id,first_name,last_name,avatar,gender','post.background', 'post.images'])
                              ->get();
 
         return responseJson($savedPosts, 200, 'Danh sách các bài đăng đã lưu');
