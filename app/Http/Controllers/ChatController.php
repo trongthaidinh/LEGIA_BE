@@ -147,17 +147,21 @@ class ChatController extends Controller
             $q = strtolower($request->q) ?? '';
 
             $conversationParticipants = DB::table('conversation_participants')
-            ->join('users', 'users.id', '=', 'conversation_participants.user_id')
-            ->where(function ($query) use ($q) {
-                $query->where(DB::raw('LOWER(users.first_name)'), 'like', '%' . $q . '%')
-                      ->orWhere(DB::raw('LOWER(users.last_name)'), 'like', '%' . $q . '%');
-            })
-            ->select('conversation_participants.conversation_id')
-            ->distinct()
-            ->get()
-            ->pluck('conversation_id');
+            ->where('user_id', $userId)
+            ->select('conversation_participants.conversation_id');
 
-
+            if (!empty($q)) {
+                $conversationParticipants->whereIn('conversation_id', function ($query) use ($q, $userId) {
+                    $query->select('conversation_id')
+                        ->from('conversation_participants as cp')
+                        ->join('users', 'users.id', '=', 'cp.user_id')
+                        ->where('cp.user_id', '!=', $userId)
+                        ->where(function ($innerQuery) use ($q) {
+                            $innerQuery->where(DB::raw('LOWER(users.first_name)'), 'like', '%' . $q . '%')
+                                       ->orWhere(DB::raw('LOWER(users.last_name)'), 'like', '%' . $q . '%');
+                    });
+                });
+            }
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->whereHas('messages', function ($query) use ($userId) {
@@ -165,6 +169,7 @@ class ChatController extends Controller
                       ->orWhereNull('deleted_by');
             })
             ->get();
+
 
             $conversations->each(function ($conversation) use ($userId) {
                 $conversation->load('participants');

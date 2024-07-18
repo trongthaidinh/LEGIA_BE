@@ -14,12 +14,16 @@ class MessageSent {
         $this->pusher = new Pusher($APP_KEY, $APP_SECRET, $APP_ID, array('cluster' => $APP_CLUSTER));
     }
 
+    public function pusherConversationIdGetNewMessage($userId, $messageInfo) {
+        $this->pusher->trigger('new-message-' . $userId, 'NewMessage', $messageInfo);
+    }
+
     public function pusherMessageSent($secret_key, $message) {
-        $this->pusher->trigger('chat' . $secret_key, 'MessageSent', $message);
+        $this->pusher->trigger('chat-' . $secret_key, 'MessageSent', $message);
     }
 
     public function pusherMessageIsRead($secret_key, $message) {
-        $this->pusher->trigger('chat' . $secret_key, 'MessageIsRead', $message);
+        $this->pusher->trigger('chat-' . $secret_key, 'MessageIsRead', $message);
     }
 
 }
