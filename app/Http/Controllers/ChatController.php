@@ -103,6 +103,7 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validator->errors());
             }
 
+            $conversationId = $data['conversation_id'];
 
             $message = Message::create(array_merge(
                 $validator->validated(),
@@ -113,7 +114,23 @@ class ChatController extends Controller
             ->where('id', $message->conversation_id)
             ->first();
 
+            $partners = DB::table('conversation_participants')
+            ->where('conversation_id', $conversationId)
+            ->where('user_id', '!=', $user->id)
+            ->get();
+
             $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
+
+            foreach ($partners as $partner) {
+                $this->MessageSent->pusherConversationIdGetNewMessage($partner->user_id, [
+                    'conversation_id' => $conversationId,
+                    'content' => $message->content
+                ]);
+            }
+
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['last_message' => $message->content]);
 
             return responseJson($message, 200, 'Tạo tin nhắn thành công!');
 
@@ -140,15 +157,7 @@ class ChatController extends Controller
             ->get()
             ->pluck('conversation_id');
 
-            $messagesDeletedByMeCount = DB::table('conversations')
-            ->whereHas('messages', function ($query) use ($userId) {
-                $query->where('deleted_by', $userId);
-            })
-            ->count();
 
-            $allMessageCount = DB::table('conversations')
-            ->whereHas('messages')
-            ->count();
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->whereHas('messages', function ($query) use ($userId) {
@@ -156,10 +165,6 @@ class ChatController extends Controller
                       ->orWhereNull('deleted_by');
             })
             ->get();
-
-            if ($messagesDeletedByMeCount == $allMessageCount) {
-                return responseJson(null, 400, 'Không có cuộc đối thoại hợp lệ!');
-            }
 
             $conversations->each(function ($conversation) use ($userId) {
                 $conversation->load('participants');
@@ -189,6 +194,10 @@ class ChatController extends Controller
             $user = auth()->userOrFail();
             $userId = $user->id;
 
+            $page = request()->query('page', 1);
+            $perPage = request()->query('per_page', 10);
+
+
             $conversationParticipants = DB::table('conversation_participants')
             ->where('user_id', $userId)
             ->where('conversation_id', $conversationId)
@@ -198,20 +207,31 @@ class ChatController extends Controller
             if(!$conversationParticipants){
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
             }
-
             $messages = DB::table('messages')
-            ->where('conversation_id', $conversationParticipants->conversation_id)
-            ->where(function($query) use ($userId) {
-                $query->where('deleted_by', '!=', $userId)
-                    ->orWhereNull('deleted_by');
-            })
-            ->get();
+                ->where('conversation_id', $conversationParticipants->conversation_id)
+                ->where(function($query) use ($userId) {
+                    $query->where('deleted_by', '!=', $userId)
+                        ->orWhereNull('deleted_by');
+                })
+                ->latest()
+                ->paginate($perPage, ['*'], 'page', $page);
 
             if($messages->isEmpty()){
                 return responseJson($messages, 200, 'Không có tin nhắn trong cuộc đối thoại này!');
             }
 
-            return responseJson($messages, 200, 'Lấy tin nhắn trong cuộc đối thoại thành công');
+            $response = [
+                'messages' => $messages->items(),
+                'page_info' => [
+                    'total' => $messages->total(),
+                    'total_page' => (int) ceil($messages->total() / $messages->perPage()),
+                    'current_page' => $messages->currentPage(),
+                    'next_page' => $messages->currentPage() < $messages->lastPage() ? $messages->currentPage() + 1 : null,
+                    'per_page' => $messages->perPage(),
+                ],
+            ];
+
+            return responseJson($response, 200, 'Lấy tin nhắn trong cuộc đối thoại thành công');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
