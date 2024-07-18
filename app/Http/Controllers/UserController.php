@@ -147,7 +147,7 @@ class UserController extends Controller
             $dataUpdate = $request->only('avatar');
 
             $validator = Validator::make($dataUpdate, [
-                'avatar' => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
+                'avatar' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
             if($validator->fails()){
@@ -195,7 +195,7 @@ class UserController extends Controller
             $dataUpdate = $request->only('cover_image');
 
             $validator = Validator::make($dataUpdate, [
-                'cover_image' => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
+                'cover_image' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
             if($validator->fails()){

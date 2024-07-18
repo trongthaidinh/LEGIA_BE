@@ -23,7 +23,7 @@ class StoryController extends Controller
                 'type' => 'required|in:text,image',
                 'privacy' => 'required|in:PUBLIC,PRIVATE',
                 'content' => 'required_if:type,text|string|max:255',
-                'image' => 'required_if:type,image|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'image' => 'required_if:type,image|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
                 'background_id' => 'nullable|exists:backgrounds,id',
             ], [
                 'type.required' => 'Loại tin không được để trống.',

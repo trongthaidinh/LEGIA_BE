@@ -34,7 +34,7 @@ class PostController extends Controller
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
             $userId = $user->id;
-    
+
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
 
@@ -52,9 +52,9 @@ class PostController extends Controller
                 $query->where('id', '!=', $userId);
             }])
             ->get();
-    
+
             $friendIds = $friendships->pluck('owner_id')->toArray();
-    
+
             $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
                 ->where(function($query) use ($user, $friendIds) {
@@ -72,7 +72,7 @@ class PostController extends Controller
                 ->through(function ($post) use ($user) {
                     $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
                     $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-    
+
                     $reactionCounts = $post->reactions()
                         ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
@@ -80,7 +80,7 @@ class PostController extends Controller
                         ->limit(3)
                         ->pluck('count', 'type')
                         ->toArray();
-    
+
                     $topReactions = [];
                     foreach ($reactionCounts as $type => $count) {
                         $topReactions[] = [
@@ -95,7 +95,7 @@ class PostController extends Controller
                         if ($share) {
                             $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
                             ->find($share->post_id);
-            
+
                             $reactionCounts = $originalPost->reactions()
                             ->select('type', DB::raw('COUNT(*) as count'))
                             ->groupBy('type')
@@ -103,7 +103,7 @@ class PostController extends Controller
                             ->limit(3)
                             ->pluck('count', 'type')
                             ->toArray();
-            
+
                             $topReactions = [];
                             foreach ($reactionCounts as $type => $count) {
                                 $topReactions[] = [
@@ -112,19 +112,19 @@ class PostController extends Controller
                                 ];
                             }
                             $originalPost->top_reactions = $topReactions;
-            
+
                             $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
                             $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-            
+
                             if ($originalPost) {
                                 $post->original_post = $originalPost;
                             }
                         }
                     }
-            
+
                     return $post;
                 });
-    
+
             $response = [
                 'posts' => $posts->items(),
                 'page_info' => [
@@ -135,38 +135,38 @@ class PostController extends Controller
                     'per_page' => $posts->perPage(),
                 ],
             ];
-    
+
             return responseJson($response, 200, 'Danh sách các bài đăng công khai và bạn bè');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
     }
-    
-    
-    
-    
-    
+
+
+
+
+
 
     public function getUserPosts($userId, Request $request)
 {
     try {
         $currentUser = auth()->userOrFail();
         $currentUserId = $currentUser->id;
-    
+
         if (!$currentUser) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
-    
+
         $user = User::findOrFail($userId);
-    
+
         if ($user->is_banned) {
             return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
         }
-    
+
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
-    
-            
+
+
         $friendIds = [];
 
         $friendships = Friendship::where(function ($query) use ($currentUserId) {
@@ -183,7 +183,7 @@ class PostController extends Controller
         ->get();
 
         $friendIds = $friendships->pluck('owner_id')->toArray();
-    
+
         $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
             ->withCount(['comments', 'reactions', 'shares'])
             ->where('owner_id', $userId)
@@ -204,14 +204,14 @@ class PostController extends Controller
                 $query->where('is_banned', false);
             })
             ->orderBy('created_at', 'desc');
-    
+
         $totalPosts = $query->count();
-    
+
         $posts = $query->paginate($perPage, ['*'], 'page', $page)
             ->through(function ($post) use ($currentUser, $user) {
                 $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
                 $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-    
+
                 $reactionCounts = $post->reactions()
                     ->select('type', DB::raw('COUNT(*) as count'))
                     ->groupBy('type')
@@ -219,7 +219,7 @@ class PostController extends Controller
                     ->limit(3)
                     ->pluck('count', 'type')
                     ->toArray();
-    
+
                 $topReactions = [];
                 foreach ($reactionCounts as $type => $count) {
                     $topReactions[] = [
@@ -234,7 +234,7 @@ class PostController extends Controller
                     if ($share) {
                         $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
                         ->find($share->post_id);
-        
+
                         $reactionCounts = $originalPost->reactions()
                         ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
@@ -242,7 +242,7 @@ class PostController extends Controller
                         ->limit(3)
                         ->pluck('count', 'type')
                         ->toArray();
-        
+
                         $topReactions = [];
                         foreach ($reactionCounts as $type => $count) {
                             $topReactions[] = [
@@ -251,23 +251,23 @@ class PostController extends Controller
                             ];
                         }
                         $originalPost->top_reactions = $topReactions;
-        
+
                         $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
                         $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-        
+
                         if ($originalPost) {
                             $post->original_post = $originalPost;
                         }
                     }
-                }        
-    
+                }
+
                 return $post;
             });
-    
+
         if ($posts->isEmpty()) {
             return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
         }
-    
+
         $response = [
             'posts' => $posts->items(),
             'page_info' => [
@@ -278,7 +278,7 @@ class PostController extends Controller
                 'per_page' => $posts->perPage(),
             ],
         ];
-    
+
         return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
     } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
         return responseJson(null, 404, 'Người dùng chưa xác thực!');
@@ -299,7 +299,7 @@ class PostController extends Controller
                 'content' => 'nullable|string|max:300',
                 'privacy' => 'required|in:PUBLIC,PRIVATE,FRIEND',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-                'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
+                'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
                 'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
@@ -526,7 +526,7 @@ class PostController extends Controller
             foreach ($post->images as $image) {
                 $publicId = getPublicIdFromAvatarUrl($image->url);
                 Cloudinary::destroy($publicId);
-                
+
                 $image->delete();
             }
         }
@@ -668,7 +668,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson($existingReaction, 200, 'Không có sự thay đổi trạng thái thả cảm xúc của bài đăng');
             } else {
                 $postOwner = $post->owner;
-                
+
                 $notification = Notification::where('owner_id', $postOwner->id)
                     ->where('emitter_id', $user->id)
                     ->where('type', 'post_like')
@@ -757,27 +757,27 @@ public function addOrUpdateReaction(Request $request, $postId)
 
             $post = Post::find($postId);
             $postOwner = $post->owner;
-    
+
             $reaction = Reaction::where('owner_id', $user->id)
                                 ->where('post_id', $postId)
                                 ->first();
-    
+
             if ($reaction) {
                 $notification = Notification::where('owner_id', $postOwner->id)
                             ->where('emitter_id', $user->id)
                             ->where('type', 'post_like')
                             ->where('icon', $reaction->type)
                             ->first();
-    
+
                 if ($notification) {
                     $notification->delete();
                     $this->NotificationAdded->pusherNotificationDeleted($notification->id, $postOwner->id);
                 }
-    
+
                 $reaction->delete();
                 return responseJson(null, 200, 'Bỏ trạng thái thả cảm xúc cho bài viết thành công');
             }
-    
+
             return responseJson(null, 404, 'Không tìm thấy trạng thái thả cảm xúc');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa thả cảm xúc bài đăng: ' . $e->getMessage());
@@ -1015,7 +1015,7 @@ public function addOrUpdateReaction(Request $request, $postId)
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-    
+
             $validator = Validator::make($request->all(), [
                 'q' => 'required|string|max:255',
                 'page' => 'integer|min:1',
@@ -1030,15 +1030,15 @@ public function addOrUpdateReaction(Request $request, $postId)
                 'per_page.min' => 'Giá trị của trường số lượng mỗi trang phải lớn hơn hoặc bằng 1.',
                 'per_page.max' => 'Giá trị của trường số lượng mỗi trang không được vượt quá :max.',
             ]);
-    
+
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-    
+
             $query = $request->input('q');
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-    
+
             $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'shares'])
                 ->where('content', 'like', '%' . $query . '%')
@@ -1051,7 +1051,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 ->through(function ($post) use ($user) {
                     $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
                     $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-    
+
                     $reactionCounts = $post->reactions()
                         ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
@@ -1059,7 +1059,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                         ->limit(3)
                         ->pluck('count', 'type')
                         ->toArray();
-    
+
                     $topReactions = [];
                     foreach ($reactionCounts as $type => $count) {
                         $topReactions[] = [
@@ -1068,11 +1068,11 @@ public function addOrUpdateReaction(Request $request, $postId)
                         ];
                     }
                     $post->top_reactions = $topReactions;
-    
+
                     return $post;
                 })
                 ->appends(['q' => $query]);
-    
+
             $response = [
                 'posts' => $posts->items(),
                 'page_info' => [
@@ -1083,12 +1083,12 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'per_page' => $posts->perPage(),
                 ],
             ];
-    
+
             return responseJson($response, 200, 'Kết quả tìm kiếm bài viết');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi tìm kiếm bài viết: ' . $e->getMessage());
         }
-    }    
+    }
 
     public function getUserReaction($postId)
     {
@@ -1229,13 +1229,13 @@ public function addOrUpdateReaction(Request $request, $postId)
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-    
+
             $post = Post::findOrFail($postId);
-    
+
             $reactions = $post->reactions()
                 ->with('owner:id,first_name,last_name,avatar')
                 ->paginate(10);
-    
+
             $reactionDetails = [
                 'users' => $reactions->map(function ($reaction) {
                     return [
@@ -1253,7 +1253,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'next_page' => $reactions->currentPage() < $reactions->lastPage() ? $reactions->currentPage() + 1 : null,
                 ]
             ];
-    
+
             return responseJson($reactionDetails, 200, 'Lấy tất cả thông tin reaction thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
