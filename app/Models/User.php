@@ -54,7 +54,8 @@ class User extends Authenticatable implements JWTSubject
     public function friends()
     {
         return $this->belongsToMany(User::class, 'friendships', 'owner_id', 'friend_id')
-                    ->wherePivot('status', 'accepted');
+                    ->wherePivot('status', 'accepted')
+                    ->withPivot('status');
     }
 
     public function isMyFriend($userId)

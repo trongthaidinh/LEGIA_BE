@@ -27,7 +27,7 @@ class PostController extends Controller
     public function index(Request $request)
     {
         try {
-            $user = auth()->user();
+            $user = auth()->userOrFail();
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
@@ -35,9 +35,17 @@ class PostController extends Controller
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
     
+            $friendIds = $user->friends()->pluck('users.id')->toArray();
+    
             $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
-                ->where('privacy', 'PUBLIC')
+                ->where(function($query) use ($user, $friendIds) {
+                    $query->where('privacy', 'PUBLIC')
+                          ->orWhere(function ($query) use ($user, $friendIds) {
+                              $query->where('privacy', 'FRIEND')
+                                    ->whereIn('owner_id', $friendIds);
+                          });
+                })
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
@@ -78,7 +86,7 @@ class PostController extends Controller
                 ],
             ];
     
-            return responseJson($response, 200, 'Danh sách các bài đăng công khai');
+            return responseJson($response, 200, 'Danh sách các bài đăng công khai và bạn bè');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
@@ -98,7 +106,7 @@ class PostController extends Controller
             }
     
             $user = User::findOrFail($userId);
-
+    
             if ($user->is_locked) {
                 return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
             }
@@ -106,9 +114,18 @@ class PostController extends Controller
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
     
+            $friendIds = $currentUser->friends()->pluck('users.id')->toArray();
+    
             $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
                 ->where('owner_id', $userId)
+                ->where(function ($query) use ($currentUser, $friendIds) {
+                    $query->where('privacy', 'PUBLIC')
+                          ->orWhere(function ($query) use ($currentUser, $friendIds) {
+                              $query->where('privacy', 'FRIEND')
+                                    ->whereIn('owner_id', $friendIds);
+                          });
+                })
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
@@ -159,8 +176,10 @@ class PostController extends Controller
             return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
         }
-    }
+    }    
 
     public function store(Request $request)
     {
@@ -172,7 +191,7 @@ class PostController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'content' => 'nullable|string|max:300',
-                'privacy' => 'required|in:PUBLIC,PRIVATE',
+                'privacy' => 'required|in:PUBLIC,PRIVATE,FRIEND',
                 'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg|max:2048',
             ], [
