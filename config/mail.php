@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,13 +39,17 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
+            'host' => env('MAIL_HOST', 'live.smtp.mailtrap.io'),
+            'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'username' => env('MAIL_USERNAME', 'api'),
+            'password' => env('MAIL_PASSWORD', 'fcd534def5a76986f9dfa982877f3ae6'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
+
+
+            'auth_mode'  => null,
+            'verify_peer'       => false,
         ],
 
         'ses' => [
@@ -104,8 +108,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'mailtrap@demomailtrap.com'),
+        'name' => env('MAIL_FROM_NAME', 'Sandy Media'),
     ],
 
 ];
