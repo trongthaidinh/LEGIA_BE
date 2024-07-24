@@ -25,7 +25,7 @@ class ChatController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $conversationData = request()->only(['name', 'type', 'targets_id']);
+            $conversationData = request()->only(['name', 'type', 'targets_id', 'type']);
 
             $validatorConversation = Validator::make($conversationData, [
                 'name' => 'nullable',
@@ -43,6 +43,35 @@ class ChatController extends Controller
                     return responseJson(null, 400, 'Bạn không thể trò chuyện với chính mình!');
                 }
             }
+
+            $conversationType = $validatorConversation->getData()['type'];
+
+            if (!$conversationType || $conversationType == 'individual' ) {
+                $target_id = $validatorConversation->getData()['targets_id'][0]->id;
+
+                if(!$target_id){
+                    return responseJson(null, 400, 'Vui lý nhập thông tin người tham gia đoạn chat cá nhân!');
+                }
+
+                $conversationParticipantPartners = DB::table('conversation_participants')
+                ->where('user_id', $target_id)
+                ->get();
+
+                foreach ($conversationParticipantPartners as $conversationParticipantPartner) {
+
+                    $conversation_id = $conversationParticipantPartner->conversation_id;
+
+                    $conversationParticipantPartnerAndMe = DB::table('conversation_participants')
+                        ->where('user_id', $user->id)
+                        ->where('conversation_id', $conversation_id)
+                        ->first();
+
+                    if ($conversationParticipantPartnerAndMe) {
+                        return responseJson(null, 400, 'Đoạn chat cá nhân đã được tạo từ trước!');
+                    }
+                }
+            };
+
 
             $secret_key = Str::uuid()->toString();
 
