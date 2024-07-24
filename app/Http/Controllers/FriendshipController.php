@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\FriendRequestAccepted;
-use App\Events\FriendRequestSent;
 use App\Models\Friendship;
 use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Database\Query\Builder;
 use App\Share\Pushers\NotificationAdded;
 use Illuminate\Http\Request;
 

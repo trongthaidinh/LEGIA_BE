@@ -12,7 +12,9 @@ class Conversation extends Model
     protected $fillable = [
         'creator_id',
         'name',
-        'secret_key'
+        'type',
+        'secret_key',
+        'last_message'
     ];
 
     public function creator() {

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('name', 40)->nullable();
             $table->string('secret_key')->unique();
             $table->enum('type', ['individual', 'group'])->default('individual');
+            $table->string('last_message', 300)->nullable();
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });

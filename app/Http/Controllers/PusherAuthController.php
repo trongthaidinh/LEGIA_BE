@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Pusher\Pusher;
 
@@ -28,13 +29,7 @@ class PusherAuthController extends Controller
 
             $userData = [
                 'id' => $user->id,
-                'user_info' => [
-                    'id' => $user->id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'avatar' => $user->avatar,
-                ],
-                'watchlist' => [3]
+                'watchlist' => [2,3]
             ];
 
 
@@ -55,11 +50,13 @@ class PusherAuthController extends Controller
             $socketId = $request->input('socket_id');
             $channel = $request->input('channel_name');
             $userId = $user->id;
+            $userModel = User::find($userId);
             $userInfo = [
                 'id' => $user->id,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'avatar' => $user->avatar,
+                'friend_list' => $userModel->friends()
             ];
 
             $authResponse = $this->pusher->authorizePresenceChannel($channel, $socketId, $userId, $userInfo);
