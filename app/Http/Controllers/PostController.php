@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Archive;
 use App\Models\Background;
 use App\Models\Comment;
+use App\Models\Friendship;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\Post;
@@ -31,11 +32,27 @@ class PostController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
+            $userId = $user->id;
     
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
+
+            $friendIds = [];
+
+            $friendships = Friendship::where(function ($query) use ($userId) {
+                $query->where('friend_id', $userId)
+                      ->orWhere('owner_id', $userId);
+            })
+            ->where('status', 'accepted')
+            ->with(['friend' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->with(['owner' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->get();
     
-            $friendIds = $user->friends()->pluck('users.id')->toArray();
+            $friendIds = $friendships->pluck('owner_id')->toArray();
     
             $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
@@ -101,6 +118,7 @@ class PostController extends Controller
 {
     try {
         $currentUser = auth()->userOrFail();
+        $currentUserId = $currentUser->id;
     
         if (!$currentUser) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
@@ -115,8 +133,23 @@ class PostController extends Controller
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
     
-        
-        $friendIds = $currentUser->friends()->pluck('users.id')->toArray();
+            
+        $friendIds = [];
+
+        $friendships = Friendship::where(function ($query) use ($currentUserId) {
+            $query->where('friend_id', $currentUserId)
+                  ->orWhere('owner_id', $currentUserId);
+        })
+        ->where('status', 'accepted')
+        ->with(['friend' => function ($query) use ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
+        }])
+        ->with(['owner' => function ($query) use ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
+        }])
+        ->get();
+
+        $friendIds = $friendships->pluck('owner_id')->toArray();
     
         $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
             ->withCount(['comments', 'reactions', 'shares'])
