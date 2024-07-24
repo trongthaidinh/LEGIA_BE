@@ -25,7 +25,7 @@ class ChatController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $conversationData = request()->only(['name', 'type', 'targets_id', 'type']);
+            $conversationData = request()->only(['name', 'type', 'targets_id']);
 
             $validatorConversation = Validator::make($conversationData, [
                 'name' => 'nullable',
