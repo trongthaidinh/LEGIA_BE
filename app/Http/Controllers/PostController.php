@@ -102,7 +102,6 @@ class PostController extends Controller
     try {
         $currentUser = auth()->userOrFail();
     
-        // Kiểm tra người dùng hiện tại có được xác thực hay không
         if (!$currentUser) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
@@ -116,6 +115,7 @@ class PostController extends Controller
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
     
+        
         $friendIds = $currentUser->friends()->pluck('users.id')->toArray();
     
         $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
@@ -124,7 +124,8 @@ class PostController extends Controller
             ->where(function ($query) use ($currentUser, $friendIds, $userId) {
                 if ($currentUser->id == $userId) {
                     $query->where('privacy', 'PUBLIC')
-                          ->orWhere('privacy', 'PRIVATE');
+                          ->orWhere('privacy', 'PRIVATE')
+                          ->orWhere('privacy', 'FRIEND');
                 } else {
                     $query->where('privacy', 'PUBLIC')
                           ->orWhere(function ($query) use ($friendIds) {
