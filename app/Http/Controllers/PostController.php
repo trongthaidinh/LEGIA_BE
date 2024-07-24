@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Archive;
 use App\Models\Background;
 use App\Models\Comment;
+use App\Models\Friendship;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\Post;
@@ -31,11 +32,27 @@ class PostController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
+            $userId = $user->id;
     
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
+
+            $friendIds = [];
+
+            $friendships = Friendship::where(function ($query) use ($userId) {
+                $query->where('friend_id', $userId)
+                      ->orWhere('owner_id', $userId);
+            })
+            ->where('status', 'accepted')
+            ->with(['friend' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->with(['owner' => function ($query) use ($userId) {
+                $query->where('id', '!=', $userId);
+            }])
+            ->get();
     
-            $friendIds = $user->friends()->pluck('users.id')->toArray();
+            $friendIds = $friendships->pluck('owner_id')->toArray();
     
             $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
                 ->withCount(['comments', 'reactions', 'shares'])
@@ -98,88 +115,112 @@ class PostController extends Controller
     
 
     public function getUserPosts($userId, Request $request)
-    {
-        try {
-            $currentUser = auth()->userOrFail();
-            if (!$currentUser) {
-                return responseJson(null, 401, 'Chưa xác thực người dùng');
-            }
+{
+    try {
+        $currentUser = auth()->userOrFail();
+        $currentUserId = $currentUser->id;
     
-            $user = User::findOrFail($userId);
+        if (!$currentUser) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
     
-            if ($user->is_locked) {
-                return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
-            }
+        $user = User::findOrFail($userId);
     
-            $perPage = $request->input('per_page', 10);
-            $page = $request->input('page', 1);
+        if ($user->is_locked) {
+            return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
+        }
     
-            $friendIds = $currentUser->friends()->pluck('users.id')->toArray();
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
     
-            $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
-                ->withCount(['comments', 'reactions', 'shares'])
-                ->where('owner_id', $userId)
-                ->where(function ($query) use ($currentUser, $friendIds) {
+            
+        $friendIds = [];
+
+        $friendships = Friendship::where(function ($query) use ($currentUserId) {
+            $query->where('friend_id', $currentUserId)
+                  ->orWhere('owner_id', $currentUserId);
+        })
+        ->where('status', 'accepted')
+        ->with(['friend' => function ($query) use ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
+        }])
+        ->with(['owner' => function ($query) use ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
+        }])
+        ->get();
+
+        $friendIds = $friendships->pluck('owner_id')->toArray();
+    
+        $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+            ->withCount(['comments', 'reactions', 'shares'])
+            ->where('owner_id', $userId)
+            ->where(function ($query) use ($currentUser, $friendIds, $userId) {
+                if ($currentUser->id == $userId) {
                     $query->where('privacy', 'PUBLIC')
-                          ->orWhere(function ($query) use ($currentUser, $friendIds) {
+                          ->orWhere('privacy', 'PRIVATE')
+                          ->orWhere('privacy', 'FRIEND');
+                } else {
+                    $query->where('privacy', 'PUBLIC')
+                          ->orWhere(function ($query) use ($friendIds) {
                               $query->where('privacy', 'FRIEND')
                                     ->whereIn('owner_id', $friendIds);
                           });
-                })
-                ->whereHas('owner', function ($query) {
-                    $query->where('is_locked', false);
-                })
-                ->orderBy('created_at', 'desc');
+                }
+            })
+            ->whereHas('owner', function ($query) {
+                $query->where('is_locked', false);
+            })
+            ->orderBy('created_at', 'desc');
     
-            $totalPosts = $query->count();
+        $totalPosts = $query->count();
     
-            $posts = $query->paginate($perPage, ['*'], 'page', $page)
-                ->through(function ($post) use ($currentUser) {
-                    $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
-                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+        $posts = $query->paginate($perPage, ['*'], 'page', $page)
+            ->through(function ($post) use ($currentUser) {
+                $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
+                $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
     
-                    $reactionCounts = $post->reactions()
-                        ->select('type', DB::raw('COUNT(*) as count'))
-                        ->groupBy('type')
-                        ->orderByDesc('count')
-                        ->limit(3)
-                        ->pluck('count', 'type')
-                        ->toArray();
+                $reactionCounts = $post->reactions()
+                    ->select('type', DB::raw('COUNT(*) as count'))
+                    ->groupBy('type')
+                    ->orderByDesc('count')
+                    ->limit(3)
+                    ->pluck('count', 'type')
+                    ->toArray();
     
-                    $topReactions = [];
-                    foreach ($reactionCounts as $type => $count) {
-                        $topReactions[] = [
-                            'type' => $type,
-                            'count' => $count,
-                        ];
-                    }
-                    $post->top_reactions = $topReactions;
+                $topReactions = [];
+                foreach ($reactionCounts as $type => $count) {
+                    $topReactions[] = [
+                        'type' => $type,
+                        'count' => $count,
+                    ];
+                }
+                $post->top_reactions = $topReactions;
     
-                    return $post;
-                });
+                return $post;
+            });
     
-            if ($posts->isEmpty()) {
-                return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
-            }
-    
-            $response = [
-                'posts' => $posts->items(),
-                'page_info' => [
-                    'total' => $totalPosts,
-                    'total_page' => (int) ceil($totalPosts / $posts->perPage()),
-                    'current_page' => $posts->currentPage(),
-                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
-                    'per_page' => $posts->perPage(),
-                ],
-            ];
-    
-            return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
-        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-            return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
+        if ($posts->isEmpty()) {
+            return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
         }
-    }    
+    
+        $response = [
+            'posts' => $posts->items(),
+            'page_info' => [
+                'total' => $totalPosts,
+                'total_page' => (int) ceil($totalPosts / $posts->perPage()),
+                'current_page' => $posts->currentPage(),
+                'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                'per_page' => $posts->perPage(),
+            ],
+        ];
+    
+        return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 404, 'Người dùng chưa xác thực!');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
+    }
+}
 
     public function store(Request $request)
     {
@@ -273,20 +314,26 @@ class PostController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-    
+        
             $post = Post::with(['background', 'images', 'owner:id,first_name,last_name,avatar,gender'])
-                ->withCount(['comments','reactions', 'shares'])
+                ->withCount(['comments', 'reactions', 'shares'])
                 ->where('id', $id)
-                ->where('privacy', 'PUBLIC')
+                ->where(function ($query) use ($user) {
+                    $query->where('privacy', 'PUBLIC')
+                          ->orWhere(function ($query) use ($user) {
+                              $query->where('privacy', 'PRIVATE')
+                                    ->where('owner_id', $user->id);
+                          });
+                })
                 ->whereHas('owner', function ($query) {
                     $query->where('is_locked', false);
                 })
                 ->first();
-    
+        
             if (!$post) {
                 return responseJson(null, 404, 'Bài đăng không tồn tại');
             }
-    
+        
             $reactionCounts = $post->reactions()
                 ->select('type', DB::raw('COUNT(*) as count'))
                 ->groupBy('type')
@@ -294,7 +341,7 @@ class PostController extends Controller
                 ->limit(3)
                 ->pluck('count', 'type')
                 ->toArray();
-    
+        
             $topReactions = [];
             foreach ($reactionCounts as $type => $count) {
                 $topReactions[] = [
@@ -303,15 +350,15 @@ class PostController extends Controller
                 ];
             }
             $post->top_reactions = $topReactions;
-    
+        
             $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
             $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-    
+        
             return responseJson($post, 200, 'Thông tin bài đăng');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
         }
-    }    
+    }        
 
 
     public function update(Request $request, $id)
