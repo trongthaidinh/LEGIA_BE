@@ -122,6 +122,7 @@ Route::group([
     Route::get('/', [PostController::class, 'getArchivedPosts']);
     Route::post('/{id}', [PostController::class, 'saveToArchive']);
     Route::delete('/{id}', [PostController::class, 'removeFromArchive']);
+    Route::delete('/', [PostController::class, 'removeAllFromArchive']);
 });
 
 Route::group([

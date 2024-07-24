@@ -443,6 +443,26 @@ public function removeFromArchive($postId)
     }
 }
 
+public function removeAllFromArchive()
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $deletedCount = Archive::where('user_id', $user->id)->delete();
+
+        if ($deletedCount === 0) {
+            return responseJson(null, 404, 'Không có bài đăng nào để xóa');
+        }
+
+        return responseJson(null, 200, 'Tất cả bài đăng đã lưu đã được xóa');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi xóa tất cả bài đăng khỏi mục đã lưu: ' . $e->getMessage());
+    }
+}
+
 public function getArchivedPosts()
 {
     try {
