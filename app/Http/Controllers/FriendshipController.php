@@ -120,7 +120,7 @@ class FriendshipController extends Controller
             $friendship->update(['status' => 'accepted']);
 
 
-            $friend = $friendship->friends;
+            $friend = $friendship->friend;
 
             if ($user->id != $senderId) {
                 $notification = Notification::create([
