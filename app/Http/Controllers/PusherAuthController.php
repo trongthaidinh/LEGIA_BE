@@ -29,7 +29,7 @@ class PusherAuthController extends Controller
 
             $userData = [
                 'id' => $user->id,
-                'watchlist' => [2,3]
+                'watchlist' => []
             ];
 
 
