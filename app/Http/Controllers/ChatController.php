@@ -38,6 +38,10 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validatorConversation->errors());
             }
 
+            if($conversationData['type'] === 'group' && !$conversationData['name'] ){
+                return responseJson(null, 400, 'Vui lòng nhập tên nhóm chat!');
+            }
+
             foreach ($conversationData['targets_id'] as $targetId) {
                 if($targetId == $user->id){
                     return responseJson(null, 400, 'Bạn không thể trò chuyện với chính mình!');
