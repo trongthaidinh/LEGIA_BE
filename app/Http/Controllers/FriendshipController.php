@@ -210,7 +210,7 @@ class FriendshipController extends Controller
                 return responseJson(null, 200, 'Hủy kết bạn thành công!');
             }
 
-            return responseJson(null, 200, 'Từ chối lời mời kết bạn thành công!');
+            return responseJson(null, 200, 'Từ chối lời mời/Hủy yêu cầu kết bạn thành công!');
 
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
