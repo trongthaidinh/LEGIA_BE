@@ -39,11 +39,11 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST'),
+            'host' => env('MAIL_HOST', 'live.smtp.mailtrap.io'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'username' => env('MAIL_USERNAME', 'api'),
+            'password' => env('MAIL_PASSWORD', 'fcd534def5a76986f9dfa982877f3ae6'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
 
