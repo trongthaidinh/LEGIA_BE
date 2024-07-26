@@ -167,7 +167,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
             'token' => 'required',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6',
         ], [
             'email.required' => 'Email là bắt buộc.',
             'email.email' => 'Email không hợp lệ.',
@@ -175,14 +175,13 @@ class AuthController extends Controller
             'token.required' => 'Token là bắt buộc.',
             'password.required' => 'Mật khẩu là bắt buộc.',
             'password.min' => 'Mật khẩu phải có ít nhất :min ký tự.',
-            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
         ]);
 
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
 
-        $credentials = $request->only('email', 'password', 'password_confirmation', 'token');
+        $credentials = $request->only('email', 'password', 'token');
 
         $resetPasswordStatus = Password::reset($credentials, function ($user, $password) {
             $user->password = bcrypt($password);
