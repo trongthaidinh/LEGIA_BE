@@ -178,6 +178,7 @@ class ChatController extends Controller
             $userId = $user->id;
 
             $q = strtolower($request->q) ?? '';
+            $type = $request->type;
 
             $conversationParticipants = DB::table('conversation_participants')
             ->where('user_id', $userId)
@@ -200,6 +201,11 @@ class ChatController extends Controller
             ->whereHas('messages', function ($query) use ($userId) {
                 $query->where('deleted_by', '!=', $userId)
                       ->orWhereNull('deleted_by');
+            })
+            ->when($type, function ($query) use ($type) {
+                $query->where('type', $type);
+            }, function ($query) {
+                $query->where('type', '!=', null);
             })
             ->get();
 
