@@ -327,7 +327,7 @@ class UserController extends Controller
                         ->orWhere('friend_id', $user->id);
                 })
                 ->inRandomOrder()
-                ->limit(10)
+                ->limit(15)
                 ->get();
 
 
