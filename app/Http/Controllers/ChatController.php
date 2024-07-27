@@ -38,41 +38,48 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validatorConversation->errors());
             }
 
-            if($conversationData['type'] === 'group' && !$conversationData['name'] ){
+            $conversationType = $validatorConversation->getData()['type'] ?? null;
+            $conversationName = $validatorConversation->getData()['name'] ?? null;
+
+
+            if($conversationType == 'group' && !$conversationName ){
                 return responseJson(null, 400, 'Vui lòng nhập tên nhóm chat!');
             }
 
-            foreach ($conversationData['targets_id'] as $targetId) {
+            $conversationTargetsId = $validatorConversation->getData()['targets_id'];
+
+            foreach ($conversationTargetsId as $targetId) {
                 if($targetId == $user->id){
                     return responseJson(null, 400, 'Bạn không thể trò chuyện với chính mình!');
                 }
             }
 
-            $conversationType = $validatorConversation->getData()['type'];
 
-            if (!$conversationType || $conversationType == 'individual' ) {
-                $target_id = $validatorConversation->getData()['targets_id'][0]->id;
+            if (!$conversationType || $conversationType == 'individual') {
+                $target_id = $conversationTargetsId[0];
 
                 if(!$target_id){
                     return responseJson(null, 400, 'Vui lý nhập thông tin người tham gia đoạn chat cá nhân!');
                 }
 
-                $conversationParticipantPartners = DB::table('conversation_participants')
-                ->where('user_id', $target_id)
-                ->get();
+                $existingConversationIds = DB::table('conversation_participants')
+                    ->where('user_id', $target_id)
+                    ->pluck('conversation_id')
+                    ->toArray();
 
-                foreach ($conversationParticipantPartners as $conversationParticipantPartner) {
+                $conversationExists = DB::table('conversations')
+                    ->whereIn('id', $existingConversationIds)
+                    ->where('type', 'individual')
+                    ->whereExists(function ($query) use ($user) {
+                        $query->select(DB::raw(1))
+                            ->from('conversation_participants')
+                            ->where('user_id', $user->id)
+                            ->whereRaw('conversation_participants.conversation_id = conversations.id');
+                    })
+                    ->exists();
 
-                    $conversation_id = $conversationParticipantPartner->conversation_id;
-
-                    $conversationParticipantPartnerAndMe = DB::table('conversation_participants')
-                        ->where('user_id', $user->id)
-                        ->where('conversation_id', $conversation_id)
-                        ->first();
-
-                    if ($conversationParticipantPartnerAndMe) {
-                        return responseJson(null, 400, 'Đoạn chat cá nhân đã được tạo từ trước!');
-                    }
+                if ($conversationExists) {
+                    return responseJson(null, 400, 'Đoạn chat cá nhân với người này đã được tạo từ trước!');
                 }
             };
 
@@ -184,7 +191,7 @@ class ChatController extends Controller
             ->where('user_id', $userId)
             ->select('conversation_participants.conversation_id');
 
-            if (!empty($q)) {
+            if (!empty($q) && $type == 'individual') {
                 $conversationParticipants->whereIn('conversation_id', function ($query) use ($q, $userId) {
                     $query->select('conversation_id')
                         ->from('conversation_participants as cp')
@@ -202,10 +209,14 @@ class ChatController extends Controller
                 $query->where('deleted_by', '!=', $userId)
                       ->orWhereNull('deleted_by');
             })
-            ->when($type, function ($query) use ($type) {
-                $query->where('type', $type);
+            ->when($type, function ($query) use ($type, $q) {
+                if ($type == 'group') {
+                    $query->where('name', 'like', '%' . $q . '%');
+                } else {
+                    $query->where('type', $type);
+                }
             }, function ($query) {
-                $query->where('type', '!=', null);
+                $query->whereNotNull('type');
             })
             ->get();
 
@@ -251,13 +262,13 @@ class ChatController extends Controller
             if(!$conversationParticipants){
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
             }
-            $messages = DB::table('messages')
-                ->where('conversation_id', $conversationParticipants->conversation_id)
+            $messages = Message::where('conversation_id', $conversationParticipants->conversation_id)
                 ->where(function($query) use ($userId) {
                     $query->where('deleted_by', '!=', $userId)
                         ->orWhereNull('deleted_by');
                 })
                 ->latest()
+                ->with('user')
                 ->paginate($perPage, ['*'], 'page', $page);
 
             if($messages->isEmpty()){
