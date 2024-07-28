@@ -12,6 +12,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SocialLinksController;
 use App\Http\Controllers\StoryController;
 use App\Http\Middleware\AdminMiddleware;
 
@@ -211,4 +212,12 @@ Route::group([
     Route::get('sex-ratio', [DashboardController::class, 'sexRatio']);
     Route::get('quantity-post', [DashboardController::class, 'detailedPosts']);
     Route::get('quantity-user', [DashboardController::class, 'detailedUsers']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'social-links',
+], function () {
+    Route::post('', [SocialLinksController::class, 'createOrUpdate']);
+    Route::get('{user_id}', [SocialLinksController::class, 'getByUser']);
 });
