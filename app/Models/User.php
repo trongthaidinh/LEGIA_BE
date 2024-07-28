@@ -90,4 +90,9 @@ class User extends Authenticatable implements JWTSubject
         $this->userStatus->pusherMakeOffline($this);
     }
 
+    public function socialLinks()
+    {
+        return $this->hasOne(SocialLinks::class);
+    }
+
 }

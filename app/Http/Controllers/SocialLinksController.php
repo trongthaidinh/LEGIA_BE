@@ -17,6 +17,10 @@ class SocialLinksController extends Controller
             ->where('user_id', $userId)
             ->first();
 
+            if(!$socialLink){
+                return responseJson(null, 404);
+            }
+
             return responseJson($socialLink, 200);
 
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
@@ -38,7 +42,7 @@ class SocialLinksController extends Controller
 
             $data = $request->only(['telegram_link', 'facebook_link', 'instagram_link', 'x_link']);
 
-
+            var_dump($userId);
             if($socialLink){
                 DB::table('social_links')
                 ->where('user_id', $userId)
@@ -52,7 +56,7 @@ class SocialLinksController extends Controller
             }else{
                 $res = SocialLinks::create(array_merge(
                     $data,
-                    ['user_id' => $user]
+                    ['user_id' => $userId]
                 ));
 
                 return responseJson($res, 200, "Cập nhật liên kết mạng xã hội thành công!");

@@ -29,8 +29,8 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $profile = DB::table('users')
-            ->where('id', $id)
+            $profile = User::where('id', $id)
+            ->with('socialLinks')
             ->first();
 
             if( ! $profile ) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
