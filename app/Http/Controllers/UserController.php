@@ -18,9 +18,15 @@ class UserController extends Controller
 {
 
     public function me(){
-        if(! $user = auth()->user()){
+        $user = auth()->user();
+
+        if(!$user){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
+        };
+
+        $user = User::where('id', $user->id)
+            ->with('socialLinks')
+            ->first();
 
         return responseJson($user);
     }
