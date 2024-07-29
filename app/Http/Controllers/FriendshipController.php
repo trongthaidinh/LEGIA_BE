@@ -69,7 +69,8 @@ class FriendshipController extends Controller
                     'type' => 'friend_request',
                     'content' => "friendRequest",
                     'read' => false,
-                    'icon' => 'FRIEND_REQUEST'
+                    'icon' => 'FRIEND_REQUEST',
+                    'target_id' => $user->id
                 ]);
 
                 $notification->user = [
@@ -123,12 +124,13 @@ class FriendshipController extends Controller
 
             if ($user->id != $senderId) {
                 $notification = Notification::create([
-                    'owner_id' => $user->id,
-                    'emitter_id' => $senderId,
+                    'owner_id' => $senderId,
+                    'emitter_id' => $user->id,
                     'type' => 'friend_request_accept',
                     'content' => "friendRequestAccept",
                     'read' => false,
-                    'icon' => 'FRIEND_REQUEST_ACCEPT'
+                    'icon' => 'FRIEND_REQUEST_ACCEPT',
+                    'target_id' => $user->id
                 ]);
 
                 $notification->user = [

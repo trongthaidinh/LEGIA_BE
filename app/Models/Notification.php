@@ -18,6 +18,7 @@ class Notification extends Model
         'content',
         'read',
         'icon',
+        'target_id'
     ];
 
     protected $casts = [
