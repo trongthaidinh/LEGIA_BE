@@ -65,13 +65,13 @@ Route::group([
 });
 
 Route::group([
-    'middleware' => ['api'],
+    'middleware' => 'api',
     'prefix' => 'backgrounds'
 ], function () {
     Route::get('/', [BackgroundController::class, 'index']);
     Route::post('/', [BackgroundController::class, 'store']);
     Route::get('/{id}', [BackgroundController::class, 'show']);
-    Route::put('/{id}', [BackgroundController::class, 'update']);
+    Route::post('/{id}', [BackgroundController::class, 'update']);
     Route::put('/toggle-visibility/{id}', [BackgroundController::class, 'toggleVisibility']);
     Route::delete('/{id}', [BackgroundController::class, 'destroy']);
 });
