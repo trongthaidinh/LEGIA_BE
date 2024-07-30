@@ -11,6 +11,7 @@ class Share extends Model
 
     protected $fillable = [
         'post_id',
+        'owner_post_id',
         'owner_id',
     ];
 

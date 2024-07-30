@@ -88,7 +88,39 @@ class PostController extends Controller
                         ];
                     }
                     $post->top_reactions = $topReactions;
-    
+
+                    if ($post->post_type === 'SHARE') {
+                        $share = Share::where('owner_post_id', $post->id)->first();
+                        if ($share) {
+                            $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+                            ->find($share->post_id);
+            
+                            $reactionCounts = $originalPost->reactions()
+                            ->select('type', DB::raw('COUNT(*) as count'))
+                            ->groupBy('type')
+                            ->orderByDesc('count')
+                            ->limit(3)
+                            ->pluck('count', 'type')
+                            ->toArray();
+            
+                            $topReactions = [];
+                            foreach ($reactionCounts as $type => $count) {
+                                $topReactions[] = [
+                                    'type' => $type,
+                                    'count' => $count,
+                                ];
+                            }
+                            $originalPost->top_reactions = $topReactions;
+            
+                            $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
+                            $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+            
+                            if ($originalPost) {
+                                $post->original_post = $originalPost;
+                            }
+                        }
+                    }
+            
                     return $post;
                 });
     
@@ -175,7 +207,7 @@ class PostController extends Controller
         $totalPosts = $query->count();
     
         $posts = $query->paginate($perPage, ['*'], 'page', $page)
-            ->through(function ($post) use ($currentUser) {
+            ->through(function ($post) use ($currentUser, $user) {
                 $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
                 $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
     
@@ -195,6 +227,38 @@ class PostController extends Controller
                     ];
                 }
                 $post->top_reactions = $topReactions;
+
+                if ($post->post_type === 'SHARE') {
+                    $share = Share::where('owner_post_id', $post->id)->first();
+                    if ($share) {
+                        $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+                        ->find($share->post_id);
+        
+                        $reactionCounts = $originalPost->reactions()
+                        ->select('type', DB::raw('COUNT(*) as count'))
+                        ->groupBy('type')
+                        ->orderByDesc('count')
+                        ->limit(3)
+                        ->pluck('count', 'type')
+                        ->toArray();
+        
+                        $topReactions = [];
+                        foreach ($reactionCounts as $type => $count) {
+                            $topReactions[] = [
+                                'type' => $type,
+                                'count' => $count,
+                            ];
+                        }
+                        $originalPost->top_reactions = $topReactions;
+        
+                        $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
+                        $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+        
+                        if ($originalPost) {
+                            $post->original_post = $originalPost;
+                        }
+                    }
+                }        
     
                 return $post;
             });
@@ -315,8 +379,7 @@ class PostController extends Controller
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
 
-        $post = Post::with(['background', 'images', 'owner:id,first_name,last_name,avatar,gender'])
-            ->withCount(['comments', 'reactions', 'shares'])
+        $post = Post::with(['owner:id,first_name,last_name,avatar,gender'])
             ->where('id', $id)
             ->whereHas('owner', function ($query) {
                 $query->where('is_locked', false);
@@ -362,13 +425,43 @@ class PostController extends Controller
         $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
         $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
 
+        if ($post->post_type === 'SHARE') {
+            $share = Share::where('owner_post_id', $post->id)->first();
+            if ($share) {
+                $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+                ->find($share->post_id);
+
+                $reactionCounts = $originalPost->reactions()
+                ->select('type', DB::raw('COUNT(*) as count'))
+                ->groupBy('type')
+                ->orderByDesc('count')
+                ->limit(3)
+                ->pluck('count', 'type')
+                ->toArray();
+
+                $topReactions = [];
+                foreach ($reactionCounts as $type => $count) {
+                    $topReactions[] = [
+                        'type' => $type,
+                        'count' => $count,
+                    ];
+                }
+                $originalPost->top_reactions = $topReactions;
+
+                $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
+                $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+
+                if ($originalPost) {
+                    $post->original_post = $originalPost;
+                }
+            }
+        }
+
         return responseJson($post, 200, 'Thông tin bài đăng');
     } catch (\Exception $e) {
         return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
     }
 }
-        
-
     public function update(Request $request, $id)
     {
         try {
@@ -848,7 +941,7 @@ public function addOrUpdateReaction(Request $request, $postId)
         }
     }
 
-    public function sharePost($postId)
+    public function sharePost(Request $request, $postId)
     {
         try {
             $user = auth()->user();
@@ -863,16 +956,16 @@ public function addOrUpdateReaction(Request $request, $postId)
             }
 
             $sharedPost = Post::create([
-                'owner_id' => $originalPost->owner_id,
-                'content' => $originalPost->content,
-                'privacy' => $originalPost->privacy,
+                'owner_id' => $user->id,
+                'content' => $request->content,
+                'privacy' => $request->privacy,
                 'post_type' => 'SHARE',
-                'background_id' => $originalPost->background_id,
             ]);
 
             $share = Share::create([
                 'owner_id' => $user->id,
                 'post_id' => $postId,
+                'owner_post_id' => $sharedPost->id,
             ]);
 
             $post = $share->post;
@@ -882,10 +975,11 @@ public function addOrUpdateReaction(Request $request, $postId)
                 $notification = Notification::create([
                     'owner_id' => $postOwner->id,
                     'emitter_id' => $user->id,
-                    'type' => 'post_share',
+                    'type' => 'your_post_shared',
                     'content' => "sharepost",
                     'read' => false,
-                    'target_id' => $post->id
+                    'icon' => 'SHARE',
+                    'target_id' => $sharedPost->id
                 ]);
 
                 $notification->user = [
@@ -893,9 +987,9 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'last_name' => $user->last_name,
                     'avatar' => $user->avatar
                 ];
+                $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
             }
 
-            $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
 
             return responseJson($sharedPost, 200, 'Bài viết đã được chia sẻ');
         } catch (\Exception $e) {
