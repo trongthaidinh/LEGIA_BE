@@ -266,8 +266,6 @@ class UserController extends Controller
                 return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
             }
 
-            $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
-            Cloudinary::destroy($publicId);
 
             $user->update(['cover_image' => null]);
             $user->save();
