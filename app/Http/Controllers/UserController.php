@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\Friendship;
+use App\Models\Post;
+use App\Models\PostImage;
 use App\Models\User;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
@@ -165,7 +167,21 @@ class UserController extends Controller
             $user->update(['avatar' => $avatarPath]);
             $user->save();
 
-            return responseJson($user, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
+            
+            
+            $post = Post::create([
+                'owner_id' => $user->id,
+                'privacy' => 'PUBLIC',
+                'post_type' => 'AVATAR_CHANGE',
+            ]);
+
+            PostImage::create([
+                'user_id' => $user->id,
+                'post_id' => $post->id,
+                'url' => $avatarPath,
+            ]);
+
+            return responseJson($post, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
@@ -198,6 +214,18 @@ class UserController extends Controller
 
             $user->update(['cover_image' => $coverImagePath]);
             $user->save();
+
+            $post = Post::create([
+                'owner_id' => $user->id,
+                'privacy' => 'PUBLIC',
+                'post_type' => 'COVER_CHANGE',
+            ]);
+
+            PostImage::create([
+                'user_id' => $user->id,
+                'post_id' => $post->id,
+                'url' => $coverImagePath,
+            ]);
 
             return responseJson($user, 200, 'Cập nhật ảnh bìa người dùng thành công!');
 
