@@ -181,7 +181,7 @@ class UserController extends Controller
                 'url' => $avatarPath,
             ]);
 
-            return responseJson($post, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
+            return responseJson($user, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
