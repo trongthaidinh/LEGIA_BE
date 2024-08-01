@@ -110,7 +110,6 @@ class UserController extends Controller
             return responseJson($user, 200, 'Cập nhật thông tin người dùng thành công!');
 
         }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-            var_dump($e);
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
@@ -174,8 +173,8 @@ class UserController extends Controller
             $user->update(['avatar' => $avatarPath]);
             $user->save();
 
-            
-            
+
+
             $post = Post::create([
                 'owner_id' => $user->id,
                 'privacy' => 'PUBLIC',
