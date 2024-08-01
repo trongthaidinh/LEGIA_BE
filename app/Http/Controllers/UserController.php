@@ -235,9 +235,6 @@ class UserController extends Controller
                 return responseJson(null, 400, 'Bạn chưa có ảnh đại diện!');
             }
 
-            $publicId = getPublicIdFromAvatarUrl($oldAvatar);
-            Cloudinary::destroy($publicId);
-
             $avatarPath = null;
 
             if($user->gender == 'male'){
