@@ -89,7 +89,7 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $dataUpdate = $request->except(['is_verified', 'role', 'password', 'email', 'phone_number', 'avatar', 'relationship_status']);
+            $dataUpdate = $request->except(['is_verified', 'role', 'password', 'email', 'phone_number', 'avatar']);
 
             $validator = Validator::make($dataUpdate, [
                 'first_name' => 'nullable|max:30',
