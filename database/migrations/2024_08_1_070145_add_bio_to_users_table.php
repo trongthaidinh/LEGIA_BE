@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('relationship_status', ['single', 'dating', 'married', 'widowed', 'divorced', 'complicated'])->nullable();
+            $table->string('bio', 120)->nullable()->after('last_name');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('relationship_status');
+            $table->dropColumn('bio');
         });
     }
 };

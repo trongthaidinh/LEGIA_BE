@@ -98,6 +98,7 @@ class UserController extends Controller
                 'address' => 'nullable|max:120',
                 'date_of_birth' => 'nullable|date',
                 'relationship_status' => 'nullable|in:single,dating,married,widowed,divorced,complicated',
+                'bio' => 'nullable|max:120',
             ], userValidatorMessages());
 
             if($validator->fails()){
