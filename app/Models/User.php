@@ -34,6 +34,7 @@ class User extends Authenticatable implements JWTSubject
         'relationship_status',
         'status',
         'last_activity',
+        'bio',
         'is_verified',
         'is_banned'
     ];
