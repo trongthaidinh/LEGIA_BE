@@ -14,6 +14,7 @@ use App\Models\Reaction;
 use App\Models\Share;
 use App\Models\User;
 use App\Share\Pushers\NotificationAdded;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
@@ -509,24 +510,33 @@ class PostController extends Controller
 
 
 
-public function destroy($id)
+    public function destroy($id)
 {
-    $user = auth()->userOrFail();
-    if(!$user) {
-        return responseJson(null, 401, 'Chưa xác thực người dùng');
-    }
-    $post = Post::find($id);
+    try {
+        $user = auth()->userOrFail();
 
-    if (!$post) {
-        return responseJson(null, 404, 'Bài đăng không tồn tại');
-    }
+        $post = Post::findOrFail($id);
 
-    if ($user->id !== $post->owner_id && $user->role !== 'admin') {
-        return responseJson(null, 403, 'Bạn không có quyền xóa bài đăng này');
-    }
+        if ($user->id !== $post->owner_id && $user->role !== 'admin') {
+            return responseJson(null, 403, 'Bạn không có quyền xóa bài đăng này');
+        }
 
-    $post->delete();
-    return responseJson(null, 200, 'Bài đăng đã được xóa');
+        if ($post->images) {
+            foreach ($post->images as $image) {
+                $publicId = getPublicIdFromAvatarUrl($image->url);
+                Cloudinary::destroy($publicId);
+                
+                $image->delete();
+            }
+        }
+
+        $post->delete();
+        return responseJson(null, 200, 'Bài đăng đã được xóa');
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 404, 'Người dùng chưa xác thực!');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi: ' . $e->getMessage());
+    }
 }
 
 
