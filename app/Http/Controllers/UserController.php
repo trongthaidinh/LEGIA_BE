@@ -159,12 +159,6 @@ class UserController extends Controller
                 return responseJson(null, 400, $validator->errors());
             }
 
-            if($oldAvatar = $user->avatar){
-                $publicId = getPublicIdFromAvatarUrl($oldAvatar);
-                Cloudinary::destroy($publicId);
-            }
-
-
             $result = $request->file('avatar')->storeOnCloudinary('avatars');
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
@@ -207,12 +201,6 @@ class UserController extends Controller
                 return responseJson(null, 400, $validator->errors());
             }
 
-            if($oldCoverImage = $user->cover_image){
-                $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
-                Cloudinary::destroy($publicId);
-            }
-
-
             $result = $request->file('cover_image')->storeOnCloudinary('cover_images');
             $coverImagePublicId = $result->getPublicId();
             $coverImagePath = "{$result->getSecurePath()}?public_id={$coverImagePublicId}";
@@ -243,7 +231,7 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            if(! $oldAvatar = $user->avatar){
+            if(! $user->avatar){
                 return responseJson(null, 400, 'Bạn chưa có ảnh đại diện!');
             }
 
@@ -274,7 +262,7 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            if(! $oldCoverImage = $user->cover_image){
+            if(! $user->cover_image){
                 return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
             }
 
