@@ -14,7 +14,6 @@ use App\Models\Reaction;
 use App\Models\Share;
 use App\Models\User;
 use App\Share\Pushers\NotificationAdded;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
@@ -524,40 +523,6 @@ public function destroy($id)
 
     if ($user->id !== $post->owner_id && $user->role !== 'admin') {
         return responseJson(null, 403, 'Bạn không có quyền xóa bài đăng này');
-    }
-
-    if($post->post_type === 'COVER_CHANGE') {
-        if(! $oldCoverImage = $user->cover_image){
-            return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
-        }
-
-        $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
-        Cloudinary::destroy($publicId);
-
-        $user->update(['cover_image' => null]);
-        $user->save();
-    }
-
-    if($post->post_type === 'AVATAR_CHANGE') {
-        if(! $oldAvatar = $user->avatar){
-            return responseJson(null, 400, 'Bạn chưa có ảnh đại diện!');
-        }
-
-        $publicId = getPublicIdFromAvatarUrl($oldAvatar);
-        Cloudinary::destroy($publicId);
-
-        $avatarPath = null;
-
-        if($user->gender == 'male'){
-            $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarMale_ixpufu.jpg?_s=public-apps";
-        }else if($user->gender == 'female'){
-            $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarFemale_olfayu.jpg?_s=public-apps";
-        }else if($user->gender == 'other'){
-            $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarOther_ftskmk.jpg?_s=public-apps";
-        }
-
-        $user->update(['avatar' => $avatarPath]);
-        $user->save();
     }
 
     $post->delete();
