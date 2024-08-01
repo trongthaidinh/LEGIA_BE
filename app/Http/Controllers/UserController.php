@@ -103,7 +103,6 @@ class UserController extends Controller
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
-
             $user->update($dataUpdate);
             $user->save();
 
