@@ -380,7 +380,8 @@ class PostController extends Controller
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
 
-        $post = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+        $post = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+            ->withCount(['comments', 'reactions', 'shares'])
             ->where('id', $id)
             ->whereHas('owner', function ($query) {
                 $query->where('is_locked', false);
