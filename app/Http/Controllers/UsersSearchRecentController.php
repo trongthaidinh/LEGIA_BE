@@ -36,9 +36,19 @@ class UsersSearchRecentController extends Controller
             }
 
 
+            $recentCount = UsersSearchRecent::where('user_id', $user->id)->count();
+
+            if ($recentCount >= 5) {
+                UsersSearchRecent::where('user_id', $user->id)
+                    ->orderBy('created_at', 'asc')
+                    ->first()
+                    ->delete();
+            }
+
             $userSearch = UsersSearchRecent::create(array_merge(
-            $validator->validated(),
-            ['user_id' => $user->id]));
+                $validator->validated(),
+                ['user_id' => $user->id]
+            ));
 
 
             return responseJson($userSearch, 201);
