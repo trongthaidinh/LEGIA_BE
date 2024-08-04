@@ -45,10 +45,15 @@ class UsersSearchRecentController extends Controller
                     ->delete();
             }
 
-            $userSearch = UsersSearchRecent::create(array_merge(
+            $res = UsersSearchRecent::create(array_merge(
                 $validator->validated(),
                 ['user_id' => $user->id]
             ));
+
+            $userSearch = UsersSearchRecent::with("ref")
+            ->where('user_id', $res->user_id)
+            ->where('ref_id', $res->ref_id)
+            ->first();
 
 
             return responseJson($userSearch, 201);
