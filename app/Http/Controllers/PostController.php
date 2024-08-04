@@ -1222,6 +1222,43 @@ public function addOrUpdateReaction(Request $request, $postId)
         }
     }
 
+    public function getAllReactions($postId)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+    
+            $post = Post::findOrFail($postId);
+    
+            $reactions = $post->reactions()
+                ->with('owner:id,first_name,last_name,avatar')
+                ->paginate(10);
+    
+            $reactionDetails = [
+                'users' => $reactions->map(function ($reaction) {
+                    return [
+                        'id' => $reaction->owner->id,
+                        'name' => $reaction->owner->last_name . ' ' . $reaction->owner->first_name,
+                        'avatar' => $reaction->owner->avatar,
+                        'reaction_type' => $reaction->type,
+                    ];
+                }),
+                'pagination' => [
+                    'total' => $reactions->total(),
+                    'per_page' => $reactions->perPage(),
+                    'current_page' => $reactions->currentPage(),
+                    'last_page' => $reactions->lastPage(),
+                    'next_page' => $reactions->currentPage() < $reactions->lastPage() ? $reactions->currentPage() + 1 : null,
+                ]
+            ];
+    
+            return responseJson($reactionDetails, 200, 'Lấy tất cả thông tin reaction thành công');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin reaction: ' . $e->getMessage());
+        }
+    }
 
 
     public function getTopReactions($postId)
