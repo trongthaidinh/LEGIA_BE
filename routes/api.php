@@ -14,6 +14,7 @@ use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SocialLinksController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\UsersSearchRecentController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::group([
@@ -220,4 +221,12 @@ Route::group([
 ], function () {
     Route::post('', [SocialLinksController::class, 'createOrUpdate']);
     Route::get('{user_id}', [SocialLinksController::class, 'getByUser']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'users-search-recent',
+], function () {
+    Route::post('', [UsersSearchRecentController::class, 'create']);
+    Route::get('', [UsersSearchRecentController::class, 'get']);
 });
