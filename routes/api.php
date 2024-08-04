@@ -99,6 +99,8 @@ Route::group([
 
     Route::get('user/{id}', [PostController::class, 'getUserPosts']);
 
+    Route::get('reaction-detail/{postId}/{reactionType}', [PostController::class, 'getReactionsByType']);
+    Route::get('reaction-counts/{postId}', [PostController::class, 'getReactionCounts']);
     Route::get('reaction-detail/{postId}', [PostController::class, 'getReactionsDetail']);
     Route::get('user-reaction/{postId}', [PostController::class, 'getUserReaction']);
     Route::get('top-reactions/{postId}', [PostController::class, 'getTopReactions']);
