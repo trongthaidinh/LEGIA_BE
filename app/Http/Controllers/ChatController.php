@@ -332,7 +332,7 @@ class ChatController extends Controller
             $user = auth()->userOrFail();
             $userId = $user->id;
 
-            $data = $request->only(['secret_key']);
+            $data = $request->only(['message_ids']);
 
             $validator = Validator::make($data, [
                 'message_ids' => 'required',
