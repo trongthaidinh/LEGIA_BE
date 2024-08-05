@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -263,7 +264,7 @@ class ChatController extends Controller
             }
             $messages = Message::where('conversation_id', $conversationParticipants->conversation_id)
                 ->latest()
-                ->with('user')
+                ->with(['user', 'seen_by'])
                 ->paginate($perPage, ['*'], 'page', $page);
 
             if($messages->isEmpty()){
@@ -326,30 +327,38 @@ class ChatController extends Controller
         }
     }
 
-    public function markMessageAsRead(Request $request, $messageId) {
-        $data = $request->only(['secret_key']);
-
-        $validator = Validator::make($data, [
-            'secret_key' => 'required|string|exists:conversations,secret_key',
-        ], chatValidatorMessages());
-
-        if ($validator->fails()) {
-            return responseJson(null, 400, $validator->errors()->first());
-        }
-
+    public function markMessageAsRead(Request $request) {
         try{
             $user = auth()->userOrFail();
-            $message = Message::find($messageId);
-            if(!$message){
-                return responseJson(null, 400, 'Không tìm thấy tin nhắn!');
+            $userId = $user->id;
+
+            $data = $request->only(['secret_key']);
+
+            $validator = Validator::make($data, [
+                'message_ids' => 'required',
+                'message_ids.*' => 'exists:messages,id',
+            ], [
+                'message_ids.required' => 'Vui lòng nhập message_id',
+                'message_ids.*.exists' => 'Không tìm thấy tin nhắn!',
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson(null, 400, $validator->errors()->first());
             }
-            $message->read_at = now();
 
-            $this->MessageSent->pusherMessageIsRead($data['secret_key'], $message);
+            $messageIds = $validator->validated()['message_ids'];
 
-            $message->save();
+            foreach($messageIds as $messageId){
 
-            return responseJson($message, 200, 'Thành công!');
+                $seen = MessagesSeenBy::create([
+                    'user_id' => $userId,
+                    'message_id' => $messageId
+                ]);
+
+                $this->MessageSent->pusherMessageIsRead($messageId, $seen);
+            }
+
+            return responseJson(null, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");

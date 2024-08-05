@@ -21,4 +21,9 @@ class Message extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function seen_by(){
+
+        return $this->hasMany(MessagesSeenBy::class, 'message_id');
+    }
+
 }
