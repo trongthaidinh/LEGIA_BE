@@ -345,7 +345,7 @@ class ChatController extends Controller
             }
             $message->read_at = now();
 
-            $this->messageSent->pusherMessageIsRead($data['secret_key'], $message);
+            $this->MessageSent->pusherMessageIsRead($data['secret_key'], $message);
 
             $message->save();
 
