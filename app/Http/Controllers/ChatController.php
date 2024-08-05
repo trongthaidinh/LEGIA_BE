@@ -159,6 +159,9 @@ class ChatController extends Controller
             ->where('user_id', '!=', $user->id)
             ->get();
 
+
+            $message->load('user');
+
             $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
 
             foreach ($partners as $partner) {
@@ -205,10 +208,6 @@ class ChatController extends Controller
             }
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
-            ->whereHas('messages', function ($query) use ($userId) {
-                $query->where('deleted_by', '!=', $userId)
-                      ->orWhereNull('deleted_by');
-            })
             ->when($type, function ($query) use ($type, $q) {
                 if ($type == 'group') {
                     $query->where('name', 'like', '%' . $q . '%');
@@ -250,7 +249,7 @@ class ChatController extends Controller
             $userId = $user->id;
 
             $page = request()->query('page', 1);
-            $perPage = request()->query('per_page', 10);
+            $perPage = request()->query('per_page', 20);
 
 
             $conversationParticipants = DB::table('conversation_participants')
@@ -263,10 +262,6 @@ class ChatController extends Controller
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
             }
             $messages = Message::where('conversation_id', $conversationParticipants->conversation_id)
-                ->where(function($query) use ($userId) {
-                    $query->where('deleted_by', '!=', $userId)
-                        ->orWhereNull('deleted_by');
-                })
                 ->latest()
                 ->with('user')
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -361,29 +356,29 @@ class ChatController extends Controller
         }
     }
 
-    public function deleteConversation($conversationId){
-        try{
-            $user = auth()->userOrFail();
+    // public function deleteConversation($conversationId){
+    //     try{
+    //         $user = auth()->userOrFail();
 
-            $userId = $user->id;
+    //         $userId = $user->id;
 
-            $messages = Message::where('conversation_id', $conversationId)->get();
+    //         $messages = Message::where('conversation_id', $conversationId)->get();
 
 
-            foreach($messages as $message){
-                if($message->deleted_by != null && $message->deleted_by != $userId){
-                    $message->delete();
-                }else{
-                    $message->deleted_by = $userId;
-                    $message->save();
-                }
-            }
+    //         foreach($messages as $message){
+    //             if($message->deleted_by != null && $message->deleted_by != $userId){
+    //                 $message->delete();
+    //             }else{
+    //                 $message->deleted_by = $userId;
+    //                 $message->save();
+    //             }
+    //         }
 
-           return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
+    //        return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
 
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
-        }
-    }
+    //     }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+    //         return responseJson(null, 404, "Người dùng chưa xác thực!");
+    //     }
+    // }
 
 }

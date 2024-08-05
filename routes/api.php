@@ -148,7 +148,7 @@ Route::group([
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
     Route::post('message/mark-is-read/{message_id}', [ChatController::class, 'markIsRead']);
-    Route::delete('conversation/{conversation_id}', [ChatController::class, 'deleteConversation']);
+    // Route::delete('conversation/{conversation_id}', [ChatController::class, 'deleteConversation']);
 });
 
 Route::group([
