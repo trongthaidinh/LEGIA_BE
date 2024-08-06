@@ -14,6 +14,5 @@ class MessagesDeletedBy extends Model
     protected $fillable = [
         'user_id',
         'message_id',
-        'type'
     ];
 }

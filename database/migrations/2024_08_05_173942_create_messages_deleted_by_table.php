@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('message_id');
             $table->foreign('message_id')->references('id')->on('messages')->onDelete('cascade');
-            $table->enum('type', ['recall', 'only_me']);
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });

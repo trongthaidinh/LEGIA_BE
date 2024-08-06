@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use App\Models\MessagesDeletedBy;
 use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -208,6 +209,15 @@ class ChatController extends Controller
                 });
             }
 
+            $latestMessageSubquery = DB::table('messages')
+            ->select('conversation_id', DB::raw('MAX(created_at) as latest_message_time'))
+            ->whereNotIn('id', function ($subQuery) use ($userId) {
+                $subQuery->select('message_id')
+                    ->from('messages_deleted_by')
+                    ->where('user_id', $userId);
+            })
+            ->groupBy('conversation_id');
+
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->when($type, function ($query) use ($type, $q) {
                 if ($type == 'group') {
@@ -218,6 +228,21 @@ class ChatController extends Controller
             }, function ($query) {
                 $query->whereNotNull('type');
             })
+            ->whereExists(function ($query) use ($userId) {
+                $query->select(DB::raw(1))
+                    ->from('messages')
+                    ->whereColumn('messages.conversation_id', 'conversations.id')
+                    ->whereNotIn('messages.id', function ($subQuery) use ($userId) {
+                        $subQuery->select('message_id')
+                            ->from('messages_deleted_by')
+                            ->where('user_id', $userId);
+                    });
+            })
+            ->leftJoinSub($latestMessageSubquery, 'latest_messages', function ($join) {
+                $join->on('latest_messages.conversation_id', '=', 'conversations.id');
+            })
+            ->select('conversations.*', 'latest_messages.latest_message_time')
+            ->orderBy('latest_message_time', 'DESC')
             ->get();
 
 
@@ -262,7 +287,11 @@ class ChatController extends Controller
             if(!$conversationParticipants){
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
             }
+
             $messages = Message::where('conversation_id', $conversationParticipants->conversation_id)
+                ->whereDoesntHave('deleted_by', function($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
                 ->latest()
                 ->with(['user', 'seen_by'])
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -365,29 +394,27 @@ class ChatController extends Controller
         }
     }
 
-    // public function deleteConversation($conversationId){
-    //     try{
-    //         $user = auth()->userOrFail();
+    public function deleteConversation($conversationId){
+        try{
+            $user = auth()->userOrFail();
 
-    //         $userId = $user->id;
+            $userId = $user->id;
 
-    //         $messages = Message::where('conversation_id', $conversationId)->get();
+            $messages = Message::where('conversation_id', $conversationId)->get();
 
 
-    //         foreach($messages as $message){
-    //             if($message->deleted_by != null && $message->deleted_by != $userId){
-    //                 $message->delete();
-    //             }else{
-    //                 $message->deleted_by = $userId;
-    //                 $message->save();
-    //             }
-    //         }
+            foreach($messages as $message){
+                MessagesDeletedBy::create([
+                    'user_id' => $userId,
+                    'message_id' => $message->id
+                ]);
+            }
 
-    //        return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
+           return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
 
-    //     }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-    //         return responseJson(null, 404, "Người dùng chưa xác thực!");
-    //     }
-    // }
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
 
 }

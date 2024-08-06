@@ -26,4 +26,9 @@ class Message extends Model
         return $this->hasMany(MessagesSeenBy::class, 'message_id');
     }
 
+    public function deleted_by(){
+
+        return $this->hasMany(MessagesDeletedBy::class, 'message_id');
+    }
+
 }
