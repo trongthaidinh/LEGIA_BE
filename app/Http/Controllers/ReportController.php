@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Report;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -34,7 +33,7 @@ class ReportController extends Controller
 
             $request->validate([
                 'target_id' => 'required|integer', 
-                'type' => 'required|in:spam,abusive_content,fake_news,copyright_infringement',
+                'type' => 'required|in:user, post',
                 'code' => 'required|string',
             ]);
 
