@@ -33,7 +33,7 @@ class ReportController extends Controller
 
             $request->validate([
                 'target_id' => 'required|integer', 
-                'type' => 'required|in:user, post',
+                'type' => 'required|in:user,post',
                 'code' => 'required|string',
             ]);
 
