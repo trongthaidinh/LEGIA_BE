@@ -16,17 +16,25 @@ class NotificationController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-
-            $notifications = Notification::where('owner_id', $user->id)
+            $filter = $request->input('filter', 'all');
+    
+            $query = Notification::where('owner_id', $user->id)
                 ->with(['user' => function ($query) {
                     $query->select('id', 'first_name', 'last_name', 'avatar', 'gender');
                 }])
-                ->orderByDesc('created_at')
-                ->paginate($perPage, ['*'], 'page', $page);
-
+                ->orderByDesc('created_at');
+    
+            if ($filter === 'read') {
+                $query->where('read', true);
+            } elseif ($filter === 'unread') {
+                $query->where('read', false);
+            }
+    
+            $notifications = $query->paginate($perPage, ['*'], 'page', $page);
+    
             $response = [
                 'notifications' => $notifications->items(),
                 'page_info' => [
@@ -37,12 +45,13 @@ class NotificationController extends Controller
                     'per_page' => $notifications->perPage(),
                 ],
             ];
-
+    
             return responseJson($response, 200, "Lấy thành công danh sách thông báo");
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách thông báo: ' . $e->getMessage());
         }
     }
+    
 
     public function markAsRead($id)
     {
