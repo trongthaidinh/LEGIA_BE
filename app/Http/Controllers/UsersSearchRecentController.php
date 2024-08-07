@@ -80,4 +80,22 @@ class UsersSearchRecentController extends Controller
 
     }
 
+    public function delete($id){
+        try{
+            $user = auth()->userOrFail();
+
+
+            $res = UsersSearchRecent::where('user_id', $user->id)->where('id', $id)->delete();
+
+            if(!$res){
+                return responseJson(null, 400);
+            }
+
+            return responseJson($res, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
 }

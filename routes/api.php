@@ -235,4 +235,5 @@ Route::group([
 ], function () {
     Route::post('', [UsersSearchRecentController::class, 'create']);
     Route::get('', [UsersSearchRecentController::class, 'get']);
+    Route::delete('{id}', [UsersSearchRecentController::class, 'delete']);
 });
