@@ -31,8 +31,10 @@ class User extends Authenticatable implements JWTSubject
         'phone_number',
         'address',
         'date_of_birth',
+        'relationship_status',
         'status',
         'last_activity',
+        'bio',
         'is_verified',
         'is_banned'
     ];
@@ -54,8 +56,7 @@ class User extends Authenticatable implements JWTSubject
     public function friends()
     {
         return $this->belongsToMany(User::class, 'friendships', 'owner_id', 'friend_id')
-                    ->wherePivot('status', 'accepted')
-                    ->withPivot('status');
+                    ->wherePivot('status', '=', 'accepted');
     }
 
     public function isMyFriend($userId)
@@ -89,6 +90,11 @@ class User extends Authenticatable implements JWTSubject
         $this->save();
 
         $this->userStatus->pusherMakeOffline($this);
+    }
+
+    public function socialLinks()
+    {
+        return $this->hasOne(SocialLinks::class);
     }
 
 }

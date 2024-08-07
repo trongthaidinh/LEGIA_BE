@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('messages', function (Blueprint $table) {
-            $table->unsignedBigInteger('deleted_by')->nullable();
+        Schema::table('conversations', function (Blueprint $table) {
+            $table->string('last_message', 400)->nullable();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('messages', function (Blueprint $table) {
-            $table->dropColumn('deleted_by');
+        Schema::table('conversations', function (Blueprint $table) {
+            $table->dropColumn('last_message');
         });
     }
 };

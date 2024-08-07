@@ -12,7 +12,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SocialLinksController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\UsersSearchRecentController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::group([
@@ -58,10 +60,15 @@ Route::group([
 ], function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('forgot-password', [AuthController::class, 'sendResetLinkEmail']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
+});
+
+Route::group([
+    'prefix' => 'auth',
+], function () {
+    Route::post('refresh', [AuthController::class, 'refresh']);
 });
 
 Route::group([
@@ -145,7 +152,8 @@ Route::group([
     Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
-    Route::post('message/mark-is-read/{message_id}', [ChatController::class, 'markIsRead']);
+    Route::get('message-images/{conversation_id}', [ChatController::class, 'getMessageImages']);
+    Route::post('message/mark-is-read', [ChatController::class, 'markMessageAsRead']);
     Route::delete('conversation/{conversation_id}', [ChatController::class, 'deleteConversation']);
 });
 
@@ -211,4 +219,21 @@ Route::group([
     Route::get('sex-ratio', [DashboardController::class, 'sexRatio']);
     Route::get('quantity-post', [DashboardController::class, 'detailedPosts']);
     Route::get('quantity-user', [DashboardController::class, 'detailedUsers']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'social-links',
+], function () {
+    Route::post('', [SocialLinksController::class, 'createOrUpdate']);
+    Route::get('{user_id}', [SocialLinksController::class, 'getByUser']);
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'users-search-recent',
+], function () {
+    Route::post('', [UsersSearchRecentController::class, 'create']);
+    Route::get('', [UsersSearchRecentController::class, 'get']);
+    Route::delete('{id}', [UsersSearchRecentController::class, 'delete']);
 });

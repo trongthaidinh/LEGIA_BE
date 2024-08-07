@@ -6,6 +6,9 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use App\Models\MessageImage;
+use App\Models\MessagesDeletedBy;
+use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -38,41 +41,48 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validatorConversation->errors());
             }
 
-            if($conversationData['type'] === 'group' && !$conversationData['name'] ){
+            $conversationType = $validatorConversation->getData()['type'] ?? null;
+            $conversationName = $validatorConversation->getData()['name'] ?? null;
+
+
+            if($conversationType == 'group' && !$conversationName ){
                 return responseJson(null, 400, 'Vui lòng nhập tên nhóm chat!');
             }
 
-            foreach ($conversationData['targets_id'] as $targetId) {
+            $conversationTargetsId = $validatorConversation->getData()['targets_id'];
+
+            foreach ($conversationTargetsId as $targetId) {
                 if($targetId == $user->id){
                     return responseJson(null, 400, 'Bạn không thể trò chuyện với chính mình!');
                 }
             }
 
-            $conversationType = $validatorConversation->getData()['type'];
 
-            if (!$conversationType || $conversationType == 'individual' ) {
-                $target_id = $validatorConversation->getData()['targets_id'][0]->id;
+            if (!$conversationType || $conversationType == 'individual') {
+                $target_id = $conversationTargetsId[0];
 
                 if(!$target_id){
                     return responseJson(null, 400, 'Vui lý nhập thông tin người tham gia đoạn chat cá nhân!');
                 }
 
-                $conversationParticipantPartners = DB::table('conversation_participants')
-                ->where('user_id', $target_id)
-                ->get();
+                $existingConversationIds = DB::table('conversation_participants')
+                    ->where('user_id', $target_id)
+                    ->pluck('conversation_id')
+                    ->toArray();
 
-                foreach ($conversationParticipantPartners as $conversationParticipantPartner) {
+                $conversationExists = DB::table('conversations')
+                    ->whereIn('id', $existingConversationIds)
+                    ->where('type', 'individual')
+                    ->whereExists(function ($query) use ($user) {
+                        $query->select(DB::raw(1))
+                            ->from('conversation_participants')
+                            ->where('user_id', $user->id)
+                            ->whereRaw('conversation_participants.conversation_id = conversations.id');
+                    })
+                    ->exists();
 
-                    $conversation_id = $conversationParticipantPartner->conversation_id;
-
-                    $conversationParticipantPartnerAndMe = DB::table('conversation_participants')
-                        ->where('user_id', $user->id)
-                        ->where('conversation_id', $conversation_id)
-                        ->first();
-
-                    if ($conversationParticipantPartnerAndMe) {
-                        return responseJson(null, 400, 'Đoạn chat cá nhân đã được tạo từ trước!');
-                    }
+                if ($conversationExists) {
+                    return responseJson(null, 400, 'Đoạn chat cá nhân với người này đã được tạo từ trước!');
                 }
             };
 
@@ -121,55 +131,82 @@ class ChatController extends Controller
         }
     }
 
-    public function createMessage(){
-        try {
-            $user = auth()->userOrFail();
+    public function createMessage(Request $request)
+{
+    try {
+        $user = auth()->userOrFail();
+        $data = $request->only(['conversation_id', 'content', 'images']);
 
-            $data = request()->only(['conversation_id', 'content']);
+        $validator = Validator::make($data, [
+            'conversation_id' => 'required|exists:conversations,id',
+            'content' => 'nullable|string|max:400',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ], chatValidatorMessages());
 
-            $validator = Validator::make($data, [
-                'conversation_id' => 'required|exists:conversations,id',
-                'content' => 'required|string|max:400',
-            ], chatValidatorMessages());
-
-            if($validator->fails()){
-                return responseJson(null, 400, $validator->errors());
-            }
-
-            $conversationId = $data['conversation_id'];
-
-            $message = Message::create(array_merge(
-                $validator->validated(),
-                ['user_id' => $user->id]
-            ));
-
-            $conversation =  DB::table('conversations')
-            ->where('id', $message->conversation_id)
-            ->first();
-
-            $partners = DB::table('conversation_participants')
-            ->where('conversation_id', $conversationId)
-            ->where('user_id', '!=', $user->id)
-            ->get();
-
-            $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
-
-            foreach ($partners as $partner) {
-                $this->MessageSent->pusherConversationIdGetNewMessage($partner->user_id, [
-                    'conversation_id' => $conversationId,
-                    'content' => $message->content
-                ]);
-            }
-
-            DB::table('conversations')
-                ->where('id', $conversationId)
-                ->update(['last_message' => $message->content]);
-
-            return responseJson($message, 200, 'Tạo tin nhắn thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
         }
+
+        $hasContent = !empty(trim($data['content'] ?? ''));
+        $hasImages = $request->hasFile('images') && !empty($request->file('images'));
+
+        if(!$hasContent && !$hasImages){
+            return responseJson(null, 400, 'Phải có nội dung hoặc hình ảnh');
+        }
+
+        $conversationId = $data['conversation_id'];
+
+        $message = Message::create(array_merge(
+            $validator->validated(),
+            ['user_id' => $user->id]
+        ));
+
+        $images = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('message_images');
+                    $imagePublicId = $result->getPublicId();
+                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+
+                    $res = MessageImage::create([
+                        'message_id' => $message->id,
+                        'url' => $imageUrl,
+                    ]);
+
+                    $images[] = $res;
+                }
+            }
+        }
+
+        $conversation = Conversation::findOrFail($conversationId);
+
+        $partners = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', '!=', $user->id)
+            ->pluck('user_id');
+
+        $message->load('user');
+        $message->images = $images;
+
+        $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
+
+        foreach ($partners as $partnerId) {
+            $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
+                'conversation_id' => $conversationId,
+                'content' => $message->content
+            ]);
+        }
+
+        $conversation->update(['last_message' => $message->content]);
+
+        return responseJson($message, 200, 'Tạo tin nhắn thành công!');
+
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 401, "Người dùng chưa xác thực!");
+    } catch (\Exception $e) {
+        return responseJson(null, 500, "Có lỗi xảy ra: " . $e->getMessage());
+    }
     }
 
     public function getMyConversations(Request $request) {
@@ -178,12 +215,13 @@ class ChatController extends Controller
             $userId = $user->id;
 
             $q = strtolower($request->q) ?? '';
+            $type = $request->type;
 
             $conversationParticipants = DB::table('conversation_participants')
             ->where('user_id', $userId)
             ->select('conversation_participants.conversation_id');
 
-            if (!empty($q)) {
+            if (!empty($q) && $type == 'individual') {
                 $conversationParticipants->whereIn('conversation_id', function ($query) use ($q, $userId) {
                     $query->select('conversation_id')
                         ->from('conversation_participants as cp')
@@ -196,11 +234,29 @@ class ChatController extends Controller
                 });
             }
 
+
+
             $conversations = Conversation::whereIn('id', $conversationParticipants)
-            ->whereHas('messages', function ($query) use ($userId) {
-                $query->where('deleted_by', '!=', $userId)
-                      ->orWhereNull('deleted_by');
+            ->when($type, function ($query) use ($type, $q) {
+                if ($type == 'group') {
+                    $query->where('name', 'like', '%' . $q . '%');
+                } else {
+                    $query->where('type', $type);
+                }
+            }, function ($query) {
+                $query->whereNotNull('type');
             })
+            ->whereExists(function ($query) use ($userId) {
+                $query->select(DB::raw(1))
+                    ->from('messages')
+                    ->whereColumn('messages.conversation_id', 'conversations.id')
+                    ->whereNotIn('messages.id', function ($subQuery) use ($userId) {
+                        $subQuery->select('message_id')
+                            ->from('messages_deleted_by')
+                            ->where('user_id', $userId);
+                    });
+            })
+            ->orderBy('updated_at')
             ->get();
 
 
@@ -233,7 +289,7 @@ class ChatController extends Controller
             $userId = $user->id;
 
             $page = request()->query('page', 1);
-            $perPage = request()->query('per_page', 10);
+            $perPage = request()->query('per_page', 20);
 
 
             $conversationParticipants = DB::table('conversation_participants')
@@ -245,13 +301,13 @@ class ChatController extends Controller
             if(!$conversationParticipants){
                 return responseJson(null, 400, 'Bạn chưa tham gia cuộc đối thoại này nên không thể lấy tin nhắn từ nó!');
             }
-            $messages = DB::table('messages')
-                ->where('conversation_id', $conversationParticipants->conversation_id)
-                ->where(function($query) use ($userId) {
-                    $query->where('deleted_by', '!=', $userId)
-                        ->orWhereNull('deleted_by');
+
+            $messages = Message::where('conversation_id', $conversationParticipants->conversation_id)
+                ->whereDoesntHave('deleted_by', function($query) use ($userId) {
+                    $query->where('user_id', $userId);
                 })
                 ->latest()
+                ->with(['user', 'seen_by', 'images'])
                 ->paginate($perPage, ['*'], 'page', $page);
 
             if($messages->isEmpty()){
@@ -314,30 +370,38 @@ class ChatController extends Controller
         }
     }
 
-    public function markMessageAsRead(Request $request, $messageId) {
-        $data = $request->only(['secret_key']);
-
-        $validator = Validator::make($data, [
-            'secret_key' => 'required|string|exists:conversations,secret_key',
-        ], chatValidatorMessages());
-
-        if ($validator->fails()) {
-            return responseJson(null, 400, $validator->errors()->first());
-        }
-
+    public function markMessageAsRead(Request $request) {
         try{
             $user = auth()->userOrFail();
-            $message = Message::find($messageId);
-            if(!$message){
-                return responseJson(null, 400, 'Không tìm thấy tin nhắn!');
+            $userId = $user->id;
+
+            $data = $request->only(['message_ids']);
+
+            $validator = Validator::make($data, [
+                'message_ids' => 'required',
+                'message_ids.*' => 'exists:messages,id',
+            ], [
+                'message_ids.required' => 'Vui lòng nhập message_id',
+                'message_ids.*.exists' => 'Không tìm thấy tin nhắn!',
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson(null, 400, $validator->errors()->first());
             }
-            $message->read_at = now();
 
-            $this->messageSent->pusherMessageIsRead($data['secret_key'], $message);
+            $messageIds = $validator->validated()['message_ids'];
 
-            $message->save();
+            foreach($messageIds as $messageId){
 
-            return responseJson($message, 200, 'Thành công!');
+                MessagesSeenBy::create([
+                    'user_id' => $userId,
+                    'message_id' => $messageId
+                ]);
+
+                // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
+            }
+
+            return responseJson(null, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -354,15 +418,31 @@ class ChatController extends Controller
 
 
             foreach($messages as $message){
-                if($message->deleted_by != null && $message->deleted_by != $userId){
-                    $message->delete();
-                }else{
-                    $message->deleted_by = $userId;
-                    $message->save();
-                }
+                MessagesDeletedBy::create([
+                    'user_id' => $userId,
+                    'message_id' => $message->id
+                ]);
             }
 
            return responseJson(null, 200, 'Đã xóa cuộc đối thoại này!');
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function getMessageImages($conversationId) {
+        try{
+            auth()->userOrFail();
+
+            $messageImages = MessageImage::select('message_images.*')
+            ->join('messages', 'messages.id', '=', 'message_images.message_id')
+            ->where('messages.conversation_id', $conversationId)
+            ->limit(9)
+            ->get();
+
+
+           return responseJson($messageImages, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");

@@ -18,9 +18,15 @@ class UserController extends Controller
 {
 
     public function me(){
-        if(! $user = auth()->user()){
+        $user = auth()->user();
+
+        if(!$user){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
-        }
+        };
+
+        $user = User::where('id', $user->id)
+            ->with('socialLinks')
+            ->first();
 
         return responseJson($user);
     }
@@ -29,8 +35,8 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            $profile = DB::table('users')
-            ->where('id', $id)
+            $profile = User::where('id', $id)
+            ->with('socialLinks')
             ->first();
 
             if( ! $profile ) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
@@ -91,19 +97,19 @@ class UserController extends Controller
                 'gender' => 'nullable|in:male,female,other',
                 'address' => 'nullable|max:120',
                 'date_of_birth' => 'nullable|date',
+                'relationship_status' => 'nullable|in:single,dating,married,widowed,divorced,complicated',
+                'bio' => 'nullable|max:120',
             ], userValidatorMessages());
 
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
-
             $user->update($dataUpdate);
             $user->save();
 
             return responseJson($user, 200, 'Cập nhật thông tin người dùng thành công!');
 
         }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-            var_dump($e);
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
@@ -147,18 +153,12 @@ class UserController extends Controller
             $dataUpdate = $request->only('avatar');
 
             $validator = Validator::make($dataUpdate, [
-                'avatar' => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
+                'avatar' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
-
-            if($oldAvatar = $user->avatar){
-                $publicId = getPublicIdFromAvatarUrl($oldAvatar);
-                Cloudinary::destroy($publicId);
-            }
-
 
             $result = $request->file('avatar')->storeOnCloudinary('avatars');
             $avatarPublicId = $result->getPublicId();
@@ -167,8 +167,8 @@ class UserController extends Controller
             $user->update(['avatar' => $avatarPath]);
             $user->save();
 
-            
-            
+
+
             $post = Post::create([
                 'owner_id' => $user->id,
                 'privacy' => 'PUBLIC',
@@ -195,18 +195,12 @@ class UserController extends Controller
             $dataUpdate = $request->only('cover_image');
 
             $validator = Validator::make($dataUpdate, [
-                'cover_image' => 'required|file|image|mimes:jpeg,png,jpg|max:2048',
+                'cover_image' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
             if($validator->fails()){
                 return responseJson(null, 400, $validator->errors());
             }
-
-            if($oldCoverImage = $user->cover_image){
-                $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
-                Cloudinary::destroy($publicId);
-            }
-
 
             $result = $request->file('cover_image')->storeOnCloudinary('cover_images');
             $coverImagePublicId = $result->getPublicId();
@@ -238,12 +232,9 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            if(! $oldAvatar = $user->avatar){
+            if(! $user->avatar){
                 return responseJson(null, 400, 'Bạn chưa có ảnh đại diện!');
             }
-
-            $publicId = getPublicIdFromAvatarUrl($oldAvatar);
-            Cloudinary::destroy($publicId);
 
             $avatarPath = null;
 
@@ -269,12 +260,10 @@ class UserController extends Controller
         try{
             $user = auth()->userOrFail();
 
-            if(! $oldCoverImage = $user->cover_image){
+            if(! $user->cover_image){
                 return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
             }
 
-            $publicId = getPublicIdFromAvatarUrl($oldCoverImage);
-            Cloudinary::destroy($publicId);
 
             $user->update(['cover_image' => null]);
             $user->save();
@@ -291,13 +280,13 @@ class UserController extends Controller
             $user = auth()->userOrFail();
 
             $users = DB::table('users')
-            ->where('id', '!=', $user->id)
             ->where(function($query) use ($request) {
                 $query->where('first_name', 'like', '%' . $request->q . '%')
                     ->orWhere('last_name', 'like', '%' . $request->q . '%')
                     ->orWhere('email', 'like', '%' . $request->q . '%')
                     ->orWhere('phone_number', 'like', '%' . $request->q . '%');
             })
+            ->where('id', '!=', $user->id)
             ->get();
 
 
@@ -327,7 +316,7 @@ class UserController extends Controller
                         ->orWhere('friend_id', $user->id);
                 })
                 ->inRandomOrder()
-                ->limit(10)
+                ->limit(15)
                 ->get();
 
 

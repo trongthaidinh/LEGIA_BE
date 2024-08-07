@@ -11,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('message_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained(
-                table: 'users', indexName: 'messages_user_id'
-            );
-            $table->foreignId('conversation_id')->constrained(
-                table: 'conversations', indexName: 'messages_conversation_id'
-            );
-            $table->string('content', 300)->nullable();
-            $table->timestamp('read_at')->default(null)->nullable();
+            $table->unsignedBigInteger('message_id');
+            $table->foreign('message_id')->references('id')->on('messages')->onDelete('cascade');
+            $table->string('url', 300);
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });
@@ -31,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('message_images');
     }
 };

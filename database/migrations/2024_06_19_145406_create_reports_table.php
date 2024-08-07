@@ -18,7 +18,7 @@ class CreateReportsTable extends Migration
             $table->foreignId('emitter_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('target_id');
             $table->enum('type', ['spam', 'abusive_content', 'fake_news', 'copyright_infringement']);
-            $table->string('code'); 
+            $table->integer('code');
             $table->boolean('rejected')->default(false);
             $table->boolean('approved')->default(false);
             $table->timestamps();

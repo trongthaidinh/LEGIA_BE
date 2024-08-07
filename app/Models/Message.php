@@ -16,5 +16,20 @@ class Message extends Model
         "read_at"
     ];
 
+    public function user(){
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function seen_by(){
+        return $this->hasMany(MessagesSeenBy::class, 'message_id');
+    }
+
+    public function deleted_by(){
+        return $this->hasMany(MessagesDeletedBy::class, 'message_id');
+    }
+
+    public function images(){
+        return $this->hasMany(MessageImage::class, 'message_id');
+    }
 
 }

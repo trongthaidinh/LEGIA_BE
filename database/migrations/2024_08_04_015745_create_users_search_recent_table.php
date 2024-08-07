@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('users_search_recent', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained(
-                table: 'users', indexName: 'messages_user_id'
-            );
-            $table->foreignId('conversation_id')->constrained(
-                table: 'conversations', indexName: 'messages_conversation_id'
-            );
-            $table->string('content', 300)->nullable();
-            $table->timestamp('read_at')->default(null)->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('ref_id');
+            $table->foreign('ref_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamp('created_at')->useCurrent()->nullable();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
         });
@@ -31,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('user_search_recent');
     }
 };
