@@ -442,4 +442,22 @@ class ChatController extends Controller
         }
     }
 
+    public function getMessageImages($conversationId) {
+        try{
+            auth()->userOrFail();
+
+            $messageImages = MessageImage::select('message_images.*')
+            ->join('messages', 'messages.id', '=', 'message_images.message_id')
+            ->where('messages.conversation_id', $conversationId)
+            ->limit(9)
+            ->get();
+
+
+           return responseJson($messageImages, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
 }

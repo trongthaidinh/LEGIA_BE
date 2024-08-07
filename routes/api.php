@@ -152,6 +152,7 @@ Route::group([
     Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
+    Route::get('message-images/{conversation_id}', [ChatController::class, 'getMessageImages']);
     Route::post('message/mark-is-read', [ChatController::class, 'markMessageAsRead']);
     Route::delete('conversation/{conversation_id}', [ChatController::class, 'deleteConversation']);
 });
