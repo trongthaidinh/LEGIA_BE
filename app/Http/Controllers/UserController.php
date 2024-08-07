@@ -280,13 +280,13 @@ class UserController extends Controller
             $user = auth()->userOrFail();
 
             $users = DB::table('users')
-            ->where('id', '!=', $user->id)
             ->where(function($query) use ($request) {
                 $query->where('first_name', 'like', '%' . $request->q . '%')
                     ->orWhere('last_name', 'like', '%' . $request->q . '%')
                     ->orWhere('email', 'like', '%' . $request->q . '%')
                     ->orWhere('phone_number', 'like', '%' . $request->q . '%');
             })
+            ->where('id', '!=', $user->id)
             ->get();
 
 

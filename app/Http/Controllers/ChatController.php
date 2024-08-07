@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Models\ConversationParticipant;
+use App\Models\MessageImage;
 use App\Models\MessagesDeletedBy;
 use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
@@ -130,15 +131,16 @@ class ChatController extends Controller
         }
     }
 
-    public function createMessage()
+    public function createMessage(Request $request)
 {
     try {
         $user = auth()->userOrFail();
-        $data = request()->only(['conversation_id', 'content']);
+        $data = $request->only(['conversation_id', 'content', 'images']);
 
         $validator = Validator::make($data, [
             'conversation_id' => 'required|exists:conversations,id',
             'content' => 'required|string|max:400',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], chatValidatorMessages());
 
         if ($validator->fails()) {
@@ -152,6 +154,24 @@ class ChatController extends Controller
             ['user_id' => $user->id]
         ));
 
+        $images = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($data['images'] as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('message_images');
+                    $imagePublicId = $result->getPublicId();
+                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+
+                    $res = MessageImage::create([
+                        'message_id' => $message->id,
+                        'url' => $imageUrl,
+                    ]);
+                    $images[] = $res;
+                }
+            }
+        }
+
         $conversation = Conversation::findOrFail($conversationId);
 
         $partners = ConversationParticipant::where('conversation_id', $conversationId)
@@ -159,6 +179,7 @@ class ChatController extends Controller
             ->pluck('user_id');
 
         $message->load('user');
+        $message->images = $images;
 
         $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
 

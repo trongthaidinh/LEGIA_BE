@@ -46,6 +46,10 @@
             'secret_key.required' => 'Thiếu secret key',
             'secret_key.string' => 'Secret key phải là một chuỗi',
             'secret_key.exists' => 'Secret key không tìm thấy',
+            'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
+            'images.*.image' => 'Tệp phải là hình ảnh',
+            'images.*.mimes' => 'Sai định dạng',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
         ];
     }
 

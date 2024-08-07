@@ -306,9 +306,9 @@ class PostController extends Controller
                 'privacy.in' => 'Quyền riêng tư không hợp lệ.',
                 'post_type.in' => 'Loại bài viết không hợp lệ.',
                 'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
-                'images.*.image' => 'Tệp phải là hình ảnh.',
-                'images.*.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg.',
-                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
+                'images.*.image' => 'Tệp phải là hình ảnh',
+                'images.*.mimes' => 'Sai định dạng',
+                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
             ]);
 
             if ($validator->fails()) {
