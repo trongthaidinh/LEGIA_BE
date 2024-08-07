@@ -80,6 +80,28 @@ class NotificationController extends Controller
         }
     }
 
+    public function markAllAsRead()
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $updatedCount = Notification::where('owner_id', $user->id)
+            ->where('read', false)
+            ->update(['read' => true]);
+
+        if ($updatedCount === 0) {
+            return responseJson(null, 204, "Không có thông báo nào để đánh dấu là đã đọc");
+        }
+
+        return responseJson(null, 200, "Đã đánh dấu tất cả thông báo là đã đọc");
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi đánh dấu tất cả thông báo là đã đọc: ' . $e->getMessage());
+    }
+}
+
     public function getSecretKey(Request $request)
     {
         $user = auth()->user();
