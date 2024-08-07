@@ -139,12 +139,19 @@ class ChatController extends Controller
 
         $validator = Validator::make($data, [
             'conversation_id' => 'required|exists:conversations,id',
-            'content' => 'required|string|max:400',
+            'content' => 'nullable|string|max:400',
             'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
         ], chatValidatorMessages());
 
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
+        }
+
+        $hasContent = !empty(trim($data['content'] ?? ''));
+        $hasImages = $request->hasFile('images') && !empty($request->file('images'));
+
+        if(!$hasContent && !$hasImages){
+            return responseJson(null, 400, 'Phải có nội dung hoặc hình ảnh');
         }
 
         $conversationId = $data['conversation_id'];
