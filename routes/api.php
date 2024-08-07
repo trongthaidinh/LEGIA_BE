@@ -182,6 +182,7 @@ Route::group([
     'prefix' => 'reports',
 ], function () {
     Route::get('/', [ReportController::class, 'index']);
+    Route::get('/type/{type}', [ReportController::class, 'getReportsByType']);
     Route::post('/', [ReportController::class, 'store']);
 });
 
