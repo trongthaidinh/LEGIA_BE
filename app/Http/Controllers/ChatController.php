@@ -157,7 +157,7 @@ class ChatController extends Controller
         $images = [];
 
         if ($request->hasFile('images')) {
-            foreach ($data['images'] as $file) {
+            foreach ($request->file('images') as $file) {
                 if ($file->isValid()) {
                     $result = $file->storeOnCloudinary('message_images');
                     $imagePublicId = $result->getPublicId();
@@ -167,6 +167,7 @@ class ChatController extends Controller
                         'message_id' => $message->id,
                         'url' => $imageUrl,
                     ]);
+
                     $images[] = $res;
                 }
             }
@@ -310,7 +311,7 @@ class ChatController extends Controller
                     $query->where('user_id', $userId);
                 })
                 ->latest()
-                ->with(['user', 'seen_by'])
+                ->with(['user', 'seen_by', 'images'])
                 ->paginate($perPage, ['*'], 'page', $page);
 
             if($messages->isEmpty()){
