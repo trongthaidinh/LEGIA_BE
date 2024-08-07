@@ -34,7 +34,7 @@ class User extends Authenticatable implements JWTSubject
         'status',
         'last_activity',
         'is_verified',
-        'is_locked'
+        'is_banned'
     ];
 
     protected $hidden = [

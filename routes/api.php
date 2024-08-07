@@ -39,8 +39,8 @@ Route::group([
 ], function () {
     Route::get('users', [AdminUserController::class, 'index']);
     Route::get('users/{id}', [AdminUserController::class, 'show']);
-    Route::patch('users/{id}/lock', [AdminUserController::class, 'lock']);
-    Route::patch('users/{id}/unlock', [AdminUserController::class, 'unlock']);
+    Route::patch('users/{id}/ban', [AdminUserController::class, 'banUser']);
+    Route::patch('users/{id}/unban', [AdminUserController::class, 'unbanUser']);
 
     Route::group([
         'prefix' => 'reports',

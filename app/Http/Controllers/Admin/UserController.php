@@ -23,24 +23,24 @@ class UserController extends Controller
         return responseJson($user, 200, 'Thông tin chi tiết người dùng');
     }
 
-    public function lock($id)
+    public function banUser($id)
     {
         $user = User::find($id);
         if (!$user) {
             return responseJson(null, 404, 'Người dùng không tồn tại');
         }
-        $user->is_locked = true;
+        $user->is_banned = true;
         $user->save();
         return responseJson(null, 200, 'Tài khoản người dùng đã bị khóa');
     }
 
-    public function unlock($id)
+    public function unbanUser($id)
     {
         $user = User::find($id);
         if (!$user) {
             return responseJson(null, 404, 'Người dùng không tồn tại');
         }
-        $user->is_locked = false;
+        $user->is_banned = false;
         $user->save();
         return responseJson(null, 200, 'Tài khoản người dùng đã được mở khóa');
     }

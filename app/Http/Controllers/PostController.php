@@ -65,7 +65,7 @@ class PostController extends Controller
                           });
                 })
                 ->whereHas('owner', function ($query) {
-                    $query->where('is_locked', false);
+                    $query->where('is_banned', false);
                 })
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page)
@@ -159,7 +159,7 @@ class PostController extends Controller
     
         $user = User::findOrFail($userId);
     
-        if ($user->is_locked) {
+        if ($user->is_banned) {
             return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
         }
     
@@ -201,7 +201,7 @@ class PostController extends Controller
                 }
             })
             ->whereHas('owner', function ($query) {
-                $query->where('is_locked', false);
+                $query->where('is_banned', false);
             })
             ->orderBy('created_at', 'desc');
     
@@ -384,7 +384,7 @@ class PostController extends Controller
             ->withCount(['comments', 'reactions', 'shares'])
             ->where('id', $id)
             ->whereHas('owner', function ($query) {
-                $query->where('is_locked', false);
+                $query->where('is_banned', false);
             })
             ->first();
 
@@ -632,7 +632,7 @@ public function getArchivedPosts()
 
         $savedPosts = Archive::where('user_id', $user->id)
                              ->whereHas('post.owner', function($query) {
-                                 $query->where('is_locked', false);
+                                 $query->where('is_banned', false);
                              })
                              ->with(['post.owner:id,first_name,last_name,avatar,gender','post.background', 'post.images'])
                              ->get();
@@ -1044,7 +1044,7 @@ public function addOrUpdateReaction(Request $request, $postId)
                 ->where('content', 'like', '%' . $query . '%')
                 ->where('privacy', 'PUBLIC')
                 ->whereHas('owner', function ($query) {
-                    $query->where('is_locked', false);
+                    $query->where('is_banned', false);
                 })
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page)
