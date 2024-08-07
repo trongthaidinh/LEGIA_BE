@@ -234,14 +234,7 @@ class ChatController extends Controller
                 });
             }
 
-            $latestMessageSubquery = DB::table('messages')
-            ->select('conversation_id', DB::raw('MAX(created_at) as latest_message_time'))
-            ->whereNotIn('id', function ($subQuery) use ($userId) {
-                $subQuery->select('message_id')
-                    ->from('messages_deleted_by')
-                    ->where('user_id', $userId);
-            })
-            ->groupBy('conversation_id');
+
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->when($type, function ($query) use ($type, $q) {
@@ -263,11 +256,7 @@ class ChatController extends Controller
                             ->where('user_id', $userId);
                     });
             })
-            ->leftJoinSub($latestMessageSubquery, 'latest_messages', function ($join) {
-                $join->on('latest_messages.conversation_id', '=', 'conversations.id');
-            })
-            ->select('conversations.*', 'latest_messages.latest_message_time')
-            ->orderBy('latest_message_time', 'DESC')
+            ->orderBy('updated_at')
             ->get();
 
 
