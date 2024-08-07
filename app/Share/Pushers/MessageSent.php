@@ -25,8 +25,6 @@ class MessageSent {
     public function pusherMessageIsRead($message_id, $seen) {
         $this->pusher->trigger('chat-read-' . $message_id, 'MessageIsRead', $seen);
     }
-
 }
-
 
 ?>

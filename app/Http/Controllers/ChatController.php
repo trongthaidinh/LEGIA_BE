@@ -130,58 +130,54 @@ class ChatController extends Controller
         }
     }
 
-    public function createMessage(){
-        try {
-            $user = auth()->userOrFail();
+    public function createMessage()
+{
+    try {
+        $user = auth()->userOrFail();
+        $data = request()->only(['conversation_id', 'content']);
 
-            $data = request()->only(['conversation_id', 'content']);
+        $validator = Validator::make($data, [
+            'conversation_id' => 'required|exists:conversations,id',
+            'content' => 'required|string|max:400',
+        ], chatValidatorMessages());
 
-            $validator = Validator::make($data, [
-                'conversation_id' => 'required|exists:conversations,id',
-                'content' => 'required|string|max:400',
-            ], chatValidatorMessages());
-
-            if($validator->fails()){
-                return responseJson(null, 400, $validator->errors());
-            }
-
-            $conversationId = $data['conversation_id'];
-
-            $message = Message::create(array_merge(
-                $validator->validated(),
-                ['user_id' => $user->id]
-            ));
-
-            $conversation =  DB::table('conversations')
-            ->where('id', $message->conversation_id)
-            ->first();
-
-            $partners = DB::table('conversation_participants')
-            ->where('conversation_id', $conversationId)
-            ->where('user_id', '!=', $user->id)
-            ->get();
-
-
-            $message->load('user');
-
-            $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
-
-            foreach ($partners as $partner) {
-                $this->MessageSent->pusherConversationIdGetNewMessage($partner->user_id, [
-                    'conversation_id' => $conversationId,
-                    'content' => $message->content
-                ]);
-            }
-
-            DB::table('conversations')
-                ->where('id', $conversationId)
-                ->update(['last_message' => $message->content]);
-
-            return responseJson($message, 200, 'Tạo tin nhắn thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
         }
+
+        $conversationId = $data['conversation_id'];
+
+        $message = Message::create(array_merge(
+            $validator->validated(),
+            ['user_id' => $user->id]
+        ));
+
+        $conversation = Conversation::findOrFail($conversationId);
+
+        $partners = ConversationParticipant::where('conversation_id', $conversationId)
+            ->where('user_id', '!=', $user->id)
+            ->pluck('user_id');
+
+        $message->load('user');
+
+        $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
+
+        foreach ($partners as $partnerId) {
+            $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
+                'conversation_id' => $conversationId,
+                'content' => $message->content
+            ]);
+        }
+
+        $conversation->update(['last_message' => $message->content]);
+
+        return responseJson($message, 200, 'Tạo tin nhắn thành công!');
+
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 401, "Người dùng chưa xác thực!");
+    } catch (\Exception $e) {
+        return responseJson(null, 500, "Có lỗi xảy ra: " . $e->getMessage());
+    }
     }
 
     public function getMyConversations(Request $request) {
@@ -379,12 +375,12 @@ class ChatController extends Controller
 
             foreach($messageIds as $messageId){
 
-                $seen = MessagesSeenBy::create([
+                MessagesSeenBy::create([
                     'user_id' => $userId,
                     'message_id' => $messageId
                 ]);
 
-                $this->MessageSent->pusherMessageIsRead($messageId, $seen);
+                // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
             }
 
             return responseJson(null, 200);
