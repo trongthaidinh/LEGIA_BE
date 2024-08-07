@@ -14,6 +14,7 @@ class Report extends Model
         'target_id',
         'type',
         'code',
+        'status'
     ];
 
     public function emitter()
