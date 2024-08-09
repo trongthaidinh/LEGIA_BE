@@ -191,10 +191,13 @@ class ChatController extends Controller
 
         $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
 
+        $imagesLength = count($images) ?? 0;
+
         foreach ($partners as $partnerId) {
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'conversation_id' => $conversationId,
-                'content' => $message->content
+                'content' => $message->content,
+                'imagesLength' => $imagesLength
             ]);
         }
 

@@ -31,4 +31,10 @@ class Conversation extends Model
         return $this->hasMany(Message::class, 'conversation_id', 'id');
     }
 
+    public function messagesNotDeleted()
+    {
+        return $this->hasMany(Message::class, 'conversation_id', 'id')
+                    ->whereDoesntHave('deleted_by');
+    }
+
 }
