@@ -16,25 +16,40 @@ class ReportController extends Controller
             if (!$user) {
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-
+    
             $type = $request->query('type');
             $status = $request->query('status');
-
+    
             $reports = Report::latest();
-
+    
             if ($type && in_array($type, ['user', 'post'])) {
                 $reports->where('type', $type);
             }
-
+    
             if ($status && in_array($status, ['rejected', 'approved', 'pending', 'resolved'])) {
                 $reports->where('status', $status);
             }
-
-            return response()->json($reports->paginate(10), 200);
+    
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+            $paginatedReports = $reports->paginate($perPage, ['*'], 'page', $page);
+    
+            $response = [
+                'reports' => $paginatedReports->items(),
+                'page_info' => [
+                    'total' => $paginatedReports->total(),
+                    'total_page' => (int) ceil($paginatedReports->total() / $paginatedReports->perPage()),
+                    'current_page' => $paginatedReports->currentPage(),
+                    'next_page' => $paginatedReports->currentPage() < $paginatedReports->lastPage() ? $paginatedReports->currentPage() + 1 : null,
+                    'per_page' => $paginatedReports->perPage(),
+                ],
+            ];
+    
+            return responseJson($response, 200, 'Danh sách báo cáo');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi gửi báo cáo: ' . $e->getMessage());
         }
-    }
+    }    
 
     public function store(Request $request)
     {
