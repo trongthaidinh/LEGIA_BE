@@ -26,8 +26,12 @@ class ReportController extends Controller
                 $reports->where('type', $type);
             }
     
-            if ($status && in_array($status, ['rejected', 'approved', 'pending', 'resolved'])) {
-                $reports->where('status', $status);
+            if ($status) {
+                if ($status === 'resolved') {
+                    $reports->whereIn('status', ['approved', 'rejected']);
+                } elseif (in_array($status, ['rejected', 'approved', 'pending'])) {
+                    $reports->where('status', $status);
+                }
             }
     
             $perPage = $request->input('per_page', 10);
@@ -49,7 +53,7 @@ class ReportController extends Controller
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi gửi báo cáo: ' . $e->getMessage());
         }
-    }    
+    }
 
     public function store(Request $request)
     {
