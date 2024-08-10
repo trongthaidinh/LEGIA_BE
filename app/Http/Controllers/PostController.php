@@ -1162,26 +1162,29 @@ public function addOrUpdateReaction(Request $request, $postId)
     }
 }
 
-    public function getReactionCounts($postId)
-    {
-        try {
-            $user = auth()->user();
-            if (!$user) {
-                return responseJson(null, 401, 'Chưa xác thực người dùng');
-            }
-
-            $post = Post::findOrFail($postId);
-
-            $reactionCounts = $post->reactions()
-                ->select('type', DB::raw('COUNT(*) as count'))
-                ->groupBy('type')
-                ->pluck('count', 'type');
-
-            return responseJson($reactionCounts, 200, 'Lấy số lượng phản ứng thành công');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy số lượng phản ứng: ' . $e->getMessage());
+public function getReactionCounts($postId)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
+
+        $post = Post::find($postId);
+        if (!$post) {
+            return responseJson(null, 404, 'Bài đăng không tồn tại hoặc đã bị xóa');
+        }
+
+        $reactionCounts = $post->reactions()
+            ->select('type', DB::raw('COUNT(*) as count'))
+            ->groupBy('type')
+            ->pluck('count', 'type');
+
+        return responseJson($reactionCounts, 200, 'Lấy số lượng phản ứng thành công');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy số lượng phản ứng: ' . $e->getMessage());
     }
+}
 
 
     public function getReactionsByType($postId, $reactionType)
@@ -1192,7 +1195,10 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
-            $post = Post::findOrFail($postId);
+            $post = Post::find($postId);
+            if (!$post) {
+                return responseJson(null, 404, 'Bài đăng không tồn tại hoặc đã bị xóa');
+            }
 
             $reactions = $post->reactions()
                 ->where('type', $reactionType)
@@ -1230,7 +1236,14 @@ public function addOrUpdateReaction(Request $request, $postId)
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
 
-            $post = Post::findOrFail($postId);
+            $post = Post::find($postId);
+            if (!$post) {
+                return responseJson(null, 404, 'Bài đăng không tồn tại hoặc đã bị xóa');
+            }
+
+            if (!$post) {
+                return responseJson(null, 401, 'Bài đăng không tồn tại hoặc đã bị xóa.');
+            }
 
             $reactions = $post->reactions()
                 ->with('owner:id,first_name,last_name,avatar')
