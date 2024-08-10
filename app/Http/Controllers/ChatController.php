@@ -196,7 +196,6 @@ class ChatController extends Controller
 
         $conversation->setRelation('partners', collect($partnersData));
 
-        $partnerIds = $conversation->partners->pluck('id')->unique()->toArray();
 
         $message->load('user');
         $message->images = $images;
@@ -212,15 +211,30 @@ class ChatController extends Controller
             'avatar' => $user->avatar,
         ];
 
-        foreach ($partnerIds as $partnerId) {
+        if ($conversation->type == 'group') {
+            $partnerIds = $conversation->partners->pluck('id')->unique()->toArray();
+
+            foreach ($partnerIds as $partnerId) {
+                $this->MessageSent->pusherConversationIdGetNewMessageGroup($partnerId, [
+                    'sender' => $sender,
+                    'conversation' => $conversation,
+                    'content' => $message->content,
+                    'imagesLength' => $imagesLength,
+                    'type' => $conversation->type
+                ]);
+            }
+        } else {
+            $partnerId = $conversation->participants()->where('user_id', '!=', $user->id)->first()->user_id;
+
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
-                'partnerIds' => $partnerIds,
                 'sender' => $sender,
                 'conversation' => $conversation,
                 'content' => $message->content,
-                'imagesLength' => $imagesLength
+                'imagesLength' => $imagesLength,
+                'type' => $conversation->type
             ]);
         }
+
 
         $lastMessage = $imagesLength > 0 ? 'images-length-'.$imagesLength : $message->content;
 
