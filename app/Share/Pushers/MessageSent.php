@@ -17,6 +17,9 @@ class MessageSent {
     public function pusherConversationIdGetNewMessage($userId, $messageInfo) {
         $this->pusher->trigger('new-message-' . $userId, 'NewMessage', $messageInfo);
     }
+    public function pusherConversationIdGetNewMessageGroup($userId, $messageInfo) {
+        $this->pusher->trigger('new-message-group-' . $userId, 'NewMessageGroup', $messageInfo);
+    }
 
     public function pusherMessageSent($secret_key, $message) {
         $this->pusher->trigger('chat-' . $secret_key, 'MessageSent', $message);
