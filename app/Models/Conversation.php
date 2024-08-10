@@ -37,4 +37,9 @@ class Conversation extends Model
                     ->whereDoesntHave('deleted_by');
     }
 
+    public function partners()
+    {
+        return $this->participants()->where('user_id', '!=', auth()->id());
+    }
+
 }

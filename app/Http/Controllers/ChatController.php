@@ -182,9 +182,21 @@ class ChatController extends Controller
 
         $conversation = Conversation::findOrFail($conversationId);
 
-        $partners = ConversationParticipant::where('conversation_id', $conversationId)
-            ->where('user_id', '!=', $user->id)
-            ->pluck('user_id');
+        $conversation = $conversation->fresh();
+
+
+        $partnersData = $conversation->partners->map(function ($participant) {
+            return [
+                'id' => $participant->user->id,
+                'first_name' => $participant->user->first_name,
+                'last_name' => $participant->user->last_name,
+                'avatar' => $participant->user->avatar
+            ];
+        })->values()->all();
+
+        $conversation->setRelation('partners', collect($partnersData));
+
+        $partnerIds = $conversation->partners->pluck('id')->unique()->toArray();
 
         $message->load('user');
         $message->images = $images;
@@ -193,15 +205,26 @@ class ChatController extends Controller
 
         $imagesLength = count($images) ?? 0;
 
-        foreach ($partners as $partnerId) {
+        $sender = [
+            'id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'avatar' => $user->avatar,
+        ];
+
+        foreach ($partnerIds as $partnerId) {
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
-                'conversation_id' => $conversationId,
+                'partnerIds' => $partnerIds,
+                'sender' => $sender,
+                'conversation' => $conversation,
                 'content' => $message->content,
                 'imagesLength' => $imagesLength
             ]);
         }
 
-        $conversation->update(['last_message' => $message->content]);
+        $lastMessage = $imagesLength > 0 ? 'images-length-'.$imagesLength : $message->content;
+
+        $conversation->update(['last_message' => $lastMessage]);
 
         return responseJson($message, 200, 'Tạo tin nhắn thành công!');
 
@@ -263,13 +286,8 @@ class ChatController extends Controller
             ->get();
 
 
-            $conversations->each(function ($conversation) use ($userId) {
-                $conversation->load('participants');
-                $conversation['partners'] = $conversation->participants
-                ->reject(function ($participant) use ($userId) {
-                    return $participant->user_id === $userId;
-                })
-                ->map(function ($participant) {
+            $conversations->each(function ($conversation) {
+                $partnersData = $conversation->partners->map(function ($participant) {
                     return [
                         'id' => $participant->user->id,
                         'first_name' => $participant->user->first_name,
@@ -277,7 +295,8 @@ class ChatController extends Controller
                         'avatar' => $participant->user->avatar
                     ];
                 })->values()->all();
-                unset($conversation->participants);
+
+                $conversation->setRelation('partners', collect($partnersData));
             });
 
             return responseJson($conversations, 200, 'Truy vấn các cuộc đối thoại của bạn thành công!');
