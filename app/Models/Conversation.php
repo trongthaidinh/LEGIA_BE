@@ -42,9 +42,16 @@ class Conversation extends Model
         return $this->participants()->where('user_id', '!=', auth()->id());
     }
 
-    public function notSeenByMeCount()
+    public function myUnreadMessagesCount()
     {
-        return $this->messagesNotDeleted()->where('seen_by', auth()->id())->count();
+        $userId = auth()->id();
+        return $this->messages()
+            ->whereNotIn('id', function($query) use ($userId) {
+                $query->select('message_id')
+                      ->from('Messages_Seen_By')
+                      ->where('user_id', $userId);
+            })
+            ->count();
     }
 
 }
