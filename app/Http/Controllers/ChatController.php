@@ -87,11 +87,9 @@ class ChatController extends Controller
             };
 
 
-            $secret_key = Str::uuid()->toString();
-
             $conversation = Conversation::create(array_merge(
                 $validatorConversation->validated(),
-                ['creator_id' => $user->id, 'secret_key' => $secret_key]
+                ['creator_id' => $user->id]
             ));
 
             $conversationParticipantsCreated = DB::table('conversation_participants')
@@ -200,7 +198,7 @@ class ChatController extends Controller
         $message->load('user');
         $message->images = $images;
 
-        $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
+        $this->MessageSent->pusherMessageSent($conversation->id, $message);
 
         $imagesLength = count($images) ?? 0;
 
@@ -313,6 +311,8 @@ class ChatController extends Controller
                 $conversation->setRelation('partners', collect($partnersData));
             });
 
+            $conversations->load('notSeenByMeCount');
+
             return responseJson($conversations, 200, 'Truy vấn các cuộc đối thoại của bạn thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -368,23 +368,6 @@ class ChatController extends Controller
         }
     }
 
-    public function getSecretKey($conversationId) {
-        try{
-            auth()->userOrFail();
-
-            $conversation = DB::table('conversations')
-            ->where('id', $conversationId)
-            ->first();
-
-            if(!$conversation){
-                return responseJson(null, 400, 'Secret key không đúng!');
-            }
-            return responseJson($conversation->secret_key);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
-        }
-    }
 
     public function getConversationParticipants(Request $request) {
         try{

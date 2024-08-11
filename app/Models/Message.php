@@ -24,10 +24,6 @@ class Message extends Model
         return $this->hasMany(MessagesSeenBy::class, 'message_id');
     }
 
-    public function isSeen(){
-        return $this->seen_by()->where('user_id', '!=', auth()->id())->exists();
-    }
-
     public function deleted_by(){
         return $this->hasMany(MessagesDeletedBy::class, 'message_id');
     }
