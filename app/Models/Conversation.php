@@ -42,4 +42,9 @@ class Conversation extends Model
         return $this->participants()->where('user_id', '!=', auth()->id());
     }
 
+    public function notSeenByMeCount()
+    {
+        return $this->messagesNotDeleted()->where('seen_by', auth()->id())->count();
+    }
+
 }
