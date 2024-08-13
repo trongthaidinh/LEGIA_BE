@@ -309,9 +309,10 @@ class ChatController extends Controller
                 })->values()->all();
 
                 $conversation->setRelation('partners', collect($partnersData));
+
+                $conversation['my_unread_messages_count'] = $conversation->myUnreadMessagesCount();
             });
 
-            $conversations->load('notSeenByMeCount');
 
             return responseJson($conversations, 200, 'Truy vấn các cuộc đối thoại của bạn thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {

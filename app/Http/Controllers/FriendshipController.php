@@ -248,12 +248,7 @@ class FriendshipController extends Controller
                           ->orWhere('owner_id', $userId);
                 })
                 ->where('status', 'accepted')
-                ->with(['friend' => function ($query) use ($userId) {
-                    $query->where('id', '!=', $userId);
-                }])
-                ->with(['owner' => function ($query) use ($userId) {
-                    $query->where('id', '!=', $userId);
-                }])
+                ->with('partner')
                 ->limit($limit)
                 ->get();
             }else if ($status == 'sent'){
@@ -261,27 +256,17 @@ class FriendshipController extends Controller
                     $query->where('owner_id', $userId);
                 })
                 ->where('status', 'pending')
-                ->with('friend')
-                ->limit($limit)
+                ->with('partner')
                 ->get();
 
-            }else if( $status == 'received'){
+            }else if($status == 'received'){
                 $friendships = Friendship::where(function ($query) use ($userId) {
                     $query->where('friend_id', $userId);
                 })
                 ->where('status', 'pending')
-                ->with('owner')
-                ->limit($limit)
+                ->with('partner')
                 ->get();
             }
-
-
-            $friendships->transform(function ($friendship) {
-                $friendship->user_info = $friendship->friend ? $friendship->friend : $friendship->owner;
-                unset($friendship->friend);
-                unset($friendship->owner);
-                return $friendship;
-            });
 
 
         if($friendships->isEmpty()){

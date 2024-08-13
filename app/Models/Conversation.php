@@ -48,9 +48,10 @@ class Conversation extends Model
         return $this->messages()
             ->whereNotIn('id', function($query) use ($userId) {
                 $query->select('message_id')
-                      ->from('Messages_Seen_By')
+                      ->from('messages_seen_by')
                       ->where('user_id', $userId);
             })
+            ->where('user_id', '!=', $userId)
             ->count();
     }
 
