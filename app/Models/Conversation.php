@@ -42,4 +42,17 @@ class Conversation extends Model
         return $this->participants()->where('user_id', '!=', auth()->id());
     }
 
+    public function myUnreadMessagesCount()
+    {
+        $userId = auth()->id();
+        return $this->messages()
+            ->whereNotIn('id', function($query) use ($userId) {
+                $query->select('message_id')
+                      ->from('messages_seen_by')
+                      ->where('user_id', $userId);
+            })
+            ->where('user_id', '!=', $userId)
+            ->count();
+    }
+
 }

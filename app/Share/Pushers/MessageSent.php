@@ -21,13 +21,18 @@ class MessageSent {
         $this->pusher->trigger('new-message-group-' . $userId, 'NewMessageGroup', $messageInfo);
     }
 
-    public function pusherMessageSent($secret_key, $message) {
-        $this->pusher->trigger('chat-' . $secret_key, 'MessageSent', $message);
+    public function pusherMessageSent($conversationId, $message) {
+        $this->pusher->trigger('chat-' . $conversationId, 'MessageSent', $message);
     }
 
-    public function pusherMessageIsRead($message_id, $seen) {
-        $this->pusher->trigger('chat-read-' . $message_id, 'MessageIsRead', $seen);
+    public function pusherMessageIsRead($messageId, $seen) {
+        $this->pusher->trigger('chat-read-' . $messageId, 'MessageIsRead', $seen);
     }
+
+    public function pusherUnreadMessagesCount($userId, $count) {
+        $this->pusher->trigger('unread-messages-count-' . $userId, 'UnreadMessagesCount', $count);
+    }
+
 }
 
 ?>

@@ -11,7 +11,6 @@ use App\Models\MessagesDeletedBy;
 use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 use MessageSent;
 
@@ -87,11 +86,9 @@ class ChatController extends Controller
             };
 
 
-            $secret_key = Str::uuid()->toString();
-
             $conversation = Conversation::create(array_merge(
                 $validatorConversation->validated(),
-                ['creator_id' => $user->id, 'secret_key' => $secret_key]
+                ['creator_id' => $user->id]
             ));
 
             $conversationParticipantsCreated = DB::table('conversation_participants')
@@ -135,6 +132,7 @@ class ChatController extends Controller
 {
     try {
         $user = auth()->userOrFail();
+        $userId = $user->id;
         $data = $request->only(['conversation_id', 'content', 'images']);
 
         $validator = Validator::make($data, [
@@ -158,7 +156,7 @@ class ChatController extends Controller
 
         $message = Message::create(array_merge(
             $validator->validated(),
-            ['user_id' => $user->id]
+            ['user_id' => $userId]
         ));
 
         $images = [];
@@ -184,6 +182,9 @@ class ChatController extends Controller
 
         $conversation = $conversation->fresh();
 
+        if(!$conversation->participants->contains('user_id', $userId)){
+            return responseJson(null, 400, 'Bạn không có quyền trong cuộc trò chuyện này!');
+        }
 
         $partnersData = $conversation->partners->map(function ($participant) {
             return [
@@ -200,21 +201,24 @@ class ChatController extends Controller
         $message->load('user');
         $message->images = $images;
 
-        $this->MessageSent->pusherMessageSent($conversation->secret_key, $message);
+        $this->MessageSent->pusherMessageSent($conversation->id, $message);
 
         $imagesLength = count($images) ?? 0;
 
         $sender = [
-            'id' => $user->id,
+            'id' => $userId,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'avatar' => $user->avatar,
         ];
 
+
+
         if ($conversation->type == 'group') {
             $partnerIds = $conversation->partners->pluck('id')->unique()->toArray();
 
             foreach ($partnerIds as $partnerId) {
+
                 $this->MessageSent->pusherConversationIdGetNewMessageGroup($partnerId, [
                     'sender' => $sender,
                     'conversation' => $conversation,
@@ -224,7 +228,7 @@ class ChatController extends Controller
                 ]);
             }
         } else {
-            $partnerId = $conversation->participants()->where('user_id', '!=', $user->id)->first()->user_id;
+            $partnerId = $conversation->participants()->where('user_id', '!=', $userId)->first()->user_id;
 
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'sender' => $sender,
@@ -275,7 +279,6 @@ class ChatController extends Controller
             }
 
 
-
             $conversations = Conversation::whereIn('id', $conversationParticipants)
             ->when($type, function ($query) use ($type, $q) {
                 if ($type == 'group') {
@@ -311,7 +314,10 @@ class ChatController extends Controller
                 })->values()->all();
 
                 $conversation->setRelation('partners', collect($partnersData));
+
+                $conversation['my_unread_messages_count'] = $conversation->myUnreadMessagesCount();
             });
+
 
             return responseJson($conversations, 200, 'Truy vấn các cuộc đối thoại của bạn thành công!');
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
@@ -368,23 +374,6 @@ class ChatController extends Controller
         }
     }
 
-    public function getSecretKey($conversationId) {
-        try{
-            auth()->userOrFail();
-
-            $conversation = DB::table('conversations')
-            ->where('id', $conversationId)
-            ->first();
-
-            if(!$conversation){
-                return responseJson(null, 400, 'Secret key không đúng!');
-            }
-            return responseJson($conversation->secret_key);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
-            return responseJson(null, 404, "Người dùng chưa xác thực!");
-        }
-    }
 
     public function getConversationParticipants(Request $request) {
         try{
@@ -437,7 +426,11 @@ class ChatController extends Controller
                 // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
             }
 
-            return responseJson(null, 200);
+            $count = $this->handleGetUnreadMessagesCountOfUser($userId);
+
+            $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
+
+            return responseJson($messageIds, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -483,6 +476,54 @@ class ChatController extends Controller
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
         }
+    }
+
+    public function getMyUnreadMessagesCount() {
+        try{
+            $user = auth()->userOrFail();
+            $userId = $user->id;
+
+
+            $count = $this->handleGetUnreadMessagesCountOfUser($userId);
+
+            return responseJson($count, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    private function handleGetUnreadMessagesCountOfUser($userId){
+
+        $conversationsGroup = Conversation::whereHas('participants', function($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->where('type', 'group')
+        ->get();
+
+        $conversationsIndividual = Conversation::whereHas('participants', function($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->where('type', 'individual')
+        ->get();
+
+        $countGroup = 0;
+        $countIndividual = 0;
+
+        foreach($conversationsGroup as $conversation){
+            $countGroup += $conversation->myUnreadMessagesCount();
+        }
+
+        foreach($conversationsIndividual as $conversation){
+            $countIndividual += $conversation->myUnreadMessagesCount();
+        }
+
+        return [
+            'group' => $countGroup,
+            'individual' => $countIndividual,
+            'total' => $countGroup + $countIndividual
+        ];
+
     }
 
 }

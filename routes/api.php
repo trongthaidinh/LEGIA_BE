@@ -149,10 +149,10 @@ Route::group([
     Route::post('create-conversation', [ChatController::class, 'createConversation']);
     Route::post('message', [ChatController::class, 'createMessage']);
     Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
-    Route::get('get-secret-key/{conversation_id}', [ChatController::class, 'getSecretKey']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
     Route::get('conversation_participants', [ChatController::class, 'getConversationParticipants']);
     Route::get('message-images/{conversation_id}', [ChatController::class, 'getMessageImages']);
+    Route::get('unread-messages-count', [ChatController::class, 'getMyUnreadMessagesCount']);
     Route::post('message/mark-is-read', [ChatController::class, 'markMessageAsRead']);
     Route::delete('conversation/{conversation_id}', [ChatController::class, 'deleteConversation']);
 });
