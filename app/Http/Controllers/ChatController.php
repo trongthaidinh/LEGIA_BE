@@ -182,7 +182,7 @@ class ChatController extends Controller
 
         $conversation = $conversation->fresh();
 
-        if(!$conversation->partners->contains('user_id', $userId)){
+        if(!$conversation->participants->contains('user_id', $userId)){
             return responseJson(null, 400, 'Bạn không có quyền trong cuộc trò chuyện này!');
         }
 
