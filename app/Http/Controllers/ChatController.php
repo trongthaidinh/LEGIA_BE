@@ -11,7 +11,6 @@ use App\Models\MessagesDeletedBy;
 use App\Models\MessagesSeenBy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 use MessageSent;
 
@@ -133,6 +132,7 @@ class ChatController extends Controller
 {
     try {
         $user = auth()->userOrFail();
+        $userId = $user->id;
         $data = $request->only(['conversation_id', 'content', 'images']);
 
         $validator = Validator::make($data, [
@@ -156,7 +156,7 @@ class ChatController extends Controller
 
         $message = Message::create(array_merge(
             $validator->validated(),
-            ['user_id' => $user->id]
+            ['user_id' => $userId]
         ));
 
         $images = [];
@@ -203,7 +203,7 @@ class ChatController extends Controller
         $imagesLength = count($images) ?? 0;
 
         $sender = [
-            'id' => $user->id,
+            'id' => $userId,
             'first_name' => $user->first_name,
             'last_name' => $user->last_name,
             'avatar' => $user->avatar,
@@ -222,7 +222,7 @@ class ChatController extends Controller
                 ]);
             }
         } else {
-            $partnerId = $conversation->participants()->where('user_id', '!=', $user->id)->first()->user_id;
+            $partnerId = $conversation->participants()->where('user_id', '!=', $userId)->first()->user_id;
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'sender' => $sender,
                 'conversation' => $conversation,
@@ -231,6 +231,10 @@ class ChatController extends Controller
                 'type' => $conversation->type
             ]);
         }
+
+        $count = $this->handleGetMyUnreadMessagesCount($userId);
+
+        $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
 
 
         $lastMessage = $imagesLength > 0 ? 'images-length-'.$imagesLength : $message->content;
@@ -420,6 +424,10 @@ class ChatController extends Controller
                 // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
             }
 
+            $count = $this->handleGetMyUnreadMessagesCount($userId);
+
+            $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
+
             return responseJson(null, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
@@ -466,6 +474,54 @@ class ChatController extends Controller
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
         }
+    }
+
+    public function getMyUnreadMessagesCount() {
+        try{
+            $user = auth()->userOrFail();
+            $userId = $user->id;
+
+
+            $count = $this->handleGetMyUnreadMessagesCount($userId);
+
+            return responseJson($count, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    private function handleGetMyUnreadMessagesCount($userId){
+
+        $conversationsGroup = Conversation::whereHas('participants', function($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->where('type', 'group')
+        ->get();
+
+        $conversationsIndividual = Conversation::whereHas('participants', function($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->where('type', 'individual')
+        ->get();
+
+        $countGroup = 0;
+        $countIndividual = 0;
+
+        foreach($conversationsGroup as $conversation){
+            $countGroup += $conversation->myUnreadMessagesCount();
+        }
+
+        foreach($conversationsIndividual as $conversation){
+            $countIndividual += $conversation->myUnreadMessagesCount();
+        }
+
+        return [
+            'group' => $countGroup,
+            'individual' => $countIndividual,
+            'total' => $countGroup + $countIndividual
+        ];
+
     }
 
 }

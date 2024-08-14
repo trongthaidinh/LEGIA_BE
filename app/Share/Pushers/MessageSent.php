@@ -28,6 +28,11 @@ class MessageSent {
     public function pusherMessageIsRead($messageId, $seen) {
         $this->pusher->trigger('chat-read-' . $messageId, 'MessageIsRead', $seen);
     }
+
+    public function pusherUnreadMessagesCount($userId, $count) {
+        $this->pusher->trigger('unread-messages-count-' . $userId, 'UnreadMessagesCount', $count);
+    }
+
 }
 
 ?>
