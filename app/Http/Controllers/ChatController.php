@@ -223,7 +223,6 @@ class ChatController extends Controller
             }
         } else {
             $partnerId = $conversation->participants()->where('user_id', '!=', $user->id)->first()->user_id;
-
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'sender' => $sender,
                 'conversation' => $conversation,
