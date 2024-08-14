@@ -212,10 +212,13 @@ class ChatController extends Controller
             'avatar' => $user->avatar,
         ];
 
+
+
         if ($conversation->type == 'group') {
             $partnerIds = $conversation->partners->pluck('id')->unique()->toArray();
 
             foreach ($partnerIds as $partnerId) {
+
                 $this->MessageSent->pusherConversationIdGetNewMessageGroup($partnerId, [
                     'sender' => $sender,
                     'conversation' => $conversation,
@@ -226,6 +229,7 @@ class ChatController extends Controller
             }
         } else {
             $partnerId = $conversation->participants()->where('user_id', '!=', $userId)->first()->user_id;
+
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'sender' => $sender,
                 'conversation' => $conversation,
@@ -234,10 +238,6 @@ class ChatController extends Controller
                 'type' => $conversation->type
             ]);
         }
-
-        $count = $this->handleGetMyUnreadMessagesCount($userId);
-
-        $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
 
 
         $lastMessage = $imagesLength > 0 ? 'images-length-'.$imagesLength : $message->content;
@@ -277,7 +277,6 @@ class ChatController extends Controller
                     });
                 });
             }
-
 
 
             $conversations = Conversation::whereIn('id', $conversationParticipants)
@@ -427,11 +426,11 @@ class ChatController extends Controller
                 // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
             }
 
-            $count = $this->handleGetMyUnreadMessagesCount($userId);
+            $count = $this->handleGetUnreadMessagesCountOfUser($userId);
 
             $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
 
-            return responseJson(null, 200);
+            return responseJson($messageIds, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -485,7 +484,7 @@ class ChatController extends Controller
             $userId = $user->id;
 
 
-            $count = $this->handleGetMyUnreadMessagesCount($userId);
+            $count = $this->handleGetUnreadMessagesCountOfUser($userId);
 
             return responseJson($count, 200);
 
@@ -494,7 +493,7 @@ class ChatController extends Controller
         }
     }
 
-    private function handleGetMyUnreadMessagesCount($userId){
+    private function handleGetUnreadMessagesCountOfUser($userId){
 
         $conversationsGroup = Conversation::whereHas('participants', function($query) use ($userId) {
             $query->where('user_id', $userId);
