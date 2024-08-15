@@ -26,18 +26,18 @@ class PusherAuthController extends Controller
 
             $socketId = $request->input('socket_id');
 
-            // $friends = $user->friends;
+            $friends = $user->friends;
 
-            // $watchlist = [];
+            $watchlist = [];
 
 
-            // foreach ($friends as $friend) {
-            //     $watchlist[] = $friend->id;
-            // }
+            foreach ($friends as $friend) {
+                $watchlist[] = $friend->id;
+            }
 
             $userData = [
                 'id' => $user->id,
-                // 'watchlist' => $watchlist
+                'watchlist' => $watchlist
             ];
 
 

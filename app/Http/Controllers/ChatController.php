@@ -299,7 +299,7 @@ class ChatController extends Controller
                             ->where('user_id', $userId);
                     });
             })
-            ->orderBy('updated_at')
+            ->orderBy('updated_at','desc')
             ->get();
 
 
