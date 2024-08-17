@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Friendship;
 use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Share\Pushers\NotificationAdded;
@@ -248,15 +249,14 @@ class FriendshipController extends Controller
                           ->orWhere('owner_id', $userId);
                 })
                 ->where('status', 'accepted')
-                ->with('partner')
                 ->limit($limit)
                 ->get();
+
             }else if ($status == 'sent'){
                 $friendships = Friendship::where(function ($query) use ($userId) {
                     $query->where('owner_id', $userId);
                 })
                 ->where('status', 'pending')
-                ->with('partner')
                 ->get();
 
             }else if($status == 'received'){
@@ -264,13 +264,20 @@ class FriendshipController extends Controller
                     $query->where('friend_id', $userId);
                 })
                 ->where('status', 'pending')
-                ->with('partner')
                 ->get();
             }
 
-
         if($friendships->isEmpty()){
             return responseJson(null, 404);
+        }
+
+        foreach($friendships as $friendship){
+            if ($friendship->owner_id == $userId) {
+                $friendship['partner'] = User::find($friendship->friend_id);
+            } else {
+                $friendship['partner'] = User::find($friendship->owner_id);
+            }
+
         }
 
         $data = [
