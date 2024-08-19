@@ -144,7 +144,6 @@ class ChatController extends Controller
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
-
         $hasContent = !empty(trim($data['content'] ?? ''));
         $hasImages = $request->hasFile('images') && !empty($request->file('images'));
 
@@ -423,14 +422,21 @@ class ChatController extends Controller
                     'message_id' => $messageId
                 ]);
 
-                // $this->MessageSent->pusherMessageIsRead($messageId, $seen);
+                $this->MessageSent->pusherMessageIsRead($messageId, [
+                    'message_id' => $messageId,
+                    'user_id' => $userId,
+                    'user' => $user,
+                ]);
             }
 
             $count = $this->handleGetUnreadMessagesCountOfUser($userId);
 
             $this->MessageSent->pusherUnreadMessagesCount($userId, $count);
 
-            return responseJson($messageIds, 200);
+            return responseJson([
+                "user_id" => $userId,
+                "message_ids" => $messageIds,
+            ], 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -468,6 +474,7 @@ class ChatController extends Controller
             ->join('messages', 'messages.id', '=', 'message_images.message_id')
             ->where('messages.conversation_id', $conversationId)
             ->limit(9)
+            ->orderBy('message_images.created_at', 'desc')
             ->get();
 
 
