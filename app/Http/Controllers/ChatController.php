@@ -133,7 +133,7 @@ class ChatController extends Controller
     try {
         $user = auth()->userOrFail();
         $userId = $user->id;
-        $data = $request->only(['conversation_id', 'content', 'images']);
+        $data = $request->all();
 
         $validator = Validator::make($data, [
             'conversation_id' => 'required|exists:conversations,id',
