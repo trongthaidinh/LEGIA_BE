@@ -224,7 +224,7 @@ class ChatController extends Controller
                     'content' => $message->content,
                     'imagesLength' => $imagesLength,
                     'type' => $conversation->type,
-                    'partners' => $partnersData,
+                    'partners' => [$user],
                     'created_at' => $message->created_at,
                     'updated_at' => $message->updated_at
                 ]);
