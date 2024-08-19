@@ -140,7 +140,7 @@ class FriendshipController extends Controller
                 ];
             }
 
-            $this->NotificationAdded->pusherMakeReadNotification($notification->id, $friend);
+            $this->NotificationAdded->pusherMakeReadNotification($notification->id, $friend->id);
             $this->NotificationAdded->pusherNotificationAdded($notification, $senderId);
 
 
