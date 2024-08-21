@@ -25,16 +25,4 @@ class Friendship extends Model
         return $this->belongsTo(User::class, 'friend_id');
     }
 
-
-    public function partner()
-    {
-        $currentUserId = auth()->user()->id ?? null;
-
-        if ($this->owner_id == $currentUserId) {
-            return $this->belongsTo(User::class, 'friend_id');
-        } else {
-            return $this->belongsTo(User::class, 'owner_id');
-        }
-
-    }
 }
