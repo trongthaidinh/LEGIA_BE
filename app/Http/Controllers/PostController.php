@@ -1203,7 +1203,7 @@ public function getReactionCounts($postId)
             $reactions = $post->reactions()
                 ->where('type', $reactionType)
                 ->with('owner:id,first_name,last_name,avatar')
-                ->paginate(10);
+                ->paginate(2);
 
             $reactionDetails = [
                 'users' => $reactions->map(function ($reaction) {
@@ -1247,7 +1247,7 @@ public function getReactionCounts($postId)
 
             $reactions = $post->reactions()
                 ->with('owner:id,first_name,last_name,avatar')
-                ->paginate(10);
+                ->paginate(2);
 
             $reactionDetails = [
                 'users' => $reactions->map(function ($reaction) {
