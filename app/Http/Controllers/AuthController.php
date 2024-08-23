@@ -41,11 +41,11 @@ class AuthController extends Controller
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
         }else {
             if($request->gender == 'male'){
-                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarMale_ixpufu.jpg?_s=public-apps";
+                $avatarPath = "/images/samples/AvatarMale.jpg";
             }else if($request->gender == 'female'){
-                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarFemale_olfayu.jpg?_s=public-apps";
+                $avatarPath = "/images/samples/AvatarFemale.jpg";
             }else if($request->gender == 'other'){
-                $avatarPath = "https://res.cloudinary.com/dh5674gvh/image/upload/fl_preserve_transparency/v1719510046/samples/AvatarOther_ftskmk.jpg?_s=public-apps";
+                $avatarPath = "/images/samples/AvatarOther.jpg";
             }
         }
 
