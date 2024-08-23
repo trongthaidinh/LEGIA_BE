@@ -342,13 +342,6 @@ class UserController extends Controller
 
             $images = collect();
 
-            if ($user->avatar) {
-                $images->push($user->avatar);
-            }
-
-            if ($user->cover_image) {
-                $images->push($user->cover_image);
-            }
 
             $postImages = DB::table('post_images')
                 ->where('user_id', $id)
