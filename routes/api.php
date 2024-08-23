@@ -89,6 +89,7 @@ Route::group([
 ], function () {
     Route::get('user/{user_id}', [FriendshipController::class, 'getFriendListOfUser']);
     Route::get('find', [FriendshipController::class, 'findFriends']);
+    Route::get('friend-ids', [FriendshipController::class, 'getFriendIds']);
     Route::post('add/{friend}', [FriendshipController::class, 'add']);
     Route::patch('accept/{id}', [FriendshipController::class, 'accept']);
     Route::delete('{id}', [FriendshipController::class, 'delete']);
