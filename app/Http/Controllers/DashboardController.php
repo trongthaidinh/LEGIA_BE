@@ -14,9 +14,9 @@ class DashboardController extends Controller
             auth()->userOrFail();
 
             $filterOption = $request->input('filter', 'month');
-            $totalUser = User::count();
+            $totalUserByFilter = null;
             $increasePercent = null;
-
+            $total = User::count();
 
             switch ($filterOption) {
                 case 'month':
@@ -31,6 +31,9 @@ class DashboardController extends Controller
                     }else{
                         $increasePercent = (($currentMonthUsers - $lastMonthUsers) / $lastMonthUsers) * 100;
                     }
+
+                    $totalUserByFilter = $currentMonthUsers;
+
                     break;
                 case 'year':
                     $currentYear = now()->startOfYear();
@@ -44,15 +47,19 @@ class DashboardController extends Controller
                     }else{
                         $increasePercent = (($currentYearUsers - $lastYearUsers) / $lastYearUsers) * 100;
                     }
+
+                    $totalUserByFilter = $currentYearUsers;
+
                     break;
                 default:
                     return responseJson(null, 400, 'Thông tin bộ lọc không hợp lệ');
             }
 
             $data = [
-                'total' => $totalUser,
+                'total_by_filter' => $totalUserByFilter,
                 'increase_percent' => $increasePercent,
-                'filter_by' => $filterOption
+                'filter_by' => $filterOption,
+                'total' => $total
             ];
 
             return responseJson($data);
@@ -68,9 +75,9 @@ class DashboardController extends Controller
             auth()->userOrFail();
 
             $filterOption = $request->input('filter', 'month');
-            $totalPost = Post::count();
+            $totalPostByFilter = null;
             $increasePercent = null;
-
+            $total = Post::count();
 
             switch ($filterOption) {
                 case 'month':
@@ -85,6 +92,9 @@ class DashboardController extends Controller
                     }else{
                         $increasePercent = (($currentMonthPosts - $lastMonthPosts) / $lastMonthPosts) * 100;
                     }
+
+                    $totalPostByFilter = $currentMonthPosts;
+
                     break;
                 case 'year':
                     $currentYear = now()->startOfYear();
@@ -99,15 +109,18 @@ class DashboardController extends Controller
                         $increasePercent = (($currentYearPosts - $lastYearPosts) / $lastYearPosts) * 100;
                     }
 
+                    $totalPostByFilter = $currentYearPosts;
+
                     break;
                 default:
                     return responseJson(null, 400, 'Thông tin bộ lọc không hợp lệ');
             }
 
             $data = [
-                'total' => $totalPost,
+                'total_by_filter' => $totalPostByFilter,
                 'increase_percent' => $increasePercent,
-                'filter_by' => $filterOption
+                'filter_by' => $filterOption,
+                'total' => $total
             ];
 
             return responseJson($data);
