@@ -26,4 +26,9 @@ class PostVideos extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'post_video_comment_id');
+    }
 }
