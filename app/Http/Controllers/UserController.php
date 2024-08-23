@@ -308,19 +308,37 @@ class UserController extends Controller
 
     public function getSuggestionList() {
         try{
-            $user = auth()->userOrFail();
+            $currentUser = auth()->userOrFail();
 
-            $users = User::where('id', '!=', $user->id)
-                ->whereDoesntHave('friends', function ($query) use ($user) {
-                    $query->where('owner_id', $user->id)
-                        ->orWhere('friend_id', $user->id);
-                })
-                ->inRandomOrder()
-                ->limit(15)
-                ->get();
+            // Lấy danh sách ID của bạn bè người dùng hiện tại
+            $friendIds = $currentUser->friends()
+                ->select(DB::raw("IF(friendships.owner_id = $currentUser->id, friendships.friend_id, friendships.   owner_id) as friend_id"))
+                ->wherePivot('status', 'accepted')
+                ->pluck('friend_id')
+                ->toArray();
+
+            // Lấy danh sách bạn bè của những người trong $friendIds
+            $friendsOfFriends = DB::table('friendships')
+            ->whereIn('owner_id', $friendIds)
+            ->orWhereIn('friend_id', $friendIds)
+            ->where(function ($query) use ($currentUser) {
+                $query->where('owner_id', '!=', $currentUser->id)
+                    ->where('friend_id', '!=', $currentUser->id);
+            })
+            ->where('status', 'accepted')
+            ->inRandomOrder()
+            ->limit(20)
+            ->get();
+
+            // Lấy danh sách ID người dùng từ các trường `owner_id` và `friend_id`
+            $userIds = $friendsOfFriends->pluck('owner_id')->merge($friendsOfFriends->pluck('friend_id'))->unique();
+
+            // Truy vấn thông tin người dùng
+            $users = DB::table('users')->whereIn('id', $userIds)->get()->keyBy('id');
 
 
-            return responseJson($users, 200);
+
+            return responseJson($friendsOfFriends);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, 'Người dùng chưa xác thực!');

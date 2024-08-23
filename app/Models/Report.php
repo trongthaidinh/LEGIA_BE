@@ -14,7 +14,8 @@ class Report extends Model
         'target_id',
         'type',
         'code',
-        'status'
+        'status',
+        'description',
     ];
 
     public function emitter()
@@ -25,5 +26,10 @@ class Report extends Model
     public function target()
     {
         return $this->belongsTo(User::class, 'target_id');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ReportImage::class);
     }
 }
