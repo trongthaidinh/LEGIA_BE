@@ -10,6 +10,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostImage;
+use App\Models\PostVideos;
 use App\Models\Reaction;
 use App\Models\Share;
 use App\Models\User;
@@ -34,12 +35,12 @@ class PostController extends Controller
                 return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
             $userId = $user->id;
-
+    
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
-
+    
             $friendIds = [];
-
+    
             $friendships = Friendship::where(function ($query) use ($userId) {
                 $query->where('friend_id', $userId)
                       ->orWhere('owner_id', $userId);
@@ -52,10 +53,15 @@ class PostController extends Controller
                 $query->where('id', '!=', $userId);
             }])
             ->get();
-
+    
             $friendIds = $friendships->pluck('owner_id')->toArray();
-
-            $posts = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+    
+            $posts = Post::with([
+                    'owner:id,first_name,last_name,avatar,gender',
+                    'background',
+                    'images',
+                    'videos' 
+                ])
                 ->withCount(['comments', 'reactions', 'shares'])
                 ->where(function($query) use ($user, $friendIds) {
                     $query->where('privacy', 'PUBLIC')
@@ -72,7 +78,7 @@ class PostController extends Controller
                 ->through(function ($post) use ($user) {
                     $currentUserReaction = $post->reactions()->where('owner_id', $user->id)->select('type')->first();
                     $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
+    
                     $reactionCounts = $post->reactions()
                         ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
@@ -80,7 +86,7 @@ class PostController extends Controller
                         ->limit(3)
                         ->pluck('count', 'type')
                         ->toArray();
-
+    
                     $topReactions = [];
                     foreach ($reactionCounts as $type => $count) {
                         $topReactions[] = [
@@ -89,21 +95,22 @@ class PostController extends Controller
                         ];
                     }
                     $post->top_reactions = $topReactions;
-
+    
                     if ($post->post_type === 'SHARE') {
                         $share = Share::where('owner_post_id', $post->id)->first();
                         if ($share) {
                             $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
-                            ->find($share->post_id);
-
+                                ->with(['images', 'videos']) 
+                                ->find($share->post_id);
+    
                             $reactionCounts = $originalPost->reactions()
-                            ->select('type', DB::raw('COUNT(*) as count'))
-                            ->groupBy('type')
-                            ->orderByDesc('count')
-                            ->limit(3)
-                            ->pluck('count', 'type')
-                            ->toArray();
-
+                                ->select('type', DB::raw('COUNT(*) as count'))
+                                ->groupBy('type')
+                                ->orderByDesc('count')
+                                ->limit(3)
+                                ->pluck('count', 'type')
+                                ->toArray();
+    
                             $topReactions = [];
                             foreach ($reactionCounts as $type => $count) {
                                 $topReactions[] = [
@@ -112,19 +119,19 @@ class PostController extends Controller
                                 ];
                             }
                             $originalPost->top_reactions = $topReactions;
-
+    
                             $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
                             $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
+    
                             if ($originalPost) {
                                 $post->original_post = $originalPost;
                             }
                         }
                     }
-
+    
                     return $post;
                 });
-
+    
             $response = [
                 'posts' => $posts->items(),
                 'page_info' => [
@@ -135,12 +142,13 @@ class PostController extends Controller
                     'per_page' => $posts->perPage(),
                 ],
             ];
-
+    
             return responseJson($response, 200, 'Danh sách các bài đăng công khai và bạn bè');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách các bài đăng: ' . $e->getMessage());
         }
     }
+    
 
 
 
@@ -148,231 +156,146 @@ class PostController extends Controller
 
 
     public function getUserPosts($userId, Request $request)
-{
-    try {
-        $currentUser = auth()->userOrFail();
-        $currentUserId = $currentUser->id;
-
-        if (!$currentUser) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
-        }
-
-        $user = User::findOrFail($userId);
-
-        if ($user->is_banned) {
-            return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
-        }
-
-        $perPage = $request->input('per_page', 10);
-        $page = $request->input('page', 1);
-
-
-        $friendIds = [];
-
-        $friendships = Friendship::where(function ($query) use ($currentUserId) {
-            $query->where('friend_id', $currentUserId)
-                  ->orWhere('owner_id', $currentUserId);
-        })
-        ->where('status', 'accepted')
-        ->with(['friend' => function ($query) use ($currentUserId) {
-            $query->where('id', '!=', $currentUserId);
-        }])
-        ->with(['owner' => function ($query) use ($currentUserId) {
-            $query->where('id', '!=', $currentUserId);
-        }])
-        ->get();
-
-        $friendIds = $friendships->pluck('owner_id')->toArray();
-
-        $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
-            ->withCount(['comments', 'reactions', 'shares'])
-            ->where('owner_id', $userId)
-            ->where(function ($query) use ($currentUser, $friendIds, $userId) {
-                if ($currentUser->id == $userId) {
-                    $query->where('privacy', 'PUBLIC')
-                          ->orWhere('privacy', 'PRIVATE')
-                          ->orWhere('privacy', 'FRIEND');
-                } else {
-                    $query->where('privacy', 'PUBLIC')
-                          ->orWhere(function ($query) use ($friendIds) {
-                              $query->where('privacy', 'FRIEND')
-                                    ->whereIn('owner_id', $friendIds);
-                          });
-                }
+    {
+        try {
+            $currentUser = auth()->userOrFail();
+            $currentUserId = $currentUser->id;
+    
+            if (!$currentUser) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
+            }
+    
+            $user = User::findOrFail($userId);
+    
+            if ($user->is_banned) {
+                return responseJson(null, 404, 'Người dùng không tồn tại hoặc đã bị khóa.');
+            }
+    
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+    
+            $friendIds = [];
+    
+            $friendships = Friendship::where(function ($query) use ($currentUserId) {
+                $query->where('friend_id', $currentUserId)
+                      ->orWhere('owner_id', $currentUserId);
             })
-            ->whereHas('owner', function ($query) {
-                $query->where('is_banned', false);
-            })
-            ->orderBy('created_at', 'desc');
-
-        $totalPosts = $query->count();
-
-        $posts = $query->paginate($perPage, ['*'], 'page', $page)
-            ->through(function ($post) use ($currentUser, $user) {
-                $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
-                $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
-                $reactionCounts = $post->reactions()
-                    ->select('type', DB::raw('COUNT(*) as count'))
-                    ->groupBy('type')
-                    ->orderByDesc('count')
-                    ->limit(3)
-                    ->pluck('count', 'type')
-                    ->toArray();
-
-                $topReactions = [];
-                foreach ($reactionCounts as $type => $count) {
-                    $topReactions[] = [
-                        'type' => $type,
-                        'count' => $count,
-                    ];
-                }
-                $post->top_reactions = $topReactions;
-
-                if ($post->post_type === 'SHARE') {
-                    $share = Share::where('owner_post_id', $post->id)->first();
-                    if ($share) {
-                        $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
-                        ->find($share->post_id);
-
-                        $reactionCounts = $originalPost->reactions()
+            ->where('status', 'accepted')
+            ->with(['friend' => function ($query) use ($currentUserId) {
+                $query->where('id', '!=', $currentUserId);
+            }])
+            ->with(['owner' => function ($query) use ($currentUserId) {
+                $query->where('id', '!=', $currentUserId);
+            }])
+            ->get();
+    
+            $friendIds = $friendships->pluck('owner_id')->toArray();
+    
+            $query = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images', 'videos'])
+                ->withCount(['comments', 'reactions', 'shares'])
+                ->where('owner_id', $userId)
+                ->where(function ($query) use ($currentUser, $friendIds, $userId) {
+                    if ($currentUser->id == $userId) {
+                        $query->where('privacy', 'PUBLIC')
+                              ->orWhere('privacy', 'PRIVATE')
+                              ->orWhere('privacy', 'FRIEND');
+                    } else {
+                        $query->where('privacy', 'PUBLIC')
+                              ->orWhere(function ($query) use ($friendIds) {
+                                  $query->where('privacy', 'FRIEND')
+                                        ->whereIn('owner_id', $friendIds);
+                              });
+                    }
+                })
+                ->whereHas('owner', function ($query) {
+                    $query->where('is_banned', false);
+                })
+                ->orderBy('created_at', 'desc');
+    
+            $totalPosts = $query->count();
+    
+            $posts = $query->paginate($perPage, ['*'], 'page', $page)
+                ->through(function ($post) use ($currentUser, $user) {
+                    $currentUserReaction = $post->reactions()->where('owner_id', $currentUser->id)->select('type')->first();
+                    $post->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
+                    $reactionCounts = $post->reactions()
                         ->select('type', DB::raw('COUNT(*) as count'))
                         ->groupBy('type')
                         ->orderByDesc('count')
                         ->limit(3)
                         ->pluck('count', 'type')
                         ->toArray();
-
-                        $topReactions = [];
-                        foreach ($reactionCounts as $type => $count) {
-                            $topReactions[] = [
-                                'type' => $type,
-                                'count' => $count,
-                            ];
+    
+                    $topReactions = [];
+                    foreach ($reactionCounts as $type => $count) {
+                        $topReactions[] = [
+                            'type' => $type,
+                            'count' => $count,
+                        ];
+                    }
+                    $post->top_reactions = $topReactions;
+    
+                    if ($post->post_type === 'SHARE') {
+                        $share = Share::where('owner_post_id', $post->id)->first();
+                        if ($share) {
+                            $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender', 'videos'])
+                            ->find($share->post_id);
+    
+                            $reactionCounts = $originalPost->reactions()
+                            ->select('type', DB::raw('COUNT(*) as count'))
+                            ->groupBy('type')
+                            ->orderByDesc('count')
+                            ->limit(3)
+                            ->pluck('count', 'type')
+                            ->toArray();
+    
+                            $topReactions = [];
+                            foreach ($reactionCounts as $type => $count) {
+                                $topReactions[] = [
+                                    'type' => $type,
+                                    'count' => $count,
+                                ];
+                            }
+                            $originalPost->top_reactions = $topReactions;
+    
+                            $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
+                            $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
+    
+                            if ($originalPost) {
+                                $post->original_post = $originalPost;
+                            }
                         }
-                        $originalPost->top_reactions = $topReactions;
-
-                        $currentUserReaction = $originalPost->reactions()->where('owner_id', $user->id)->select('type')->first();
-                        $originalPost->current_user_reaction = $currentUserReaction ? $currentUserReaction->type : null;
-
-                        if ($originalPost) {
-                            $post->original_post = $originalPost;
-                        }
                     }
-                }
-
-                return $post;
-            });
-
-        if ($posts->isEmpty()) {
-            return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
-        }
-
-        $response = [
-            'posts' => $posts->items(),
-            'page_info' => [
-                'total' => $totalPosts,
-                'total_page' => (int) ceil($totalPosts / $posts->perPage()),
-                'current_page' => $posts->currentPage(),
-                'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
-                'per_page' => $posts->perPage(),
-            ],
-        ];
-
-        return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
-    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-        return responseJson(null, 404, 'Người dùng chưa xác thực!');
-    } catch (\Exception $e) {
-        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
-    }
-}
-
-    public function store(Request $request)
-    {
-        try {
-            $user = auth()->user();
-            if(!$user) {
-                return responseJson(null, 401, 'Chưa xác thực người dùng');
+    
+                    return $post;
+                });
+    
+            if ($posts->isEmpty()) {
+                return responseJson(null, 404, 'Người dùng chưa có bài đăng nào!');
             }
-
-            $validator = Validator::make($request->all(), [
-                'content' => 'nullable|string|max:300',
-                'privacy' => 'required|in:PUBLIC,PRIVATE,FRIEND',
-                'post_type' => 'required|in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-                'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
-            ], [
-                'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
-                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
-                'privacy.in' => 'Quyền riêng tư không hợp lệ.',
-                'post_type.in' => 'Loại bài viết không hợp lệ.',
-                'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
-                'images.*.image' => 'Tệp phải là hình ảnh',
-                'images.*.mimes' => 'Sai định dạng',
-                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
-            ]);
-
-            if ($validator->fails()) {
-                return responseJson(null, 400, $validator->errors());
-            }
-
-            $postData = $validator->validated();
-
-                if ($request->background_id != null) {
-                    $background = Background::find($request->background_id);
-                    if (!$background) {
-                        return responseJson(null, 404, 'Background không tồn tại');
-                    }
-                    $postData['background_id'] = $request->background_id;
-                }
-
-            if (!$request->hasFile('images')) {
-                if (empty($postData['content']) && empty($postData['background_id'])) {
-                    return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh.');
-                }
-                if (!empty($postData['background_id']) && empty($postData['content'])) {
-                    return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
-                }
-            } else {
-                if (!empty($postData['background_id'])) {
-                    return responseJson(null, 400, 'Bài viết có ảnh không được có background.');
-                }
-            }
-
-            $post = Post::create(array_merge(
-                $postData,
-                ['owner_id' => $user->id]
-            ));
-
-            $images = [];
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    if ($file->isValid()) {
-                        $result = $file->storeOnCloudinary('post_images');
-                        $imagePublicId = $result->getPublicId();
-                        $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-
-                        $postImage = PostImage::create([
-                            'user_id' => $user->id,
-                            'post_id' => $post->id,
-                            'url' => $imageUrl,
-                        ]);
-
-                        $images[] = $postImage;
-                    }
-                }
-            }
-
-            $post->images = $images;
-
-            return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
-        } catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+    
+            $response = [
+                'posts' => $posts->items(),
+                'page_info' => [
+                    'total' => $totalPosts,
+                    'total_page' => (int) ceil($totalPosts / $posts->perPage()),
+                    'current_page' => $posts->currentPage(),
+                    'next_page' => $posts->currentPage() < $posts->lastPage() ? $posts->currentPage() + 1 : null,
+                    'per_page' => $posts->perPage(),
+                ],
+            ];
+    
+            return responseJson($response, 200, 'Danh sách bài đăng của người dùng');
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        } catch (\Exception $e) {
+            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bài đăng của người dùng: ' . $e->getMessage());
         }
     }
+    
 
-
-    public function show($id)
+public function store(Request $request)
 {
     try {
         $user = auth()->user();
@@ -380,7 +303,125 @@ class PostController extends Controller
             return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
 
-        $post = Post::with(['owner:id,first_name,last_name,avatar,gender', 'background', 'images'])
+        $validator = Validator::make($request->all(), [
+            'content' => 'nullable|string|max:300',
+            'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
+            'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
+        ], [
+            'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
+            'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+            'privacy.in' => 'Quyền riêng tư không hợp lệ.',
+            'post_type.in' => 'Loại bài viết không hợp lệ.',
+            'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
+            'images.*.image' => 'Tệp phải là hình ảnh',
+            'images.*.mimes' => 'Sai định dạng',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
+            'videos.*.file' => 'Tệp video không hợp lệ.',
+            'videos.*.mimes' => 'Sai định dạng video.',
+            'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
+        ]);
+
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
+        }
+
+        $postData = $validator->validated();
+
+        if ($request->background_id != null) {
+            $background = Background::find($request->background_id);
+            if (!$background) {
+                return responseJson(null, 404, 'Background không tồn tại');
+            }
+            $postData['background_id'] = $request->background_id;
+        }
+
+        if ($request->hasFile('images') && $request->hasFile('videos')) {
+            return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
+        }
+
+        if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
+            return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
+        }
+
+        if (!$request->hasFile('images') && !$request->hasFile('videos')) {
+            if (empty($postData['content']) && empty($postData['background_id'])) {
+                return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh hoặc video.');
+            }
+            if (!empty($postData['background_id']) && empty($postData['content'])) {
+                return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
+            }
+        }
+
+        $post = Post::create(array_merge(
+            $postData,
+            ['owner_id' => $user->id]
+        ));
+
+        $images = [];
+        $videos = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('post_images');
+                    $imagePublicId = $result->getPublicId();
+                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+
+                    $postImage = PostImage::create([
+                        'user_id' => $user->id,
+                        'post_id' => $post->id,
+                        'url' => $imageUrl,
+                    ]);
+
+                    $images[] = $postImage;
+                }
+            }
+        }
+
+        if ($request->hasFile('videos')) {
+            foreach ($request->file('videos') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('post_videos');
+                    $videoPublicId = $result->getPublicId();
+                    $videoUrl = "{$result->getSecurePath()}?public_id={$videoPublicId}";
+
+                    $postVideo = PostVideos::create([
+                        'user_id' => $user->id,
+                        'post_id' => $post->id,
+                        'url' => $videoUrl,
+                    ]);
+
+                    $videos[] = $postVideo;
+                }
+            }
+        }
+
+        $post->images = $images;
+        $post->videos = $videos;
+
+        return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 404, 'Người dùng chưa xác thực!');
+    }
+}
+
+
+public function show($id)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $post = Post::with([
+                'owner:id,first_name,last_name,avatar,gender', 
+                'background', 
+                'images', 
+                'videos' 
+            ])
             ->withCount(['comments', 'reactions', 'shares'])
             ->where('id', $id)
             ->whereHas('owner', function ($query) {
@@ -430,7 +471,7 @@ class PostController extends Controller
         if ($post->post_type === 'SHARE') {
             $share = Share::where('owner_post_id', $post->id)->first();
             if ($share) {
-                $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+                $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender', 'videos'])
                 ->find($share->post_id);
 
                 $reactionCounts = $originalPost->reactions()
@@ -464,51 +505,128 @@ class PostController extends Controller
         return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy thông tin bài đăng: ' . $e->getMessage());
     }
 }
-    public function update(Request $request, $id)
-    {
-        try {
-            $user = auth()->user();
-            if (!$user) {
+
+
+public function update(Request $request, $id)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
             return responseJson(null, 401, 'Chưa xác thực người dùng');
-            }
-
-            $post = Post::find($id);
-
-            if (!$post) {
-                return responseJson(null, 404, 'Bài đăng không tồn tại');
-            }
-
-
-            if ($post->owner_id !== $user->id) {
-                return responseJson(null, 403, 'Bạn không có quyền chỉnh sửa bài đăng này');
-            }
-
-            $validator = Validator::make($request->all(), [
-                'content' => 'nullable|string|max:300',
-                'privacy' => 'required|in:PUBLIC,PRIVATE',
-            ], [
-                'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
-                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
-                'privacy.required' => 'Bạn phải chọn quyền riêng tư cho bài viết.',
-                'privacy.in' => 'Quyền riêng tư không hợp lệ.',
-            ]);
-
-            if ($validator->fails()) {
-                return responseJson(null, 400, $validator->errors());
-            }
-
-            $post->update([
-                'content' => $request->content,
-                'privacy' => $request->privacy,
-            ]);
-
-            return responseJson($post, 200, 'Bài đăng đã được cập nhật');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi cập nhật bài đăng: ' . $e->getMessage());
         }
+
+        $post = Post::findOrFail($id);
+        if (!$post) {
+            return responseJson(null, 404, 'Bài đăng không tồn tại');
+        }
+
+        if ($post->owner_id !== $user->id) {
+            return responseJson(null, 403, 'Bạn không có quyền chỉnh sửa bài đăng này');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'content' => 'nullable|string|max:300',
+            'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
+            'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
+        ], [
+            'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
+            'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+            'privacy.in' => 'Quyền riêng tư không hợp lệ.',
+            'post_type.in' => 'Loại bài viết không hợp lệ.',
+            'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
+            'images.*.image' => 'Tệp phải là hình ảnh',
+            'images.*.mimes' => 'Sai định dạng',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
+            'videos.*.file' => 'Tệp video không hợp lệ.',
+            'videos.*.mimes' => 'Sai định dạng video.',
+            'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
+        ]);
+
+        if ($validator->fails()) {
+            return responseJson(null, 400, $validator->errors());
+        }
+
+        $postData = $validator->validated();
+
+        if ($request->background_id != null) {
+            $background = Background::find($request->background_id);
+            if (!$background) {
+                return responseJson(null, 404, 'Background không tồn tại');
+            }
+            $postData['background_id'] = $request->background_id;
+        }
+
+        if ($request->hasFile('images') && $request->hasFile('videos')) {
+            return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
+        }
+
+        if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
+            return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
+        }
+
+        if (!$request->hasFile('images') && !$request->hasFile('videos')) {
+            if (empty($postData['content']) && empty($postData['background_id'])) {
+                return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh hoặc video.');
+            }
+            if (!empty($postData['background_id']) && empty($postData['content'])) {
+                return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
+            }
+        }
+
+        $post->update($postData);
+
+        PostImage::where('post_id', $post->id)->delete();
+        PostVideos::where('post_id', $post->id)->delete();
+
+        $images = [];
+        $videos = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('post_images');
+                    $imagePublicId = $result->getPublicId();
+                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+
+                    $postImage = PostImage::create([
+                        'user_id' => $user->id,
+                        'post_id' => $post->id,
+                        'url' => $imageUrl,
+                    ]);
+
+                    $images[] = $postImage;
+                }
+            }
+        }
+
+        if ($request->hasFile('videos')) {
+            foreach ($request->file('videos') as $file) {
+                if ($file->isValid()) {
+                    $result = $file->storeOnCloudinary('post_videos');
+                    $videoPublicId = $result->getPublicId();
+                    $videoUrl = "{$result->getSecurePath()}?public_id={$videoPublicId}";
+
+                    $postVideo = PostVideos::create([
+                        'user_id' => $user->id,
+                        'post_id' => $post->id,
+                        'url' => $videoUrl,
+                    ]);
+
+                    $videos[] = $postVideo;
+                }
+            }
+        }
+
+        $post->images = $images;
+        $post->videos = $videos;
+
+        return responseJson($post, 200, 'Bài đăng đã được cập nhật thành công');
+    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        return responseJson(null, 404, 'Người dùng chưa xác thực!');
     }
-
-
+}
 
 
     public function destroy($id)
