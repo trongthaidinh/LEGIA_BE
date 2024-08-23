@@ -307,7 +307,7 @@ public function store(Request $request)
             'content' => 'nullable|string|max:300',
             'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
             'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:1048',
             'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
         ], [
             'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
@@ -1321,7 +1321,7 @@ public function getReactionCounts($postId)
             $reactions = $post->reactions()
                 ->where('type', $reactionType)
                 ->with('owner:id,first_name,last_name,avatar')
-                ->paginate(2);
+                ->paginate(10);
 
             $reactionDetails = [
                 'users' => $reactions->map(function ($reaction) {
@@ -1365,7 +1365,7 @@ public function getReactionCounts($postId)
 
             $reactions = $post->reactions()
                 ->with('owner:id,first_name,last_name,avatar')
-                ->paginate(2);
+                ->paginate(10);
 
             $reactionDetails = [
                 'users' => $reactions->map(function ($reaction) {
