@@ -908,31 +908,48 @@ public function addOrUpdateReaction(Request $request, $postId)
         try {
             $user = auth()->user();
             if (!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
+    
             $post = Post::find($postId);
-
+            if (!$post) {
+                return responseJson(null, 404, 'Bài viết không tồn tại');
+            }
+    
             $validator = Validator::make($request->all(), [
                 'content' => 'required|string|max:300',
+                'post_image_comment_id' => 'nullable|exists:post_images,id',
+                'post_video_comment_id' => 'nullable|exists:post_videos,id',
             ], [
                 'content.required' => 'Nội dung bình luận không được để trống.',
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
-                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.'
+                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+                'post_image_comment_id.exists' => 'Hình ảnh được chọn không tồn tại.',
+                'post_video_comment_id.exists' => 'Video được chọn không tồn tại.',
             ]);
-
+    
             if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
-
-            $comment = Comment::create([
+    
+            $commentData = [
                 'post_id' => $post->id,
                 'owner_id' => $user->id,
                 'content' => $request->content,
-            ]);
-
-            $post = $comment->post;
+            ];
+    
+            if ($request->filled('post_image_comment_id')) {
+                $commentData['post_image_comment_id'] = $request->post_image_comment_id;
+            }
+    
+            if ($request->filled('post_video_comment_id')) {
+                $commentData['post_video_comment_id'] = $request->post_video_comment_id;
+            }
+    
+            $comment = Comment::create($commentData);
+    
             $postOwner = $post->owner;
-
+    
             if ($postOwner->id != $user->id) {
                 $notification = Notification::create([
                     'owner_id' => $postOwner->id,
@@ -943,56 +960,126 @@ public function addOrUpdateReaction(Request $request, $postId)
                     'icon' => "COMMENT",
                     'target_id' => $post->id
                 ]);
-
+    
                 $notification->user = [
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'avatar' => $user->avatar
                 ];
-
-            $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
+    
+                $this->NotificationAdded->pusherNotificationAdded($notification, $postOwner->id);
             }
-            return responseJson($postOwner, 201, 'Bình luận đã được tạo thành công');
+    
+            return responseJson($comment, 201, 'Bình luận đã được tạo thành công');
         } catch (\Exception $e) {
             return responseJson(null, 500, 'Đã xảy ra lỗi khi tạo bình luận: ' . $e->getMessage());
         }
     }
 
-    public function getAllComments($postId, Request $request)
-    {
-        try {
-            $user = auth()->user();
-            if (!$user) {
-                return responseJson(null, 401, 'Chưa xác thực người dùng');
-            }
-
-            $perPage = $request->input('per_page', 10);
-            $page = $request->input('page', 1);
-
-            $comments = Comment::where('post_id', $postId)
-                ->with(['owner:id,first_name,last_name,avatar,gender'])
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage, ['*'], 'page', $page);
-
-            $response = [
-                'comments' => $comments->items(),
-                'page_info' => [
-                    'total' => $comments->total(),
-                    'total_page' => (int) ceil($comments->total() / $comments->perPage()),
-                    'current_page' => $comments->currentPage(),
-                    'next_page' => $comments->currentPage() < $comments->lastPage() ? $comments->currentPage() + 1 : null,
-                    'per_page' => $comments->perPage(),
-                ],
-            ];
-
-            return responseJson($response, 200, 'Danh sách bình luận của bài viết');
-        } catch (\Exception $e) {
-            return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
+    public function getPostComments($postId, Request $request)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
         }
+
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $comments = Comment::where('post_id', $postId)
+            ->whereNull('post_image_comment_id')
+            ->whereNull('post_video_comment_id')
+            ->with(['owner:id,first_name,last_name,avatar,gender'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $response = [
+            'comments' => $comments->items(),
+            'page_info' => [
+                'total' => $comments->total(),
+                'total_page' => (int) ceil($comments->total() / $comments->perPage()),
+                'current_page' => $comments->currentPage(),
+                'next_page' => $comments->currentPage() < $comments->lastPage() ? $comments->currentPage() + 1 : null,
+                'per_page' => $comments->perPage(),
+            ],
+        ];
+
+        return responseJson($response, 200, 'Danh sách bình luận của bài viết');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
     }
+}
+
+public function getPostImageComments($postImageId, Request $request)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $comments = Comment::where('post_image_comment_id', $postImageId)
+            ->with(['owner:id,first_name,last_name,avatar,gender'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $response = [
+            'comments' => $comments->items(),
+            'page_info' => [
+                'total' => $comments->total(),
+                'total_page' => (int) ceil($comments->total() / $comments->perPage()),
+                'current_page' => $comments->currentPage(),
+                'next_page' => $comments->currentPage() < $comments->lastPage() ? $comments->currentPage() + 1 : null,
+                'per_page' => $comments->perPage(),
+            ],
+        ];
+
+        return responseJson($response, 200, 'Danh sách bình luận của hình ảnh');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
+    }
+}
+
+public function getPostVideoComments($postVideoId, Request $request)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        $comments = Comment::where('post_video_comment_id', $postVideoId)
+            ->with(['owner:id,first_name,last_name,avatar,gender'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $response = [
+            'comments' => $comments->items(),
+            'page_info' => [
+                'total' => $comments->total(),
+                'total_page' => (int) ceil($comments->total() / $comments->perPage()),
+                'current_page' => $comments->currentPage(),
+                'next_page' => $comments->currentPage() < $comments->lastPage() ? $comments->currentPage() + 1 : null,
+                'per_page' => $comments->perPage(),
+            ],
+        ];
+
+        return responseJson($response, 200, 'Danh sách bình luận của video');
+    } catch (\Exception $e) {
+        return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy danh sách bình luận: ' . $e->getMessage());
+    }
+}
 
 
-    public function getTopComments($postId)
+
+public function getTopComments($postId)
 {
     try {
         $user = auth()->user();
@@ -1001,16 +1088,19 @@ public function addOrUpdateReaction(Request $request, $postId)
         }
 
         $comments = Comment::where('post_id', $postId)
-                    ->with(['owner:id,first_name,last_name,avatar'])
-                    ->orderBy('created_at', 'desc')
-                    ->take(3)
-                    ->get();
+            ->whereNull('post_image_comment_id')
+            ->whereNull('post_video_comment_id')
+            ->with(['owner:id,first_name,last_name,avatar'])
+            ->orderBy('created_at', 'desc')
+            ->take(3)
+            ->get();
 
         return responseJson($comments, 200, '3 bình luận mới nhất của bài viết');
     } catch (\Exception $e) {
         return responseJson(null, 500, 'Đã xảy ra lỗi khi lấy bình luận mới nhất: ' . $e->getMessage());
     }
 }
+
 
 
     public function updateComment(Request $request, $postId, $commentId)

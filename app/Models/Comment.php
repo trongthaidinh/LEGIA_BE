@@ -13,6 +13,8 @@ class Comment extends Model
         'post_id',
         'owner_id',
         'content',
+        'post_image_comment_id',
+        'post_video_comment_id',
     ];
 
     public function post()
@@ -23,5 +25,15 @@ class Comment extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function postImage()
+    {
+        return $this->belongsTo(PostImage::class, 'post_image_comment_id');
+    }
+
+    public function postVideo()
+    {
+        return $this->belongsTo(PostVideos::class, 'post_video_comment_id');
     }
 }

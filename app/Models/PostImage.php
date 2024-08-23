@@ -19,4 +19,9 @@ class PostImage extends Model
     {
         return $this->belongsTo(Post::class);
     }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'post_image_comment_id');
+    }
 }

@@ -115,8 +115,10 @@ Route::group([
     Route::post('reaction/{postId}', [PostController::class, 'addOrUpdateReaction']);
     Route::delete('reaction/{id}', [PostController::class, 'removeReaction']);
 
-    Route::get('/comments/{postId}', [PostController::class, 'getAllComments']);
+    Route::get('/comments/{postId}', [PostController::class, 'getPostComments']);
     Route::get('/top-comments/{postId}', [PostController::class, 'getTopComments']);
+    Route::get('/post-image-comments/{postImageId}', [PostController::class, 'getPostImageComments']);
+    Route::get('/post-video-comments/{postVideoId}', [PostController::class, 'getPostVideoComments']);
     Route::post('/comments/{commentId}', [PostController::class, 'storeComment']);
     Route::put('/comments/{postId}/{commentId}', [PostController::class, 'updateComment']);
     Route::delete('/comments/{postId}/{commentId}', [PostController::class, 'deleteComment']);
