@@ -20,14 +20,30 @@ class DashboardController extends Controller
 
             switch ($filterOption) {
                 case 'month':
-                    $lastMonth = now()->subMonth();
-                    $lastMonthUsers = User::where('created_at', '>=', $lastMonth)->count();
-                    $increasePercent = ($totalUser - $lastMonthUsers) / $lastMonthUsers * 100;
+                    $currentMonth = now()->startOfMonth();
+                    $lastMonth = now()->subMonth()->startOfMonth();
+
+                    $currentMonthUsers = User::whereBetween('created_at', [$currentMonth, now()])->count();
+                    $lastMonthUsers = User::whereBetween('created_at', [$lastMonth, $currentMonth])->count();
+
+                    if($lastMonthUsers == 0){
+                        $increasePercent = (($currentMonthUsers - $lastMonthUsers)) * 100;
+                    }else{
+                        $increasePercent = (($currentMonthUsers - $lastMonthUsers) / $lastMonthUsers) * 100;
+                    }
                     break;
                 case 'year':
-                    $lastYear = now()->subYear();
-                    $lastYearUsers = User::where('created_at', '>=', $lastYear)->count();
-                    $increasePercent = ($totalUser - $lastYearUsers) / $lastYearUsers * 100;
+                    $currentYear = now()->startOfYear();
+                    $lastYear = now()->subYear()->startOfYear();
+
+                    $currentYearUsers = User::whereBetween('created_at', [$currentYear, now()])->count();
+                    $lastYearUsers = User::whereBetween('created_at', [$lastYear, $currentYear])->count();
+
+                    if($lastYearUsers == 0){
+                        $increasePercent = (($currentYearUsers - $lastYearUsers)) * 100;
+                    }else{
+                        $increasePercent = (($currentYearUsers - $lastYearUsers) / $lastYearUsers) * 100;
+                    }
                     break;
                 default:
                     return responseJson(null, 400, 'Thông tin bộ lọc không hợp lệ');
@@ -58,14 +74,31 @@ class DashboardController extends Controller
 
             switch ($filterOption) {
                 case 'month':
-                    $lastMonth = now()->subMonth();
-                    $lastMonthPosts = Post::where('created_at', '>=', $lastMonth)->count();
-                    $increasePercent = ($totalPost - $lastMonthPosts) / $lastMonthPosts * 100;
+                    $currentMonth = now()->startOfMonth();
+                    $lastMonth = now()->subMonth()->startOfMonth();
+
+                    $currentMonthPosts = Post::whereBetween('created_at', [$currentMonth, now()])->count();
+                    $lastMonthPosts = Post::whereBetween('created_at', [$lastMonth, $currentMonth])->count();
+
+                    if($lastMonthPosts == 0){
+                        $increasePercent = (($currentMonthPosts - $lastMonthPosts)) * 100;
+                    }else{
+                        $increasePercent = (($currentMonthPosts - $lastMonthPosts) / $lastMonthPosts) * 100;
+                    }
                     break;
                 case 'year':
-                    $lastYear = now()->subYear();
-                    $lastYearPosts = Post::where('created_at', '>=', $lastYear)->count();
-                    $increasePercent = ($totalPost - $lastYearPosts) / $lastYearPosts * 100;
+                    $currentYear = now()->startOfYear();
+                    $lastYear = now()->subYear()->startOfYear();
+
+                    $currentYearPosts = Post::whereBetween('created_at', [$currentYear, now()])->count();
+                    $lastYearPosts = Post::whereBetween('created_at', [$lastYear, $currentYear])->count();
+
+                    if($lastYearPosts == 0){
+                        $increasePercent = (($currentYearPosts - $lastYearPosts)) * 100;
+                    }else{
+                        $increasePercent = (($currentYearPosts - $lastYearPosts) / $lastYearPosts) * 100;
+                    }
+
                     break;
                 default:
                     return responseJson(null, 400, 'Thông tin bộ lọc không hợp lệ');
