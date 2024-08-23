@@ -346,4 +346,22 @@ class FriendshipController extends Controller
         }
     }
 
+    public function getFriendIds(){
+        try{
+            $currentUser = auth()->userOrFail();
+
+                // Lấy danh sách ID của bạn bè người dùng hiện tại
+            $friendIds = $currentUser->friends()
+                ->select(DB::raw("IF(friendships.owner_id = $currentUser->id, friendships.friend_id,friendships.   owner_id) as friend_id"))
+                ->wherePivot('status', 'accepted')
+                ->pluck('friend_id')
+                ->toArray();
+
+            return responseJson($friendIds);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
+        }
+    }
+
 }
