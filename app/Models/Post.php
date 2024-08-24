@@ -66,6 +66,11 @@ class Post extends Model
         return $this->hasMany(Share::class, 'post_id');
     }
 
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'target_id');
+    }
+
     public function originalPostId()
     {
         return $this->belongsTo(Share::class, 'post_id');
