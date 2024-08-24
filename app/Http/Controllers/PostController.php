@@ -295,117 +295,136 @@ class PostController extends Controller
     }
     
 
-public function store(Request $request)
-{
-    try {
-        $user = auth()->user();
-        if (!$user) {
-            return responseJson(null, 401, 'Chưa xác thực người dùng');
-        }
-
-        $validator = Validator::make($request->all(), [
-            'content' => 'nullable|string|max:300',
-            'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
-            'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:1048',
-            'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
-        ], [
-            'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
-            'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
-            'privacy.in' => 'Quyền riêng tư không hợp lệ.',
-            'post_type.in' => 'Loại bài viết không hợp lệ.',
-            'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
-            'images.*.image' => 'Tệp phải là hình ảnh',
-            'images.*.mimes' => 'Sai định dạng',
-            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
-            'videos.*.file' => 'Tệp video không hợp lệ.',
-            'videos.*.mimes' => 'Sai định dạng video.',
-            'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
-        ]);
-
-        if ($validator->fails()) {
-            return responseJson(null, 400, $validator->errors());
-        }
-
-        $postData = $validator->validated();
-
-        if ($request->background_id != null) {
-            $background = Background::find($request->background_id);
-            if (!$background) {
-                return responseJson(null, 404, 'Background không tồn tại');
+    public function store(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return responseJson(null, 401, 'Chưa xác thực người dùng');
             }
-            $postData['background_id'] = $request->background_id;
-        }
-
-        if ($request->hasFile('images') && $request->hasFile('videos')) {
-            return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
-        }
-
-        if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
-            return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
-        }
-
-        if (!$request->hasFile('images') && !$request->hasFile('videos')) {
-            if (empty($postData['content']) && empty($postData['background_id'])) {
-                return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh hoặc video.');
+    
+            $validator = Validator::make($request->all(), [
+                'content' => 'nullable|string|max:300',
+                'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
+                'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
+                'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
+            ], [
+                'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
+                'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
+                'privacy.in' => 'Quyền riêng tư không hợp lệ.',
+                'post_type.in' => 'Loại bài viết không hợp lệ.',
+                'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
+                'images.*.image' => 'Tệp phải là hình ảnh',
+                'images.*.mimes' => 'Sai định dạng',
+                'images.*.max' => 'Kích thước hình ảnh không được vượt quá 5MB',
+                'videos.*.file' => 'Tệp video không hợp lệ.',
+                'videos.*.mimes' => 'Sai định dạng video.',
+                'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
+            ]);
+    
+            if ($validator->fails()) {
+                return responseJson(null, 400, $validator->errors());
             }
-            if (!empty($postData['background_id']) && empty($postData['content'])) {
-                return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
-            }
-        }
-
-        $post = Post::create(array_merge(
-            $postData,
-            ['owner_id' => $user->id]
-        ));
-
-        $images = [];
-        $videos = [];
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                if ($file->isValid()) {
-                    $result = $file->storeOnCloudinary('post_images');
-                    $imagePublicId = $result->getPublicId();
-                    $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
-
-                    $postImage = PostImage::create([
-                        'user_id' => $user->id,
-                        'post_id' => $post->id,
-                        'url' => $imageUrl,
-                    ]);
-
-                    $images[] = $postImage;
+    
+            $postData = $validator->validated();
+    
+            $maxTotalSize = 15 * 1024 * 1024;
+            $totalSize = 0;
+    
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $totalSize += $file->getSize();
                 }
             }
-        }
-
-        if ($request->hasFile('videos')) {
-            foreach ($request->file('videos') as $file) {
-                if ($file->isValid()) {
-                    $result = $file->storeOnCloudinary('post_videos');
-                    $videoPublicId = $result->getPublicId();
-                    $videoUrl = "{$result->getSecurePath()}?public_id={$videoPublicId}";
-
-                    $postVideo = PostVideos::create([
-                        'user_id' => $user->id,
-                        'post_id' => $post->id,
-                        'url' => $videoUrl,
-                    ]);
-
-                    $videos[] = $postVideo;
+    
+            if ($request->hasFile('videos')) {
+                foreach ($request->file('videos') as $file) {
+                    $totalSize += $file->getSize();
                 }
             }
+    
+            if ($totalSize > $maxTotalSize) {
+                return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 15MB.');
+            }
+    
+            if ($request->background_id != null) {
+                $background = Background::find($request->background_id);
+                if (!$background) {
+                    return responseJson(null, 404, 'Background không tồn tại');
+                }
+                $postData['background_id'] = $request->background_id;
+            }
+    
+            if ($request->hasFile('images') && $request->hasFile('videos')) {
+                return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
+            }
+    
+            if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
+                return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
+            }
+    
+            if (!$request->hasFile('images') && !$request->hasFile('videos')) {
+                if (empty($postData['content']) && empty($postData['background_id'])) {
+                    return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh hoặc video.');
+                }
+                if (!empty($postData['background_id']) && empty($postData['content'])) {
+                    return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
+                }
+            }
+    
+            $post = Post::create(array_merge(
+                $postData,
+                ['owner_id' => $user->id]
+            ));
+    
+            $images = [];
+            $videos = [];
+    
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    if ($file->isValid()) {
+                        $result = $file->storeOnCloudinary('post_images');
+                        $imagePublicId = $result->getPublicId();
+                        $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
+    
+                        $postImage = PostImage::create([
+                            'user_id' => $user->id,
+                            'post_id' => $post->id,
+                            'url' => $imageUrl,
+                        ]);
+    
+                        $images[] = $postImage;
+                    }
+                }
+            }
+    
+            if ($request->hasFile('videos')) {
+                foreach ($request->file('videos') as $file) {
+                    if ($file->isValid()) {
+                        $result = $file->storeOnCloudinary('post_videos');
+                        $videoPublicId = $result->getPublicId();
+                        $videoUrl = "{$result->getSecurePath()}?public_id={$videoPublicId}";
+    
+                        $postVideo = PostVideos::create([
+                            'user_id' => $user->id,
+                            'post_id' => $post->id,
+                            'url' => $videoUrl,
+                        ]);
+    
+                        $videos[] = $postVideo;
+                    }
+                }
+            }
+    
+            $post->images = $images;
+            $post->videos = $videos;
+    
+            return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+            return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
-
-        $post->images = $images;
-        $post->videos = $videos;
-
-        return responseJson($post, 201, 'Bài đăng đã được tạo thành công');
-    } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
-        return responseJson(null, 404, 'Người dùng chưa xác thực!');
     }
-}
 
 
 public function show($id)
@@ -528,7 +547,7 @@ public function update(Request $request, $id)
             'content' => 'nullable|string|max:300',
             'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
             'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
-            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
             'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
         ], [
             'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
@@ -536,12 +555,12 @@ public function update(Request $request, $id)
             'privacy.in' => 'Quyền riêng tư không hợp lệ.',
             'post_type.in' => 'Loại bài viết không hợp lệ.',
             'images.*.file' => 'Tệp hình ảnh không hợp lệ.',
-            'images.*.image' => 'Tệp phải là hình ảnh',
-            'images.*.mimes' => 'Sai định dạng',
-            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 2MB',
+            'images.*.image' => 'Tệp phải là hình ảnh.',
+            'images.*.mimes' => 'Sai định dạng.',
+            'images.*.max' => 'Kích thước hình ảnh không được vượt quá 5MB.',
             'videos.*.file' => 'Tệp video không hợp lệ.',
             'videos.*.mimes' => 'Sai định dạng video.',
-            'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
+            'videos.*.max' => 'Kích thước video không được vượt quá 10MB.',
         ]);
 
         if ($validator->fails()) {
@@ -550,38 +569,59 @@ public function update(Request $request, $id)
 
         $postData = $validator->validated();
 
+        $maxTotalSize = 15 * 1024 * 1024;
+            $totalSize = 0;
+    
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $totalSize += $file->getSize();
+            }
+        }
+    
+        if ($request->hasFile('videos')) {
+            foreach ($request->file('videos') as $file) {
+                $totalSize += $file->getSize();
+            }
+        }
+    
+        if ($totalSize > $maxTotalSize) {
+            return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 15MB.');
+        }
+
         if ($request->background_id != null) {
             $background = Background::find($request->background_id);
             if (!$background) {
                 return responseJson(null, 404, 'Background không tồn tại');
             }
+
+            if ($post->images()->exists()) {
+                return responseJson(null, 400, 'Bài đăng đã có ảnh không thể cập nhật nền.');
+            }
+
             $postData['background_id'] = $request->background_id;
         }
 
-        if ($request->hasFile('images') && $request->hasFile('videos')) {
-            return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
-        }
 
-        if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
-            return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
+        if (($request->hasFile('images') || $request->hasFile('videos')) && empty($postData['background_id'])) {
+            PostImage::where('post_id', $post->id)->delete();
+            PostVideos::where('post_id', $post->id)->delete();
+        } elseif ($request->hasFile('images') || $request->hasFile('videos')) {
+            return responseJson(null, 400, 'Bài đăng có ảnh hoặc video không được có background.');
         }
 
         if (!$request->hasFile('images') && !$request->hasFile('videos')) {
             if (empty($postData['content']) && empty($postData['background_id'])) {
-                return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nội dung và background khi không có ảnh hoặc video.');
+                return responseJson(null, 400, 'Bài viết phải có nội dung hoặc nền khi không có ảnh hoặc video.');
             }
             if (!empty($postData['background_id']) && empty($postData['content'])) {
-                return responseJson(null, 400, 'Bài viết có background phải có nội dung.');
+                return responseJson(null, 400, 'Bài viết có nền phải có nội dung.');
             }
         }
 
         $post->update($postData);
 
-        PostImage::where('post_id', $post->id)->delete();
-        PostVideos::where('post_id', $post->id)->delete();
-
-        $images = [];
-        $videos = [];
+        $images = $post->images; 
+        $videos = $post->videos;  
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
@@ -590,13 +630,12 @@ public function update(Request $request, $id)
                     $imagePublicId = $result->getPublicId();
                     $imageUrl = "{$result->getSecurePath()}?public_id={$imagePublicId}";
 
-                    $postImage = PostImage::create([
-                        'user_id' => $user->id,
-                        'post_id' => $post->id,
-                        'url' => $imageUrl,
-                    ]);
+                    $postImage = PostImage::updateOrCreate(
+                        ['post_id' => $post->id, 'url' => $imageUrl],
+                        ['user_id' => $user->id, 'post_id' => $post->id, 'url' => $imageUrl]
+                    );
 
-                    $images[] = $postImage;
+                    $images[] = $postImage;  
                 }
             }
         }
@@ -608,13 +647,12 @@ public function update(Request $request, $id)
                     $videoPublicId = $result->getPublicId();
                     $videoUrl = "{$result->getSecurePath()}?public_id={$videoPublicId}";
 
-                    $postVideo = PostVideos::create([
-                        'user_id' => $user->id,
-                        'post_id' => $post->id,
-                        'url' => $videoUrl,
-                    ]);
+                    $postVideo = PostVideos::updateOrCreate(
+                        ['post_id' => $post->id, 'url' => $videoUrl],
+                        ['user_id' => $user->id, 'post_id' => $post->id, 'url' => $videoUrl]
+                    );
 
-                    $videos[] = $postVideo;
+                    $videos[] = $postVideo; 
                 }
             }
         }
@@ -627,6 +665,7 @@ public function update(Request $request, $id)
         return responseJson(null, 404, 'Người dùng chưa xác thực!');
     }
 }
+
 
 
     public function destroy($id)
