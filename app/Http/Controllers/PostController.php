@@ -356,10 +356,6 @@ class PostController extends Controller
                 $postData['background_id'] = $request->background_id;
             }
     
-            if ($request->hasFile('images') && $request->hasFile('videos')) {
-                return responseJson(null, 400, 'Bài viết không được chứa cả hình ảnh và video.');
-            }
-    
             if (($request->hasFile('images') || $request->hasFile('videos')) && !empty($postData['background_id'])) {
                 return responseJson(null, 400, 'Bài viết có ảnh hoặc video không được có background.');
             }
