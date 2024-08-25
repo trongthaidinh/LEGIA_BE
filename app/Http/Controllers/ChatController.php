@@ -231,7 +231,6 @@ class ChatController extends Controller
             }
         } else {
             $partnerId = $conversation->participants()->where('user_id', '!=', $userId)->first()->user_id;
-
             $this->MessageSent->pusherConversationIdGetNewMessage($partnerId, [
                 'sender' => $sender,
                 'conversation' => $conversation,
@@ -428,11 +427,11 @@ class ChatController extends Controller
                     'message_id' => $messageId
                 ]);
 
-                $this->MessageSent->pusherMessageIsRead($messageId, [
-                    'message_id' => $messageId,
-                    'user_id' => $userId,
-                    'user' => $user,
-                ]);
+                // $this->MessageSent->pusherMessageIsRead($messageId, [
+                //     'message_id' => $messageId,
+                //     'user_id' => $userId,
+                //     'user' => $user,
+                // ]);
             }
 
             $count = $this->handleGetUnreadMessagesCountOfUser($userId);
