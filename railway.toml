@@ -8,13 +8,13 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
 [http]
-maxBodySize = "50M"
+maxBodySize = "20M"
 
 [[services]]
 [services.php]
 command = "php-fpm"
-maxBodySize = "50M"
+maxBodySize = "20M"
 
 [services.php.environment]
-upload_max_filesize = "50M"
-post_max_size = "50M"
+upload_max_filesize = "20M"
+post_max_size = "20M"
