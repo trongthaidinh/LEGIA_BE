@@ -21,7 +21,9 @@ class Message extends Model
     }
 
     public function seen_by(){
-        return $this->hasMany(MessagesSeenBy::class, 'message_id')->with('user');
+        return $this->hasMany(MessagesSeenBy::class, 'message_id')
+            ->selectRaw('DISTINCT user_id')
+            ->with('user');
     }
 
     public function deleted_by(){

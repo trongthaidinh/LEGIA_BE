@@ -425,10 +425,16 @@ class ChatController extends Controller
 
             foreach($messageIds as $messageId){
 
-                MessagesSeenBy::create([
-                    'user_id' => $userId,
-                    'message_id' => $messageId
-                ]);
+                $isExisted = MessagesSeenBy::where('user_id', $userId)->where('message_id', $messageId)->first();
+
+                if(!$isExisted){
+                    MessagesSeenBy::create([
+                        'user_id' => $userId,
+                        'message_id' => $messageId
+                    ]);
+                }
+
+
 
                 // $this->MessageSent->pusherMessageIsRead($messageId, [
                 //     'message_id' => $messageId,
