@@ -23,7 +23,7 @@ class ReportController extends Controller
             $status = $request->query('status');
             $targetId = $request->query('target_id');
 
-            $reports = Report::latest();
+            $reports = Report::with('images')->latest();
 
             if ($type && in_array($type, ['user', 'post'])) {
                 $reports->where('type', $type);
