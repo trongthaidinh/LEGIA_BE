@@ -305,6 +305,7 @@ class ChatController extends Controller
                             ->where('user_id', $userId);
                     });
             })
+            ->with('creator')
             ->orderBy('updated_at','desc')
             ->get();
 
@@ -380,7 +381,6 @@ class ChatController extends Controller
             return responseJson(null, 404, "Người dùng chưa xác thực!");
         }
     }
-
 
     public function getConversationParticipants(Request $request) {
         try{
@@ -508,6 +508,51 @@ class ChatController extends Controller
             $count = $this->handleGetUnreadMessagesCountOfUser($userId);
 
             return responseJson($count, 200);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function addMemberToGroup(Request $request) {
+        try{
+            $user = auth()->userOrFail();
+
+            $validator = Validator::make($request->all(), [
+                'members' => 'required',
+                'members.*' => 'exists:users,id',
+                'conversation_id' => 'required|exists:conversations,id',
+            ],[
+                'members.required' => 'Vui lòng nhập vào thành viên',
+                'members.*.exists' => 'Không tìm thấy thành viên',
+                'conversation_id.exists' => 'Không tìm thấy cuộc đối thoại này',
+                'conversation_id.required' => 'Vui lòng nhập id hội thoại',
+
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson(null, 400, $validator->errors()->first());
+            };
+
+            $members = $validator->validated()['members'];
+            $conversationId = $validator->validated()['conversation_id'];
+
+            $conversationParticipants = [];
+
+            foreach($members as $member){
+                if($member == $user->id) continue;
+
+                $isExistConversationParticipant = ConversationParticipant::where('conversation_id', $conversationId)->where('user_id', $member)->first();
+
+                if($isExistConversationParticipant) continue;
+
+                $conversationParticipants[] = ConversationParticipant::create([
+                    'conversation_id' => $conversationId,
+                    'user_id' => $member
+                ]);
+            };
+
+            return responseJson($conversationParticipants, 201);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");

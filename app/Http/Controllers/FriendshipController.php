@@ -296,6 +296,7 @@ class FriendshipController extends Controller
     public function findFriends(Request $request){
         try{
             $user = auth()->userOrFail();
+            $userId = $user->id;
             $limit = $request->per_page;
 
             $validator = Validator::make($request->all(), [
