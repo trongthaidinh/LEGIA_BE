@@ -9,6 +9,7 @@ use App\Models\ConversationParticipant;
 use App\Models\MessageImage;
 use App\Models\MessagesDeletedBy;
 use App\Models\MessagesSeenBy;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -357,9 +358,19 @@ class ChatController extends Controller
                 ->with(['user', 'seen_by', 'images'])
                 ->paginate($perPage, ['*'], 'page', $page);
 
+
             if($messages->isEmpty()){
                 return responseJson($messages, 200, 'Không có tin nhắn trong cuộc đối thoại này!');
             }
+
+            // $messages->map(function ($message) {
+            //     $seenBy = $message->seen_by->pluck('user_id')->toArray();
+
+            //     $seenBy->each(function ($seen) use ($message) {
+            //         $user = User::find($seen->user_id);
+            //         $message->seen_by->push($user);
+            //     });
+            // });
 
             $response = [
                 'messages' => $messages->items(),
