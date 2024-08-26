@@ -534,7 +534,7 @@ class ChatController extends Controller
                 return responseJson(null, 400, $validator->errors()->first());
             };
 
-            $members = $validator->validated()['members'];
+            $members = $validator->validated()['member_ids'];
             $conversationId = $validator->validated()['conversation_id'];
 
             $conversationParticipants = [];
