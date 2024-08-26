@@ -239,7 +239,8 @@ class PostController extends Controller
                     if ($post->post_type === 'SHARE') {
                         $share = Share::where('owner_post_id', $post->id)->first();
                         if ($share) {
-                            $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender', 'videos'])
+                            $originalPost = Post::with(['owner:id,first_name,last_name,avatar,gender'])
+                            ->with(['images', 'videos']) 
                             ->find($share->post_id);
     
                             $reactionCounts = $originalPost->reactions()
