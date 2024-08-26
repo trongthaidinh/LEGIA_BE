@@ -80,6 +80,10 @@ class AuthController extends Controller
             return responseJson(null, 404, 'Sai mật khẩu đăng nhập');
         }
 
+        if($user->is_banned == 1){
+            return responseJson(null, 404, 'Tài khoản đã bị khóa');
+        }
+
 
         if (! $token = auth()->attempt($credentials)) {
 
