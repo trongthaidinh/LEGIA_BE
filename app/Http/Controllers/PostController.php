@@ -305,7 +305,7 @@ class PostController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'content' => 'nullable|string|max:300',
+                'content' => 'nullable|string|max:5000',
                 'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
                 'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -541,7 +541,7 @@ public function update(Request $request, $id)
         }
 
         $validator = Validator::make($request->all(), [
-            'content' => 'nullable|string|max:300',
+            'content' => 'nullable|string|max:5000',
             'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
             'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
             'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
