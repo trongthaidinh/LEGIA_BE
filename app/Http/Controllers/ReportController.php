@@ -19,6 +19,7 @@ class ReportController extends Controller
     
             $type = $request->query('type');
             $status = $request->query('status');
+            $targetId = $request->query('target_id');
     
             $reports = Report::latest();
     
@@ -32,6 +33,10 @@ class ReportController extends Controller
                 } elseif (in_array($status, ['rejected', 'approved', 'pending'])) {
                     $reports->where('status', $status);
                 }
+            }
+    
+            if ($targetId) {
+                $reports->where('target_id', $targetId);
             }
     
             $perPage = $request->input('per_page', 10);
