@@ -546,10 +546,12 @@ class ChatController extends Controller
 
                 if($isExistConversationParticipant) continue;
 
-                $conversationParticipants[] = ConversationParticipant::create([
+                ConversationParticipant::create([
                     'conversation_id' => $conversationId,
                     'user_id' => $member
                 ]);
+
+                $conversationParticipants[] = User::where('id',$member)->select('id', 'first_name', 'last_name', 'avatar')->first();
             };
 
             return responseJson($conversationParticipants, 201);
