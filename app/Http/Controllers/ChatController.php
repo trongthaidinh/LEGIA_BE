@@ -474,11 +474,17 @@ class ChatController extends Controller
 
     public function getMessageImages($conversationId) {
         try{
-            auth()->userOrFail();
+            $user = auth()->userOrFail();
+            $userId = $user->id;
 
             $messageImages = MessageImage::select('message_images.*')
             ->join('messages', 'messages.id', '=', 'message_images.message_id')
+            ->leftJoin('messages_deleted_by', function ($join) use ($userId) {
+                $join->on('messages.id', '=', 'messages_deleted_by.message_id')
+                    ->where('messages_deleted_by.user_id', '=', $userId);
+            })
             ->where('messages.conversation_id', $conversationId)
+            ->whereNull('messages_deleted_by.id')
             ->limit(9)
             ->orderBy('message_images.created_at', 'desc')
             ->get();
