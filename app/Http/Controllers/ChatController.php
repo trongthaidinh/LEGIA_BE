@@ -363,15 +363,6 @@ class ChatController extends Controller
                 return responseJson($messages, 200, 'Không có tin nhắn trong cuộc đối thoại này!');
             }
 
-            // $messages->map(function ($message) {
-            //     $seenBy = $message->seen_by->pluck('user_id')->toArray();
-
-            //     $seenBy->each(function ($seen) use ($message) {
-            //         $user = User::find($seen->user_id);
-            //         $message->seen_by->push($user);
-            //     });
-            // });
-
             $response = [
                 'messages' => $messages->items(),
                 'page_info' => [
