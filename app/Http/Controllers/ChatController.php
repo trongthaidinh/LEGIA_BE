@@ -517,6 +517,7 @@ class ChatController extends Controller
     public function addMemberToGroup(Request $request) {
         try{
             $user = auth()->userOrFail();
+            $userId = $user->id;
 
             $validator = Validator::make($request->all(), [
                 'member_ids' => 'required',
@@ -539,6 +540,12 @@ class ChatController extends Controller
 
             $conversationParticipants = [];
 
+            $conversation = Conversation::where('id', $conversationId)->first();
+
+            if($conversation->creator_id != $userId){
+                return responseJson(null, 403, 'Không có quyền thực hiện');
+            }
+
             foreach($members as $member){
                 if($member == $user->id) continue;
 
@@ -555,6 +562,45 @@ class ChatController extends Controller
             };
 
             return responseJson($conversationParticipants, 201);
+
+        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+            return responseJson(null, 404, "Người dùng chưa xác thực!");
+        }
+    }
+
+    public function removeMemberFromGroup(Request $request) {
+        try{
+            $user = auth()->userOrFail();
+            $userId = $user->id;
+
+            $validator = Validator::make($request->all(), [
+                'member_id' => 'required|exists:users,id',
+                'conversation_id' => 'required|exists:conversations,id',
+            ],[
+                'member_id.required' => 'Vui lòng nhập vào thành viên',
+                'member_id.exists' => 'Thành viên không tồn tại',
+                'conversation_id.exists' => 'Không tìm thấy cuộc đối thoại này',
+                'conversation_id.required' => 'Vui lòng nhập id hội thoại',
+
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson(null, 400, $validator->errors()->first());
+            };
+
+           $member = $validator->validated()['member_id'];
+           $conversationId = $validator->validated()['conversation_id'];
+
+           $conversation = Conversation::where('id', $conversationId)->first();
+
+           if($conversation->creator_id != $userId){
+               return responseJson(null, 403, 'Không có quyền thực hiện');
+           }
+
+
+            $conversationParticipants = ConversationParticipant::where('conversation_id', $conversationId)->where('user_id', $member)->delete();
+
+            return responseJson($conversationParticipants, 200);
 
         }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
             return responseJson(null, 404, "Người dùng chưa xác thực!");
@@ -593,5 +639,6 @@ class ChatController extends Controller
         ];
 
     }
+
 
 }

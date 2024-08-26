@@ -151,6 +151,7 @@ Route::group([
 ], function () {
     Route::post('create-conversation', [ChatController::class, 'createConversation']);
     Route::post('add-member-to-group', [ChatController::class, 'addMemberToGroup']);
+    Route::post('remove-member-to-group', [ChatController::class, 'removeMemberFromGroup']);
     Route::post('message', [ChatController::class, 'createMessage']);
     Route::get('my-conversations', [ChatController::class, 'getMyConversations']);
     Route::get('messages/{conversation_id}', [ChatController::class, 'getMessagesByConversationId']);
