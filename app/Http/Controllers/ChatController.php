@@ -519,12 +519,12 @@ class ChatController extends Controller
             $user = auth()->userOrFail();
 
             $validator = Validator::make($request->all(), [
-                'members' => 'required',
-                'members.*' => 'exists:users,id',
+                'member_ids' => 'required',
+                'member_ids.*' => 'exists:users,id',
                 'conversation_id' => 'required|exists:conversations,id',
             ],[
-                'members.required' => 'Vui lòng nhập vào thành viên',
-                'members.*.exists' => 'Không tìm thấy thành viên',
+                'member_ids.required' => 'Vui lòng nhập vào thành viên',
+                'member_ids.*.exists' => 'Không tìm thấy thành viên',
                 'conversation_id.exists' => 'Không tìm thấy cuộc đối thoại này',
                 'conversation_id.required' => 'Vui lòng nhập id hội thoại',
 
