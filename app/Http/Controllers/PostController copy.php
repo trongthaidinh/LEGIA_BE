@@ -309,7 +309,7 @@ class PostController extends Controller
                 'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
                 'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
                 'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
-                'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:21240',
+                'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
             ], [
                 'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
                 'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
@@ -321,7 +321,7 @@ class PostController extends Controller
                 'images.*.max' => 'Kích thước hình ảnh không được vượt quá 5MB',
                 'videos.*.file' => 'Tệp video không hợp lệ.',
                 'videos.*.mimes' => 'Sai định dạng video.',
-                'videos.*.max' => 'Kích thước video không được vượt quá 20MB',
+                'videos.*.max' => 'Kích thước video không được vượt quá 10MB',
             ]);
 
             if ($validator->fails()) {
@@ -330,7 +330,7 @@ class PostController extends Controller
 
             $postData = $validator->validated();
 
-            $maxTotalSize = 20 * 1024 * 1024;
+            $maxTotalSize = 15 * 1024 * 1024;
             $totalSize = 0;
 
             if ($request->hasFile('images')) {
@@ -346,7 +346,7 @@ class PostController extends Controller
             }
 
             if ($totalSize > $maxTotalSize) {
-                return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 20MB.');
+                return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 15MB.');
             }
 
             if ($request->background_id != null) {
@@ -545,7 +545,7 @@ public function update(Request $request, $id)
             'privacy' => 'in:PUBLIC,PRIVATE,FRIEND',
             'post_type' => 'in:AVATAR_CHANGE,COVER_CHANGE,STATUS,SHARE',
             'images.*' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:21240',
+            'videos.*' => 'nullable|file|mimes:mp4,mov,avi|max:10240',
         ], [
             'content.string' => 'Nội dung bài viết phải là một chuỗi ký tự.',
             'content.max' => 'Nội dung bài viết không được vượt quá :max ký tự.',
@@ -557,7 +557,7 @@ public function update(Request $request, $id)
             'images.*.max' => 'Kích thước hình ảnh không được vượt quá 5MB.',
             'videos.*.file' => 'Tệp video không hợp lệ.',
             'videos.*.mimes' => 'Sai định dạng video.',
-            'videos.*.max' => 'Kích thước video không được vượt quá 20MB.',
+            'videos.*.max' => 'Kích thước video không được vượt quá 10MB.',
         ]);
 
         if ($validator->fails()) {
@@ -566,7 +566,7 @@ public function update(Request $request, $id)
 
         $postData = $validator->validated();
 
-        $maxTotalSize = 20 * 1024 * 1024;
+        $maxTotalSize = 15 * 1024 * 1024;
             $totalSize = 0;
 
         if ($request->hasFile('images')) {
@@ -582,7 +582,7 @@ public function update(Request $request, $id)
         }
 
         if ($totalSize > $maxTotalSize) {
-            return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 20MB.');
+            return responseJson(null, 400, 'Tổng kích thước các tệp tin không được vượt quá 15MB.');
         }
 
         if ($request->background_id != null) {
