@@ -6,9 +6,9 @@ class MessageSent {
     private $pusher;
 
     public function __construct(
-        $APP_KEY = "bdf3ac284bdbb6bfabae",
-        $APP_SECRET = "1cea3d48fa3a2c572c2c",
-        $APP_ID = "1791163",
+        $APP_KEY = "e253ed618d0a8b50eff6",
+        $APP_SECRET = "c49e9a9f3a21f75a8b24",
+        $APP_ID = "1855676",
         $APP_CLUSTER = "ap1"
     ) {
         $this->pusher = new Pusher($APP_KEY, $APP_SECRET, $APP_ID, array('cluster' => $APP_CLUSTER));
