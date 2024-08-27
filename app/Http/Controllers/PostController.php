@@ -62,7 +62,7 @@ class PostController extends Controller
                     'images',
                     'videos'
                 ])
-                ->withCount(['comments', 'reactions', 'shares'])
+                ->withCount(['comments', 'reactions', 'shares'])  
                 ->where(function($query) use ($user, $friendIds) {
                     $query->where('privacy', 'PUBLIC')
                           ->orWhere(function ($query) use ($user, $friendIds) {
@@ -125,6 +125,11 @@ class PostController extends Controller
 
                             if ($originalPost) {
                                 $post->original_post = $originalPost;
+
+                                if($originalPost->background_id){
+                                    $originalPost->background = Background::where('id', $originalPost->background_id)->first();
+                                }
+
                             }
                         }
                     }
