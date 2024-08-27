@@ -42,7 +42,6 @@ class SocialLinksController extends Controller
 
             $data = $request->only(['telegram_link', 'facebook_link', 'instagram_link', 'x_link']);
 
-            var_dump($userId);
             if($socialLink){
                 DB::table('social_links')
                 ->where('user_id', $userId)
