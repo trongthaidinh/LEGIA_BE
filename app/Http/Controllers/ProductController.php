@@ -10,10 +10,17 @@ use Exception;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $products = Product::all();
+            $childNavId = $request->query('child_nav_id');
+
+            if ($childNavId) {
+                $products = Product::where('child_nav_id', $childNavId)->get();
+            } else {
+                $products = Product::all();
+            }
+
             return responseJson($products, 200, 'Products retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
@@ -57,7 +64,7 @@ class ProductController extends Controller
                 foreach ($images as $image) {
                     $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                     $image->storeAs('/public/images', $filename);
-                    $uploadedImages[] = 'storage/images/' . $filename;
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;
@@ -100,7 +107,7 @@ class ProductController extends Controller
                 foreach ($images as $image) {
                     $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                     $image->storeAs('public/images', $filename);
-                    $uploadedImages[] = 'storage/images/' . $filename;
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;

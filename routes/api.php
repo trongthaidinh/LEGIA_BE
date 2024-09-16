@@ -262,6 +262,7 @@ Route::group(['prefix' => 'parent-navs'], function () {
 
     Route::get('/', [ParentNavController::class, 'index']);
     Route::get('/all-with-child', [ParentNavController::class, 'getAllWithChildren']);
+    Route::get('/{slug}', [ParentNavController::class, 'getChildrenBySlug']);
     Route::get('/{id}', [ParentNavController::class, 'show']);
 });
 

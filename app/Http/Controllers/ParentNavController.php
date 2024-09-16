@@ -32,6 +32,23 @@ class ParentNavController extends Controller
         }
     }
 
+    public function getChildrenBySlug($slug)
+    {
+        try {
+            $parentNav = ParentNav::where('slug', $slug)
+                ->with('children.children')
+                ->first();
+
+            if (!$parentNav) {
+                return responseJson(null, 404, 'ParentNav not found with the provided slug');
+            }
+
+            return responseJson($parentNav->children, 200, 'Children and sub-children retrieved successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
 
     public function show($id)
     {
