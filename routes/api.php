@@ -125,7 +125,6 @@ Route::group([
     Route::delete('/comments/{postId}/{commentId}', [PostController::class, 'deleteComment']);
 
     Route::post('/share/{postId}', [PostController::class, 'sharePost']);
-
 });
 
 Route::group([
@@ -241,4 +240,124 @@ Route::group([
     Route::post('', [UsersSearchRecentController::class, 'create']);
     Route::get('', [UsersSearchRecentController::class, 'get']);
     Route::delete('{id}', [UsersSearchRecentController::class, 'delete']);
+});
+
+use App\Http\Controllers\ParentNavController;
+use App\Http\Controllers\ChildNavController;
+use App\Http\Controllers\ChildNavsTwoController;
+use App\Http\Controllers\ConfigurationController;
+use App\Http\Controllers\ExperienceController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\TeamController;
+
+// Parent Nav
+Route::group(['prefix' => 'parent-navs'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ParentNavController::class, 'store']);
+        Route::patch('/{id}', [ParentNavController::class, 'update']);
+        Route::delete('/{id}', [ParentNavController::class, 'destroy']);
+    });
+
+    Route::get('/', [ParentNavController::class, 'index']);
+    Route::get('/all-with-child', [ParentNavController::class, 'getAllWithChildren']);
+    Route::get('/{id}', [ParentNavController::class, 'show']);
+});
+
+
+// Child Nav
+Route::group(['prefix' => 'child-navs'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ChildNavController::class, 'store']);
+        Route::put('/{id}', [ChildNavController::class, 'update']);
+        Route::delete('/{id}', [ChildNavController::class, 'destroy']);
+    });
+
+    Route::get('/', [ChildNavController::class, 'index']);
+    Route::get('/{id}', [ChildNavController::class, 'show']);
+});
+
+// Child Nav Two
+Route::group(['prefix' => 'child-navs-two'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ChildNavsTwoController::class, 'store']);
+        Route::put('/{id}', [ChildNavsTwoController::class, 'update']);
+        Route::delete('/{id}', [ChildNavsTwoController::class, 'destroy']);
+    });
+
+    Route::get('/', [ChildNavsTwoController::class, 'index']);
+    Route::get('/{id}', [ChildNavsTwoController::class, 'show']);
+});
+
+// Configuration
+Route::group(['prefix' => 'configuration'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ConfigurationController::class, 'store']);
+        Route::patch('/{id}', [ConfigurationController::class, 'update']);
+        Route::delete('/{id}', [ConfigurationController::class, 'destroy']);
+    });
+
+    Route::get('/', [ConfigurationController::class, 'index']);
+    Route::get('/{id}', [ConfigurationController::class, 'show']);
+});
+
+// Product
+Route::group(['prefix' => 'products'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ProductController::class, 'store']);
+        Route::patch('/{id}', [ProductController::class, 'update']);
+        Route::delete('/{id}', [ProductController::class, 'destroy']);
+    });
+
+    Route::get('/', [ProductController::class, 'index']);
+    Route::get('/{id}', [ProductController::class, 'show']);
+});
+
+// Service
+Route::group(['prefix' => 'services'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ServiceController::class, 'store']);
+        Route::patch('/{id}', [ServiceController::class, 'update']);
+        Route::delete('/{id}', [ServiceController::class, 'destroy']);
+    });
+
+    Route::get('/', [ServiceController::class, 'index']);
+    Route::get('/{id}', [ServiceController::class, 'show']);
+});
+
+// Experience
+Route::group(['prefix' => 'experiences'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ExperienceController::class, 'store']);
+        Route::patch('/{id}', [ExperienceController::class, 'update']);
+        Route::delete('/{id}', [ExperienceController::class, 'destroy']);
+    });
+
+    Route::get('/', [ExperienceController::class, 'index']);
+    Route::get('/{id}', [ExperienceController::class, 'show']);
+});
+
+// News
+Route::group(['prefix' => 'news'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [NewsController::class, 'store']);
+        Route::patch('/{id}', [NewsController::class, 'update']);
+        Route::delete('/{id}', [NewsController::class, 'destroy']);
+    });
+
+    Route::get('/', [NewsController::class, 'index']);
+    Route::get('/{id}', [NewsController::class, 'show']);
+});
+
+// Team
+Route::group(['prefix' => 'teams'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [TeamController::class, 'store']);
+        Route::patch('/{id}', [TeamController::class, 'update']);
+        Route::delete('/{id}', [TeamController::class, 'destroy']);
+    });
+
+    Route::get('/', [TeamController::class, 'index']);
+    Route::get('/{id}', [TeamController::class, 'show']);
 });

@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:2003', 'https://www.sandy-social.xyz','https://localhost:2003', 'http://www.sandy-social.xyz'],
+    'allowed_origins' => ['http://localhost:3000', 'https://phunongbuondon.com/', 'https://localhost:3000', 'http://phunongbuondon.com/'],
 
     'allowed_origins_patterns' => [],
 

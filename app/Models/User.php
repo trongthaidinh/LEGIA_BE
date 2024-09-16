@@ -12,9 +12,9 @@ class User extends Authenticatable implements JWTSubject
 {
     private $userStatus;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->userStatus = new UserStatus();
-
     }
 
     use HasFactory, Notifiable;
@@ -56,8 +56,8 @@ class User extends Authenticatable implements JWTSubject
     public function friends()
     {
         return $this->belongsToMany(User::class, 'friendships', 'owner_id', 'friend_id')
-                    ->withPivot('status')
-                    ->wherePivot('status', '=', 'accepted');
+            ->withPivot('status')
+            ->wherePivot('status', '=', 'accepted');
     }
 
     public function isMyFriend($userId)
@@ -65,10 +65,6 @@ class User extends Authenticatable implements JWTSubject
         return $this->friends()->where('users.id', $userId)->exists();
     }
 
-    public function postImages()
-    {
-        return $this->hasMany(PostImage::class);
-    }
 
     public function isOnline()
     {
@@ -97,5 +93,4 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(SocialLinks::class);
     }
-
 }
