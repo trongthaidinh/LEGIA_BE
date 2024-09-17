@@ -17,10 +17,11 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
 
-    public function me(){
+    public function me()
+    {
         $user = auth()->user();
 
-        if(!$user){
+        if (!$user) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         };
 
@@ -31,31 +32,31 @@ class UserController extends Controller
         return responseJson($user);
     }
 
-    public function getProfile($id){
-        try{
+    public function getProfile($id)
+    {
+        try {
             $user = auth()->userOrFail();
 
             $profile = User::where('id', $id)
-            ->with('socialLinks')
-            ->first();
+                ->with('socialLinks')
+                ->first();
 
-            if( ! $profile ) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
+            if (! $profile) return responseJson(null, 404, 'Không tìm thấy thông tin người dùng!');
 
             $partnerId = $id;
             $userId = $user->id;
 
-            if($partnerId != $userId){
+            if ($partnerId != $userId) {
                 $conversation = Conversation::whereHas('participants', function ($query) use ($userId, $partnerId) {
                     $query->where('user_id', $userId)
-                          ->orWhere('user_id', $partnerId);
+                        ->orWhere('user_id', $partnerId);
                 }, '=', 2)
-                ->where('type', 'individual')
-                ->first('id');
+                    ->where('type', 'individual')
+                    ->first('id');
 
-                if($conversation){
+                if ($conversation) {
                     $profile->conversation_id = $conversation->id;
-
-                }else{
+                } else {
                     $profile->conversation_id = null;
                 }
 
@@ -63,30 +64,30 @@ class UserController extends Controller
                 $friendship = Friendship::where(function ($query) use ($partnerId, $userId) {
                     $query->where(function ($query) use ($partnerId, $userId) {
                         $query->where('friend_id', $partnerId)
-                              ->where('owner_id', $userId);
+                            ->where('owner_id', $userId);
                     })->orWhere(function ($query) use ($partnerId, $userId) {
                         $query->where('friend_id', $userId)
-                              ->where('owner_id', $partnerId);
+                            ->where('owner_id', $partnerId);
                     });
                 })->first();
 
-                if($friendship){
+                if ($friendship) {
                     $profile->friendship = $friendship;
-                }else{
+                } else {
                     $profile->friendship = null;
                 }
             }
 
             return responseJson($profile, 200);
-
-        }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             var_dump($e);
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function updateInformation(Request $request){
-        try{
+    public function updateInformation(Request $request)
+    {
+        try {
             $user = auth()->userOrFail();
 
             $dataUpdate = $request->except(['is_verified', 'role', 'password', 'email', 'phone_number', 'avatar']);
@@ -101,20 +102,20 @@ class UserController extends Controller
                 'bio' => 'nullable|max:120',
             ], userValidatorMessages());
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
             $user->update($dataUpdate);
             $user->save();
 
             return responseJson($user, 200, 'Cập nhật thông tin người dùng thành công!');
-
-        }catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function updatePassword(Request $request) {
+    public function updatePassword(Request $request)
+    {
         try {
             $user = auth()->userOrFail();
 
@@ -123,7 +124,7 @@ class UserController extends Controller
                 'new_password' => 'required|string|min:8|max:200',
             ], userValidatorMessages());
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
 
@@ -139,15 +140,14 @@ class UserController extends Controller
             $user->save();
 
             return responseJson($user, 201, 'Đổi mật khẩu mới thành công!');
-
         } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
-
     }
 
-    public function updateAvatar(Request $request){
-        try{
+    public function updateAvatar(Request $request)
+    {
+        try {
             $user = auth()->userOrFail();
 
             $dataUpdate = $request->only('avatar');
@@ -156,7 +156,7 @@ class UserController extends Controller
                 'avatar' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
 
@@ -182,14 +182,14 @@ class UserController extends Controller
             ]);
 
             return responseJson($user, 200, 'Cập nhật ảnh đại diện người dùng thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function updateCoverImage(Request $request){
-        try{
+    public function updateCoverImage(Request $request)
+    {
+        try {
             $user = auth()->userOrFail();
 
             $dataUpdate = $request->only('cover_image');
@@ -198,7 +198,7 @@ class UserController extends Controller
                 'cover_image' => 'required|file|image|mimes:jpeg,png,jpg,webp|max:2048',
             ], userValidatorMessages());
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return responseJson(null, 400, $validator->errors());
             }
 
@@ -222,27 +222,27 @@ class UserController extends Controller
             ]);
 
             return responseJson($user, 200, 'Cập nhật ảnh bìa người dùng thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function deleteAvatar(){
-        try{
+    public function deleteAvatar()
+    {
+        try {
             $user = auth()->userOrFail();
 
-            if(! $user->avatar){
+            if (! $user->avatar) {
                 return responseJson(null, 400, 'Bạn chưa có ảnh đại diện!');
             }
 
             $avatarPath = null;
 
-            if($user->gender == 'male'){
+            if ($user->gender == 'male') {
                 $avatarPath = "/images/samples/AvatarMale.jpg";
-            }else if($user->gender == 'female'){
+            } else if ($user->gender == 'female') {
                 $avatarPath = "/images/samples/AvatarFemale.jpg";
-            }else if($user->gender == 'other'){
+            } else if ($user->gender == 'other') {
                 $avatarPath = "/images/samples/AvatarOther.jpg";
             }
 
@@ -250,17 +250,17 @@ class UserController extends Controller
             $user->save();
 
             return responseJson($user, 200, 'Xóa ảnh đại diện người dùng thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function deleteCoverImage(){
-        try{
+    public function deleteCoverImage()
+    {
+        try {
             $user = auth()->userOrFail();
 
-            if(! $user->cover_image){
+            if (! $user->cover_image) {
                 return responseJson(null, 400, 'Bạn chưa có ảnh bìa!');
             }
 
@@ -269,25 +269,25 @@ class UserController extends Controller
             $user->save();
 
             return responseJson($user, 200, 'Xóa ảnh bìa người dùng thành công!');
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function find(Request $request){
-        try{
+    public function find(Request $request)
+    {
+        try {
             $user = auth()->userOrFail();
 
             $users = DB::table('users')
-            ->where(function($query) use ($request) {
-                $query->where('first_name', 'like', '%' . $request->q . '%')
-                    ->orWhere('last_name', 'like', '%' . $request->q . '%')
-                    ->orWhere('email', 'like', '%' . $request->q . '%')
-                    ->orWhere('phone_number', 'like', '%' . $request->q . '%');
-            })
-            ->where('id', '!=', $user->id)
-            ->get();
+                ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'like', '%' . $request->q . '%')
+                        ->orWhere('last_name', 'like', '%' . $request->q . '%')
+                        ->orWhere('email', 'like', '%' . $request->q . '%')
+                        ->orWhere('phone_number', 'like', '%' . $request->q . '%');
+                })
+                ->where('id', '!=', $user->id)
+                ->get();
 
 
             // Lặp qua từng user trong danh sách và thêm thuộc tính is_my_friend để biết người dùng đang xem có là bạn bè với user đó không
@@ -299,14 +299,13 @@ class UserController extends Controller
             });
 
             return responseJson($users, 200);
-
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }
 
-    public function getSuggestionList() {
+    public function getSuggestionList()
+    {
         // try{
         //     $currentUser = auth()->userOrFail();
 
@@ -344,7 +343,7 @@ class UserController extends Controller
         //     return responseJson(null, 404, 'Người dùng chưa xác thực!');
         // }
 
-        try{
+        try {
             $user = auth()->userOrFail();
 
             $users = User::where('id', '!=', $user->id)
@@ -358,11 +357,9 @@ class UserController extends Controller
 
 
             return responseJson($users, 200);
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
-
     }
 
     public function getUserImages(Request $request, $id)
@@ -412,13 +409,13 @@ class UserController extends Controller
         }
     }
 
-    public function markOnline(){
-        try{
+    public function markOnline()
+    {
+        try {
             $user = auth()->userOrFail();
 
             return $user->markOnline();
-
-        }catch(\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e){
+        } catch (\Tymon\JWTAuth\Exceptions\UserNotDefinedException $e) {
             return responseJson(null, 404, 'Người dùng chưa xác thực!');
         }
     }

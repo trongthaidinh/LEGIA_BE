@@ -10,10 +10,17 @@ use Exception;
 
 class ServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $services = Service::all();
+            $childNavId = $request->query('child_nav_id');
+
+            if ($childNavId) {
+                $services = Service::where('child_nav_id', $childNavId)->get();
+            } else {
+                $services = Service::all();
+            }
+
             return responseJson($services, 200, 'Services retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
@@ -56,7 +63,7 @@ class ServiceController extends Controller
                 foreach ($images as $image) {
                     $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                     $image->storeAs('/public/images', $filename);
-                    $uploadedImages[] = 'storage/images/' . $filename;
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;
@@ -98,7 +105,7 @@ class ServiceController extends Controller
                 foreach ($images as $image) {
                     $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                     $image->storeAs('public/images', $filename);
-                    $uploadedImages[] = 'storage/images/' . $filename;
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;
@@ -125,8 +132,8 @@ class ServiceController extends Controller
                 $images = $service->images;
 
                 foreach ($images as $image) {
-                    $path = str_replace('storage/', 'public/', $image);
-                    $fullPath = storage_path('app/' . $path);
+                    $path = str_replace(config('app.url') . '/storage/', '', $image);
+                    $fullPath = storage_path('app/public/' . $path);
 
                     if (file_exists($fullPath)) {
                         unlink($fullPath);

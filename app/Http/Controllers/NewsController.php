@@ -10,10 +10,17 @@ use Exception;
 
 class NewsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $news = News::all();
+            $childNavId = $request->query('child_nav_id');
+
+            if ($childNavId) {
+                $news = News::where('child_nav_id', $childNavId)->get();
+            } else {
+                $news = News::all();
+            }
+
             return responseJson($news, 200, 'News retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
@@ -59,9 +66,9 @@ class NewsController extends Controller
                 $uploadedImages = [];
 
                 foreach ($images as $image) {
-                    $filetitle = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('/public/images', $filetitle);
-                    $uploadedImages[] = 'storage/images/' . $filetitle;
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
+                    $image->storeAs('/public/images', $filename);
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;
@@ -103,9 +110,9 @@ class NewsController extends Controller
                 $uploadedImages = [];
 
                 foreach ($images as $image) {
-                    $filetitle = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('public/images', $filetitle);
-                    $uploadedImages[] = 'storage/images/' . $filetitle;
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
+                    $image->storeAs('public/images', $filename);
+                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
                 $validated['images'] = $uploadedImages;
@@ -132,8 +139,8 @@ class NewsController extends Controller
                 $images = $news->images;
 
                 foreach ($images as $image) {
-                    $path = str_replace('storage/', 'public/', $image);
-                    $fullPath = storage_path('app/' . $path);
+                    $path = str_replace(config('app.url') . '/storage/', '', $image);
+                    $fullPath = storage_path('app/public/' . $path);
 
                     if (file_exists($fullPath)) {
                         unlink($fullPath);

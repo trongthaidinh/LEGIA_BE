@@ -31,20 +31,20 @@ class AuthController extends Controller
             'date_of_birth' => 'nullable|date',
         ], userValidatorMessages());
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
 
-        if($request->hasFile('avatar')){
+        if ($request->hasFile('avatar')) {
             $result = $request->file('avatar')->storeOnCloudinary();
             $avatarPublicId = $result->getPublicId();
             $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
-        }else {
-            if($request->gender == 'male'){
+        } else {
+            if ($request->gender == 'male') {
                 $avatarPath = "/images/samples/AvatarMale.jpg";
-            }else if($request->gender == 'female'){
+            } else if ($request->gender == 'female') {
                 $avatarPath = "/images/samples/AvatarFemale.jpg";
-            }else if($request->gender == 'other'){
+            } else if ($request->gender == 'other') {
                 $avatarPath = "/images/samples/AvatarOther.jpg";
             }
         }
@@ -67,11 +67,11 @@ class AuthController extends Controller
             'password' => 'required',
         ], userValidatorMessages());
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
 
-        if(! $user = User::where('email', $credentials['email'])->first()) {
+        if (! $user = User::where('email', $credentials['email'])->first()) {
             return responseJson(null, 404, 'Sai email đăng nhập');
         }
 
@@ -80,7 +80,7 @@ class AuthController extends Controller
             return responseJson(null, 404, 'Sai mật khẩu đăng nhập');
         }
 
-        if($user->is_banned == 1){
+        if ($user->is_banned == 1) {
             return responseJson(null, 404, 'Tài khoản đã bị khóa');
         }
 
@@ -102,8 +102,6 @@ class AuthController extends Controller
             'accessTokenExpiresAt' => config('jwt.ttl'),
             'refreshTokenExpiresAt' => config('jwt.refresh_ttl')
         ], 200, 'Đăng nhập thành công!');
-
-
     }
 
     public function refresh(Request $request)
@@ -137,9 +135,6 @@ class AuthController extends Controller
 
     public function logout()
     {
-        auth()->logout(true);
-
-
         return responseJson(null, 200, 'Đăng xuất thành công!');
     }
 
@@ -198,7 +193,8 @@ class AuthController extends Controller
         return responseJson(null, 200, 'Mật khẩu đã được đặt lại thành công.');
     }
 
-    private function _generateRefreshToken($email){
+    private function _generateRefreshToken($email)
+    {
         $data = [
             'sub' => $email,
             'random' => rand() . time(),
@@ -207,5 +203,4 @@ class AuthController extends Controller
 
         return JWTAuth::getJWTProvider()->encode($data);
     }
-
 }

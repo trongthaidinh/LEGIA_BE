@@ -134,8 +134,8 @@ class ProductController extends Controller
                 $images = $product->images;
 
                 foreach ($images as $image) {
-                    $path = str_replace('storage/', 'public/', $image);
-                    $fullPath = storage_path('app/' . $path);
+                    $path = str_replace(config('app.url') . '/storage/', '', $image);
+                    $fullPath = storage_path('app/public/' . $path);
 
                     if (file_exists($fullPath)) {
                         unlink($fullPath);

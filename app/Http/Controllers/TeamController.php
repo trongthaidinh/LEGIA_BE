@@ -41,14 +41,15 @@ class TeamController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'position' => 'required|string|max:255',
-                'image' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:5048',
             ]);
 
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                 $image->storeAs('public/images', $filename);
-                $validated['image'] = 'storage/images/' . $filename;
+                $uploadedImages = config('app.url') . '/storage/images/' . $filename;
+                $validated['image'] = $uploadedImages;
             }
 
             $team = Teams::create($validated);
@@ -71,14 +72,15 @@ class TeamController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'position' => 'sometimes|required|string|max:255',
-                'image' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:5048',
             ]);
 
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                 $image->storeAs('public/images', $filename);
-                $validated['image'] = 'storage/images/' . $filename;
+                $uploadedImages = config('app.url') . '/storage/images/' . $filename;
+                $validated['image'] = $uploadedImages;
             }
 
             $team->update($validated);
@@ -98,9 +100,11 @@ class TeamController extends Controller
                 return responseJson(null, 404, 'Team not found');
             }
 
-            if ($team->image) {
-                $path = str_replace('storage/', 'public/', $team->image);
-                $fullPath = storage_path('app/' . $path);
+            $image = $team->image;
+
+            if ($image) {
+                $path = str_replace(config('app.url') . '/storage/', '', $image);
+                $fullPath = storage_path('app/public/' . $path);
 
                 if (file_exists($fullPath)) {
                     unlink($fullPath);

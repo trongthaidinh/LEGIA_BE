@@ -247,10 +247,12 @@ use App\Http\Controllers\ChildNavController;
 use App\Http\Controllers\ChildNavsTwoController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ExperienceController;
+use App\Http\Controllers\ImageController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\VideoController;
 
 // Parent Nav
 Route::group(['prefix' => 'parent-navs'], function () {
@@ -361,4 +363,28 @@ Route::group(['prefix' => 'teams'], function () {
 
     Route::get('/', [TeamController::class, 'index']);
     Route::get('/{id}', [TeamController::class, 'show']);
+});
+
+// Video
+Route::group(['prefix' => 'videos'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [VideoController::class, 'store']);
+        Route::patch('/{id}', [VideoController::class, 'update']);
+        Route::delete('/{id}', [VideoController::class, 'destroy']);
+    });
+
+    Route::get('/', [VideoController::class, 'index']);
+    Route::get('/{id}', [VideoController::class, 'show']);
+});
+
+// Image
+Route::group(['prefix' => 'images'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ImageController::class, 'store']);
+        Route::patch('/{id}', [ImageController::class, 'update']);
+        Route::delete('/{id}', [ImageController::class, 'destroy']);
+    });
+
+    Route::get('/', [ImageController::class, 'index']);
+    Route::get('/{id}', [ImageController::class, 'show']);
 });
