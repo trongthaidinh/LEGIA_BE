@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -88,34 +89,43 @@ class ProductController extends Controller
                 return responseJson(null, 404, 'Product not found');
             }
 
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'name' => 'sometimes|required|string|max:255',
                 'features' => 'nullable|json',
                 'images' => 'nullable|array',
-                'images.*' => 'file|mimes:jpg,jpeg,png,gif|max:5048',
+                'images.*' => 'sometimes|required',
                 'child_nav_id' => 'sometimes|required|exists:child_navs,id',
                 'created_by' => 'nullable|string|max:255',
                 'updated_by' => 'nullable|string|max:255',
                 'summary' => 'nullable|string',
-                'phone_number' => 'required|string|max:20',
-                'slug' => 'sometimes|required|string|unique:products,slug,' . $id,
+                'phone_number' => 'nullable|string|max:20',
                 'content' => 'nullable|string',
             ]);
 
-            if ($request->hasFile('images')) {
+            if ($validator->fails()) {
+                return responseJson($validator->errors(), 400, 'Validation Failed');
+            }
+
+            $validatedData = $validator->validated();
+
+            if ($request->has('images')) {
                 $images = $request->file('images');
                 $uploadedImages = [];
 
-                foreach ($images as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('public/images', $filename);
-                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
+                foreach ($request->images as $image) {
+                    if (filter_var($image, FILTER_VALIDATE_URL)) {
+                        $uploadedImages[] = $image;
+                    } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
+                        $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
+                        $image->storeAs('public/images', $filename);
+                        $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
+                    }
                 }
 
-                $validated['images'] = $uploadedImages;
+                $validatedData['images'] = $uploadedImages;
             }
 
-            $product->update($validated);
+            $product->update($validatedData);
 
             return responseJson($product, 200, 'Product updated successfully');
         } catch (Exception $e) {

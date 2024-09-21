@@ -50,7 +50,7 @@ Route::group(['prefix' => 'parent-navs'], function () {
 Route::group(['prefix' => 'child-navs'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ChildNavController::class, 'store']);
-        Route::put('/{id}', [ChildNavController::class, 'update']);
+        Route::patch('/{id}', [ChildNavController::class, 'update']);
         Route::delete('/{id}', [ChildNavController::class, 'destroy']);
     });
 
@@ -62,7 +62,7 @@ Route::group(['prefix' => 'child-navs'], function () {
 Route::group(['prefix' => 'child-navs-two'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ChildNavsTwoController::class, 'store']);
-        Route::put('/{id}', [ChildNavsTwoController::class, 'update']);
+        Route::patch('/{id}', [ChildNavsTwoController::class, 'update']);
         Route::delete('/{id}', [ChildNavsTwoController::class, 'destroy']);
     });
 
@@ -86,7 +86,7 @@ Route::group(['prefix' => 'configuration'], function () {
 Route::group(['prefix' => 'products'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ProductController::class, 'store']);
-        Route::patch('/{id}', [ProductController::class, 'update']);
+        Route::post('/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 
