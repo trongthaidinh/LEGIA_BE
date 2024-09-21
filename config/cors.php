@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'https://phunongbuondon.com/', 'https://localhost:3000', 'http://phunongbuondon.com/'],
+    'allowed_origins' => ['http://localhost:3000', 'https://phunongbuondon.com', 'https://localhost:3000', 'http://phunongbuondon.com', 'https://htx-phunong.vercel.app'],
 
     'allowed_origins_patterns' => [],
 

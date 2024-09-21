@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ChildNav extends Model
 {
-    use Sluggable, SluggableScopeHelpers;
+    use HasFactory, Sluggable, SluggableScopeHelpers;
 
     protected $fillable = [
         'title',

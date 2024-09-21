@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use Sluggable, SluggableScopeHelpers;
+    use HasFactory, Sluggable, SluggableScopeHelpers;
+
+    protected $table = 'products_1';
 
     protected $fillable = [
         'name',
@@ -21,6 +23,7 @@ class Product extends Model
         'summary',
         'slug',
         'content',
+        'phone_number',
     ];
 
     protected $casts = [

@@ -8,51 +8,33 @@ use Illuminate\Http\Request;
 use App\Mail\ResetPasswordMail;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
+use DateInterval;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use DateTimeImmutable;
 
 class AuthController extends Controller
 {
 
     public function register(Request $request)
     {
-        $avatarPath = null;
-        $avatarPublicId = null;
+
 
         $validator = Validator::make($request->except(['role', 'is_verified']), [
-            'first_name' => 'required|max:30',
-            'last_name' => 'required|max:20',
-            'avatar' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'gender' => 'required|in:male,female,other',
+            'name' => 'required|max:30',
             'email' => 'required|email|unique:users',
-            'phone_number' => 'required|max:10|unique:users',
             'password' => 'required|min:8|max:200',
-            'date_of_birth' => 'nullable|date',
-        ], userValidatorMessages());
+        ]);
 
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
 
-        if ($request->hasFile('avatar')) {
-            $result = $request->file('avatar')->storeOnCloudinary();
-            $avatarPublicId = $result->getPublicId();
-            $avatarPath = "{$result->getSecurePath()}?public_id={$avatarPublicId}";
-        } else {
-            if ($request->gender == 'male') {
-                $avatarPath = "/images/samples/AvatarMale.jpg";
-            } else if ($request->gender == 'female') {
-                $avatarPath = "/images/samples/AvatarFemale.jpg";
-            } else if ($request->gender == 'other') {
-                $avatarPath = "/images/samples/AvatarOther.jpg";
-            }
-        }
 
         $user = User::create(array_merge(
             $validator->validated(),
             ['password' => bcrypt($request->password)],
-            ['avatar' => $avatarPath]
         ));
 
         return responseJson($user, 201, 'Đăng ký người dùng mới thành công!');
@@ -65,42 +47,40 @@ class AuthController extends Controller
         $validator = Validator::make($credentials, [
             'email' => 'required|email',
             'password' => 'required',
-        ], userValidatorMessages());
+        ]);
 
         if ($validator->fails()) {
             return responseJson(null, 400, $validator->errors());
         }
 
-        if (! $user = User::where('email', $credentials['email'])->first()) {
-            return responseJson(null, 404, 'Sai email đăng nhập');
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (! $user || ! password_verify($credentials['password'], $user->password)) {
+            return responseJson(null, 404, 'Thông tin đăng nhập không chính xác');
         }
 
-
-        if (password_verify($credentials['password'], $user->password) == false) {
-            return responseJson(null, 404, 'Sai mật khẩu đăng nhập');
+        if ($user->is_banned) {
+            return responseJson(null, 403, 'Tài khoản đã bị khóa');
         }
-
-        if ($user->is_banned == 1) {
-            return responseJson(null, 404, 'Tài khoản đã bị khóa');
-        }
-
 
         if (! $token = auth()->attempt($credentials)) {
-
-            return responseJson(null, 404, 'Không tìm thấy người dùng');
+            return responseJson(null, 401, 'Không thể tạo token');
         }
+        $refreshToken = $this->_generateRefreshToken($user->email);
 
-        $email = $credentials['email'];
+        $accessTokenExpiresAt = (new DateTimeImmutable())
+            ->modify('+' . config('jwt.ttl') . ' minutes')
+            ->add(new DateInterval('PT7H'));
 
-        $refreshToken = $this->_generateRefreshToken($email);
-
-
+        $refreshTokenExpiresAt = (new DateTimeImmutable())
+            ->modify('+' . config('jwt.refresh_ttl') . ' minutes')
+            ->add(new DateInterval('PT7H'));
 
         return responseJson([
             'accessToken' => $token,
             'refreshToken' => $refreshToken,
-            'accessTokenExpiresAt' => config('jwt.ttl'),
-            'refreshTokenExpiresAt' => config('jwt.refresh_ttl')
+            'accessTokenExpiresAt' => $accessTokenExpiresAt->format('Y-m-d H:i:s'),
+            'refreshTokenExpiresAt' => $refreshTokenExpiresAt->format('Y-m-d H:i:s'),
         ], 200, 'Đăng nhập thành công!');
     }
 
@@ -116,22 +96,30 @@ class AuthController extends Controller
             }
 
             if (! $newAccessToken = auth()->login($user)) {
-                return responseJson(null, 401);
+                return responseJson(null, 401, 'Không thể tạo token mới');
             }
 
-
             $newRefreshToken = $this->_generateRefreshToken($user->email);
+
+            $accessTokenExpiresAt = (new DateTimeImmutable())
+                ->modify('+' . config('jwt.ttl') . ' minutes')
+                ->add(new DateInterval('PT7H'));
+
+            $refreshTokenExpiresAt = (new DateTimeImmutable())
+                ->modify('+' . config('jwt.refresh_ttl') . ' minutes')
+                ->add(new DateInterval('PT7H'));
 
             return responseJson([
                 'accessToken' => $newAccessToken,
                 'refreshToken' => $newRefreshToken,
-                'accessTokenExpiresAt' => config('jwt.ttl'),
-                'refreshTokenExpiresAt' => config('jwt.refresh_ttl')
-            ]);
+                'accessTokenExpiresAt' => $accessTokenExpiresAt->format('Y-m-d H:i:s'),
+                'refreshTokenExpiresAt' => $refreshTokenExpiresAt->format('Y-m-d H:i:s'),
+            ], 200, 'Làm mới token thành công!');
         } catch (Exception $ex) {
             return responseJson(null, 401, $ex->getMessage());
         }
     }
+
 
     public function logout()
     {

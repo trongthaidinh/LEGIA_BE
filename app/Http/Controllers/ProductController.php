@@ -54,6 +54,7 @@ class ProductController extends Controller
                 'created_by' => 'nullable|string|max:255',
                 'updated_by' => 'nullable|string|max:255',
                 'summary' => 'nullable|string',
+                'phone_number' => 'required|string|max:20',
                 'content' => 'nullable|string',
             ]);
 
@@ -96,6 +97,7 @@ class ProductController extends Controller
                 'created_by' => 'nullable|string|max:255',
                 'updated_by' => 'nullable|string|max:255',
                 'summary' => 'nullable|string',
+                'phone_number' => 'required|string|max:20',
                 'slug' => 'sometimes|required|string|unique:products,slug,' . $id,
                 'content' => 'nullable|string',
             ]);
