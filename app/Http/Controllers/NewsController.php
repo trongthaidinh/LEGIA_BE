@@ -94,25 +94,27 @@ class NewsController extends Controller
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
                 'images' => 'nullable|array',
-                'images.*' => 'file|mimes:jpg,jpeg,png,gif|max:5048',
+                'images.*' => 'sometimes|required',
                 'child_nav_id' => 'sometimes|required|exists:child_navs,id',
                 'created_by' => 'nullable|string|max:255',
                 'updated_by' => 'nullable|string|max:255',
                 'summary' => 'nullable|string',
                 'slug' => 'sometimes|required|string|unique:news,slug,' . $id,
                 'content' => 'nullable|string',
-                'views' => 'nullable|integer|min:0',
                 'isFeatured' => 'nullable|boolean',
             ]);
 
-            if ($request->hasFile('images')) {
-                $images = $request->file('images');
+            if ($request->has('images')) {
                 $uploadedImages = [];
 
-                foreach ($images as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('public/images', $filename);
-                    $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
+                foreach ($request->images as $image) {
+                    if (filter_var($image, FILTER_VALIDATE_URL)) {
+                        $uploadedImages[] = $image;
+                    } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
+                        $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
+                        $image->storeAs('public/images', $filename);
+                        $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
+                    }
                 }
 
                 $validated['images'] = $uploadedImages;

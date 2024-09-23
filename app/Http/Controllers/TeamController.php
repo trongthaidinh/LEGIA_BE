@@ -41,7 +41,7 @@ class TeamController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'position' => 'required|string|max:255',
-                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:10048',
             ]);
 
             if ($request->hasFile('image')) {
@@ -72,15 +72,15 @@ class TeamController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'position' => 'sometimes|required|string|max:255',
-                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'sometimes',
             ]);
 
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
                 $image->storeAs('public/images', $filename);
-                $uploadedImages = config('app.url') . '/storage/images/' . $filename;
-                $validated['image'] = $uploadedImages;
+
+                $validated['image'] = config('app.url') . '/storage/images/' . $filename;
             }
 
             $team->update($validated);

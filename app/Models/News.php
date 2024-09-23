@@ -27,7 +27,6 @@ class News extends Model
         'summary',
         'slug',
         'content',
-        'views',
         'isFeatured',
     ];
 

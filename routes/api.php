@@ -99,7 +99,7 @@ Route::group(['prefix' => 'products'], function () {
 Route::group(['prefix' => 'services'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ServiceController::class, 'store']);
-        Route::patch('/{id}', [ServiceController::class, 'update']);
+        Route::post('/{id}', [ServiceController::class, 'update']);
         Route::delete('/{id}', [ServiceController::class, 'destroy']);
     });
 
@@ -111,7 +111,7 @@ Route::group(['prefix' => 'services'], function () {
 Route::group(['prefix' => 'experiences'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ExperienceController::class, 'store']);
-        Route::patch('/{id}', [ExperienceController::class, 'update']);
+        Route::post('/{id}', [ExperienceController::class, 'update']);
         Route::delete('/{id}', [ExperienceController::class, 'destroy']);
     });
 
@@ -123,7 +123,7 @@ Route::group(['prefix' => 'experiences'], function () {
 Route::group(['prefix' => 'news'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [NewsController::class, 'store']);
-        Route::patch('/{id}', [NewsController::class, 'update']);
+        Route::post('/{id}', [NewsController::class, 'update']);
         Route::delete('/{id}', [NewsController::class, 'destroy']);
     });
 
@@ -135,7 +135,7 @@ Route::group(['prefix' => 'news'], function () {
 Route::group(['prefix' => 'teams'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [TeamController::class, 'store']);
-        Route::patch('/{id}', [TeamController::class, 'update']);
+        Route::post('/{id}', [TeamController::class, 'update']);
         Route::delete('/{id}', [TeamController::class, 'destroy']);
     });
 
