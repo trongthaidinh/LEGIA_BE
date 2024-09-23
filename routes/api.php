@@ -14,6 +14,7 @@ use App\Http\Controllers\ImageController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\VideoController;
@@ -188,4 +189,9 @@ Route::group(['prefix' => 'pages'], function () {
     Route::get('/', [PageController::class, 'index']);
     Route::get('/{id}', [PageController::class, 'show']);
     Route::get('/slug/{slug}', [PageController::class, 'getPageBySlug']);
+});
+
+// Search
+Route::group(['prefix' => 'search'], function () {
+    Route::get('/', [SearchController::class, 'search']);
 });
