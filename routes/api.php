@@ -75,7 +75,7 @@ Route::group(['prefix' => 'child-navs-two'], function () {
 Route::group(['prefix' => 'configuration'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ConfigurationController::class, 'store']);
-        Route::patch('/{id}', [ConfigurationController::class, 'update']);
+        Route::post('/{id}', [ConfigurationController::class, 'update']);
         Route::delete('/{id}', [ConfigurationController::class, 'destroy']);
     });
 
