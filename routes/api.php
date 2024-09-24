@@ -17,6 +17,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VideoController;
 
 // Auth
@@ -30,6 +31,16 @@ Route::group([
     Route::post('forgot-password', [AuthController::class, 'sendResetLinkEmail']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+});
+
+// User
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'user',
+], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('update-password', [UserController::class, 'updatePassword']);
+    });
 });
 
 // Parent Nav
