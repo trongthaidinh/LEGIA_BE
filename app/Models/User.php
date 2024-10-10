@@ -10,7 +10,7 @@ class User extends Authenticatable implements JWTSubject
 {
     use HasFactory;
 
-    protected $table = 'users_1';
+    protected $table = 'users';
 
     protected $fillable = [
         'name',

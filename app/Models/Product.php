@@ -11,16 +11,15 @@ class Product extends Model
 {
     use HasFactory, Sluggable, SluggableScopeHelpers;
 
-    protected $table = 'products_1';
+    protected $table = 'products';
 
     protected $fillable = [
         'name',
+        'price',
+        'original_price',
         'features',
         'images',
         'child_nav_id',
-        'created_by',
-        'updated_by',
-        'summary',
         'slug',
         'content',
         'phone_number',
@@ -54,5 +53,10 @@ class Product extends Model
     public function childNav()
     {
         return $this->belongsTo(ChildNav::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
     }
 }

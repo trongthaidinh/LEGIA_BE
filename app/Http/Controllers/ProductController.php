@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -50,22 +50,27 @@ class ProductController extends Controller
                 'name' => 'required|string|max:255',
                 'features' => 'nullable|json',
                 'images' => 'nullable|array',
-                'images.*' => 'file|mimes:jpg,jpeg,png,gif|max:5048',
-                'child_nav_id' => 'required|exists:child_navs,id',
-                'created_by' => 'nullable|string|max:255',
-                'updated_by' => 'nullable|string|max:255',
-                'summary' => 'nullable|string',
+                'images.*' => 'file|mimes:jpg,jpeg,png,gif|max:50048',
+                'child_nav_id' => 'nullable|exists:child_navs,id',
+                'price' => 'required|numeric',
+                'original_price' => 'required|numeric',
                 'phone_number' => 'required|string|max:20',
                 'content' => 'nullable|string',
             ]);
+
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
 
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
                 $uploadedImages = [];
 
                 foreach ($images as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('/public/images', $filename);
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                    $imagePath = $directory . '/' . $filename;
+                    convertToWebp($image->getPathname(), $imagePath);
                     $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
@@ -93,11 +98,10 @@ class ProductController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'features' => 'nullable|json',
                 'images' => 'nullable|array',
-                'images.*' => 'sometimes|required',
-                'child_nav_id' => 'sometimes|required|exists:child_navs,id',
-                'created_by' => 'nullable|string|max:255',
-                'updated_by' => 'nullable|string|max:255',
-                'summary' => 'nullable|string',
+                'images.*' => 'sometimes|required|file|mimes:jpg,jpeg,png,gif|max:50048',
+                'child_nav_id' => 'nullable|exists:child_navs,id',
+                'price' => 'nullable|numeric',
+                'original_price' => 'nullable|numeric',
                 'phone_number' => 'nullable|string|max:20',
                 'content' => 'nullable|string',
             ]);
@@ -108,7 +112,12 @@ class ProductController extends Controller
 
             $validatedData = $validator->validated();
 
-            if ($request->has('images')) {
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
+
+            if ($request->hasFile('images')) {
                 $images = $request->file('images');
                 $uploadedImages = [];
 
@@ -116,8 +125,9 @@ class ProductController extends Controller
                     if (filter_var($image, FILTER_VALIDATE_URL)) {
                         $uploadedImages[] = $image;
                     } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
-                        $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                        $image->storeAs('public/images', $filename);
+                        $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                        $imagePath = $directory . '/' . $filename;
+                        convertToWebp($image->getPathname(), $imagePath);
                         $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                     }
                 }
@@ -143,9 +153,7 @@ class ProductController extends Controller
             }
 
             if ($product->images) {
-                $images = $product->images;
-
-                foreach ($images as $image) {
+                foreach ($product->images as $image) {
                     $path = str_replace(config('app.url') . '/storage/', '', $image);
                     $fullPath = storage_path('app/public/' . $path);
 

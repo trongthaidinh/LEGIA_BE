@@ -21,6 +21,15 @@ class ImageController extends Controller
         }
     }
 
+    public function getPublicImages()
+    {
+        try {
+            $publicImages = Image::where('type', 'public')->get();
+            return responseJson($publicImages, 200, 'Public images retrieved successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
 
     public function show($id)
     {
@@ -43,13 +52,20 @@ class ImageController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:20048',
+                'type' => 'required|in:public,private',
             ]);
+
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
 
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
-                $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                $image->storeAs('public/images', $filename);
+                $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                $imagePath = $directory . '/' . $filename;
+                convertToWebp($image->getPathname(), $imagePath);
 
                 $uploadedImages = config('app.url') . '/storage/images/' . $filename;
 
@@ -76,16 +92,23 @@ class ImageController extends Controller
 
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
-                'image' => 'sometimes|required|file|mimes:jpg,jpeg,png,gif|max:5048',
+                'image' => 'sometimes|required|file|mimes:jpg,jpeg,png,gif|max:20048',
+                'type' => 'sometimes|required|in:public,private',
             ]);
+
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
 
             if ($request->hasFile('image')) {
                 $oldImagePath = str_replace(config('app.url') . '/storage/', '', $image->url);
                 Storage::delete('public/' . $oldImagePath);
 
                 $newImage = $request->file('image');
-                $filename = Str::random(10) . '-' . str_replace(' ', '_', $newImage->getClientOriginalName());
-                $newImage->storeAs('public/images', $filename);
+                $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                $imagePath = $directory . '/' . $filename;
+                convertToWebp($image->getPathname(), $imagePath);
                 $validated['url'] = config('app.url') . '/storage/images/' . $filename;
             }
 

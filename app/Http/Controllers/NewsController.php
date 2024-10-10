@@ -61,13 +61,19 @@ class NewsController extends Controller
                 'isFeatured' => 'nullable|boolean',
             ]);
 
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
+
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
                 $uploadedImages = [];
 
                 foreach ($images as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('/public/images', $filename);
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                    $imagePath = $directory . '/' . $filename;
+                    convertToWebp($image->getPathname(), $imagePath);
                     $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                 }
 
@@ -104,6 +110,11 @@ class NewsController extends Controller
                 'isFeatured' => 'nullable|boolean',
             ]);
 
+            $directory = storage_path('app/public/images');
+            if (!Storage::exists('public/images')) {
+                Storage::makeDirectory('public/images');
+            }
+
             if ($request->has('images')) {
                 $uploadedImages = [];
 
@@ -111,8 +122,9 @@ class NewsController extends Controller
                     if (filter_var($image, FILTER_VALIDATE_URL)) {
                         $uploadedImages[] = $image;
                     } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
-                        $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                        $image->storeAs('public/images', $filename);
+                        $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                        $imagePath = $directory . '/' . $filename;
+                        convertToWebp($image->getPathname(), $imagePath);
                         $uploadedImages[] = config('app.url') . '/storage/images/' . $filename;
                     }
                 }

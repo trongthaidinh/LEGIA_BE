@@ -11,7 +11,7 @@ class News extends Model
 {
     use Sluggable, SluggableScopeHelpers, HasFactory;
 
-    protected $table = 'news_1';
+    protected $table = 'news';
 
     /**
      * The attributes that are mass assignable.

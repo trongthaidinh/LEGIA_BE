@@ -21,6 +21,6 @@ class AdminMiddleware
             return $next($request);
         }
 
-        return responseJson(null, 403, 'Unauthorized.');
+        return responseJson(null, 403, 'Người dùng chưa xác thực.');
     }
 }

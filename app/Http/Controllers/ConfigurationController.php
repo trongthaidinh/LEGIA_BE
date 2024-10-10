@@ -41,23 +41,29 @@ class ConfigurationController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'homepage_slider' => 'nullable|array',
-                'homepage_slider.*' => 'file|mimes:jpg,jpeg,png,gif|max:10048', // Validate each file
+                'homepage_slider.*' => 'file|mimes:jpg,jpeg,png,gif,webp|max:50048',
                 'contact_email' => 'nullable|email',
                 'phone_number' => 'nullable|string|max:20',
             ]);
 
-            // Handle file uploads
+            $directory = storage_path('app/public/homepage_sliders');
+            if (!Storage::exists('public/homepage_sliders')) {
+                Storage::makeDirectory('public/homepage_sliders');
+            }
+
             if ($request->hasFile('homepage_slider')) {
                 $sliderImages = $request->file('homepage_slider');
                 $uploadedImages = [];
 
                 foreach ($sliderImages as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('public/homepage_sliders', $filename); // Save to storage
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                    $imagePath = $directory . '/' . $filename;
+
+                    convertToWebp($image->getPathname(), $imagePath);
+
                     $uploadedImages[] = config('app.url') . '/storage/homepage_sliders/' . $filename;
                 }
 
-                // Add the uploaded image URLs to the validated data
                 $validated['homepage_slider'] = $uploadedImages;
             }
 
@@ -81,10 +87,15 @@ class ConfigurationController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'homepage_slider' => 'nullable|array',
-                'homepage_slider.*' => 'file|mimes:jpg,jpeg,png,gif|max:10048',
+                'homepage_slider.*' => 'file|mimes:jpg,jpeg,png,gif,webp|max:50048',
                 'contact_email' => 'nullable|email',
                 'phone_number' => 'nullable|string|max:20',
             ]);
+
+            $directory = storage_path('app/public/homepage_sliders');
+            if (!Storage::exists('public/homepage_sliders')) {
+                Storage::makeDirectory('public/homepage_sliders');
+            }
 
             if ($request->hasFile('homepage_slider')) {
                 if (!empty($configuration->homepage_slider)) {
@@ -100,8 +111,11 @@ class ConfigurationController extends Controller
                 $uploadedImages = [];
 
                 foreach ($sliderImages as $image) {
-                    $filename = Str::random(10) . '-' . str_replace(' ', '_', $image->getClientOriginalName());
-                    $image->storeAs('public/homepage_sliders', $filename);
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                    $imagePath = $directory . '/' . $filename;
+
+                    convertToWebp($image->getPathname(), $imagePath);
+
                     $uploadedImages[] = config('app.url') . '/storage/homepage_sliders/' . $filename;
                 }
 
@@ -141,4 +155,31 @@ class ConfigurationController extends Controller
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }
     }
+
+    // private function convertToWebp($sourcePath, $destinationPath)
+    // {
+    //     $image = null;
+
+    //     $imageInfo = getimagesize($sourcePath);
+    //     $mimeType = $imageInfo['mime'];
+
+    //     switch ($mimeType) {
+    //         case 'image/jpeg':
+    //             $image = imagecreatefromjpeg($sourcePath);
+    //             break;
+    //         case 'image/png':
+    //             $image = imagecreatefrompng($sourcePath);
+    //             break;
+    //         case 'image/gif':
+    //             $image = imagecreatefromgif($sourcePath);
+    //             break;
+    //         default:
+    //             throw new Exception("Unsupported image format: $mimeType");
+    //     }
+
+    //     if ($image) {
+    //         imagewebp($image, $destinationPath, 90);
+    //         imagedestroy($image);
+    //     }
+    // }
 }

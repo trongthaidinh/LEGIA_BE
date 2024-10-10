@@ -1,6 +1,7 @@
 <?php
 
-function responseJson($data, $status = 200, $message = null) {
+function responseJson($data, $status = 200, $message = null)
+{
     $messages = [
         200 => 'Success',
         201 => 'Created',
@@ -21,11 +22,11 @@ function responseJson($data, $status = 200, $message = null) {
     ];
 
     return response()->json(
-    [
-    'statusCode' => $status,
-    'message'=> isset($message) ? $message : $messages[$status],
-    'data' => $data
-    ], $status);
+        [
+            'statusCode' => $status,
+            'message' => isset($message) ? $message : $messages[$status],
+            'data' => $data
+        ],
+        $status
+    );
 }
-
-?>

@@ -7,6 +7,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\ParentNavController;
 use App\Http\Controllers\ChildNavController;
 use App\Http\Controllers\ChildNavsTwoController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ExperienceController;
@@ -106,6 +107,14 @@ Route::group(['prefix' => 'products'], function () {
     Route::get('/{id}', [ProductController::class, 'show']);
 });
 
+// Comment
+Route::group(['prefix' => 'comments'], function () {
+    Route::delete('/{id}', [CommentController::class, 'destroy']);
+    Route::post('/', [CommentController::class, 'store']);
+    Route::post('/{id}', [CommentController::class, 'update']);
+    Route::get('/{id}', [CommentController::class, 'index']);
+});
+
 // Service
 Route::group(['prefix' => 'services'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
@@ -174,6 +183,7 @@ Route::group(['prefix' => 'images'], function () {
         Route::delete('/{id}', [ImageController::class, 'destroy']);
     });
 
+    Route::get('/public', [ImageController::class, 'getPublicImages']);
     Route::get('/', [ImageController::class, 'index']);
     Route::get('/{id}', [ImageController::class, 'show']);
 });
