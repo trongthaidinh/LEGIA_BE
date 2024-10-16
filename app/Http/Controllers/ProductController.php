@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -54,6 +55,7 @@ class ProductController extends Controller
                 'child_nav_id' => 'nullable|exists:child_navs,id',
                 'price' => 'required|numeric',
                 'original_price' => 'required|numeric',
+                'available_stock' => 'required|numeric',
                 'phone_number' => 'required|string|max:20',
                 'content' => 'nullable|string',
             ]);
@@ -98,12 +100,12 @@ class ProductController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'features' => 'nullable|json',
                 'images' => 'nullable|array',
-                'images.*' => 'sometimes|required|file|mimes:jpg,jpeg,png,gif|max:50048',
                 'child_nav_id' => 'nullable|exists:child_navs,id',
                 'price' => 'nullable|numeric',
                 'original_price' => 'nullable|numeric',
                 'phone_number' => 'nullable|string|max:20',
                 'content' => 'nullable|string',
+                'available_stock' => 'nullable|numeric',
             ]);
 
             if ($validator->fails()) {
@@ -166,6 +168,27 @@ class ProductController extends Controller
             $product->delete();
 
             return responseJson(null, 200, 'Product deleted successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
+    public function getProductsBySlugNav($slugNav)
+    {
+        try {
+            $childNav = DB::table('child_navs')->where('slug', $slugNav)->first();
+
+            if (!$childNav) {
+                return responseJson(null, 404, 'Category not found');
+            }
+
+            $products = Product::where('child_nav_id', $childNav->id)->get();
+
+            if ($products->isEmpty()) {
+                return responseJson(null, 404, 'No products found for this category');
+            }
+
+            return responseJson($products, 200, 'Products retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }

@@ -14,18 +14,41 @@ class NewsController extends Controller
     {
         try {
             $childNavId = $request->query('child_nav_id');
+            $page = $request->query('page', 1);
+            $limit = $request->query('limit', 10);
+
+            $validated = $request->validate([
+                'page' => 'integer|min:1',
+                'limit' => 'integer|min:1',
+            ]);
+
+            $offset = ($page - 1) * $limit;
+
+            $newsQuery = News::query();
 
             if ($childNavId) {
-                $news = News::where('child_nav_id', $childNavId)->get();
-            } else {
-                $news = News::all();
+                $newsQuery->where('child_nav_id', $childNavId);
             }
 
-            return responseJson($news, 200, 'News retrieved successfully');
+            $totalItems = $newsQuery->count();
+
+            $news = $newsQuery->offset($offset)->limit($limit)->get();
+
+            $paginationData = [
+                'current_page' => $page,
+                'total_items' => $totalItems,
+                'total_pages' => ceil($totalItems / $limit),
+            ];
+
+            return responseJson([
+                'news' => $news,
+                'pagination' => $paginationData
+            ], 200, 'News retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }
     }
+
 
     public function show($id)
     {

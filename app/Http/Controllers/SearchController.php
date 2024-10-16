@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Service;
-use App\Models\Experience;
 use App\Models\News;
 use Illuminate\Http\Request;
 use Exception;
@@ -23,16 +21,7 @@ class SearchController extends Controller
             }
 
             $products = Product::where('name', 'LIKE', "%{$query}%")
-                ->orWhere('summary', 'LIKE', "%{$query}%")
                 ->paginate($limit, ['*'], 'products_page', $page);
-
-            $services = Service::where('name', 'LIKE', "%{$query}%")
-                ->orWhere('summary', 'LIKE', "%{$query}%")
-                ->paginate($limit, ['*'], 'services_page', $page);
-
-            $experiences = Experience::where('name', 'LIKE', "%{$query}%")
-                ->orWhere('summary', 'LIKE', "%{$query}%")
-                ->paginate($limit, ['*'], 'experiences_page', $page);
 
             $news = News::where('title', 'LIKE', "%{$query}%")
                 ->orWhere('content', 'LIKE', "%{$query}%")
@@ -40,8 +29,6 @@ class SearchController extends Controller
 
             $results = [
                 'products' => $products,
-                'services' => $services,
-                'experiences' => $experiences,
                 'news' => $news,
             ];
 

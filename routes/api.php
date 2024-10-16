@@ -13,13 +13,16 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ExperienceController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VideoController;
+use App\Http\Controllers\VisitController;
 
 // Auth
 Route::group([
@@ -104,7 +107,19 @@ Route::group(['prefix' => 'products'], function () {
     });
 
     Route::get('/', [ProductController::class, 'index']);
+    Route::get('/by-category/{slugNav}', [ProductController::class, 'getProductsBySlugNav']);
     Route::get('/{id}', [ProductController::class, 'show']);
+});
+
+// Order
+Route::group(['prefix' => 'orders'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::delete('/{id}', [OrderController::class, 'destroy']);
+        Route::get('/', [OrderController::class, 'index']);
+    });
+    Route::get('/{key}', [OrderController::class, 'showByKey']);
+    Route::post('/', [OrderController::class, 'store']);
+    Route::post('/{id}/status', [OrderController::class, 'updateStatus']);
 });
 
 // Comment
@@ -212,7 +227,23 @@ Route::group(['prefix' => 'pages'], function () {
     Route::get('/slug/{slug}', [PageController::class, 'getPageBySlug']);
 });
 
+// Review
+Route::group(['prefix' => 'review'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ReviewController::class, 'store']);
+        Route::patch('/{id}', [ReviewController::class, 'update']);
+        Route::delete('/{id}', [ReviewController::class, 'destroy']);
+    });
+
+    Route::get('/', [ReviewController::class, 'index']);
+    Route::get('/{id}', [ReviewController::class, 'show']);
+});
+
 // Search
 Route::group(['prefix' => 'search'], function () {
     Route::get('/', [SearchController::class, 'search']);
 });
+
+//PageVisit
+Route::post('/track-visit', [VisitController::class, 'trackVisit']);
+Route::get('/visit-stats', [VisitController::class, 'getVisitStats']);

@@ -23,6 +23,7 @@ class Product extends Model
         'slug',
         'content',
         'phone_number',
+        'available_stock',
     ];
 
     protected $casts = [
@@ -58,5 +59,13 @@ class Product extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function reduceStock($quantity)
+    {
+        if ($this->available_stock < $quantity) {
+            throw new \Exception('Not enough stock available');
+        }
+        $this->decrement('available_stock', $quantity);
     }
 }

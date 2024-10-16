@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('phone_number');
             $table->longText('content');
+            $table->integer('available_stock')->default(0);
             $table->timestamps();
         });
     }

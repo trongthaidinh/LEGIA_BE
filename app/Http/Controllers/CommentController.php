@@ -80,7 +80,7 @@ class CommentController extends Controller
             }
 
             if ($comment->images) {
-                $images = json_decode($comment->images);
+                $images = $comment->images;
 
                 array_walk($images, function ($image) {
                     $path = str_replace(config('app.url') . '/storage/', '', $image);
