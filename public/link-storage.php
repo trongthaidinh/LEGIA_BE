@@ -1,8 +1,7 @@
 <?php
 
-// Đảm bảo rằng ứng dụng Laravel đã được khởi động
-
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 require __DIR__ . '/../bootstrap/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
@@ -12,18 +11,14 @@ $app->make(Illuminate\Contracts\Http\Kernel::class)->handle(
     Illuminate\Http\Request::capture()
 );
 
-// Kiểm tra nếu symbolic link đã tồn tại
-$storageLink = __DIR__ . '/storage';
-
-if (is_link($storageLink)) {
-    echo "Storage đã được liên kết với public.";
-} else {
-    // Thực hiện liên kết thư mục storage với public/storage
-    $exitCode = Artisan::call('storage:link');
-
-    if ($exitCode === 0) {
-        echo "Liên kết storage thành công!";
+// Kiểm tra và gọi lệnh Artisan để liên kết storage
+try {
+    if (!File::exists(public_path('storage'))) {
+        Artisan::call('storage:link');
+        echo "Liên kết storage đã được tạo thành công!";
     } else {
-        echo "Lỗi khi liên kết storage.";
+        echo "Storage đã được liên kết trước đó.";
     }
+} catch (Exception $e) {
+    echo "Đã xảy ra lỗi: " . $e->getMessage();
 }
