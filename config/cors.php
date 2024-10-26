@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'https://phunongbuondon.com', 'https://localhost:3000', 'https://legia-shop.vercel.app', 'http://legia-shop.vercel.app'],
+    'allowed_origins' => ['http://localhost:3000', 'https://yensaolegia.com', 'http://yensaolegia.com', 'https://localhost:3000', 'https://legia-shop.vercel.app', 'http://legia-shop.vercel.app'],
 
     'allowed_origins_patterns' => [],
 
