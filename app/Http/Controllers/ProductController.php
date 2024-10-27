@@ -54,7 +54,7 @@ class ProductController extends Controller
                 'images.*' => 'file|mimes:jpg,jpeg,png,gif|max:50048',
                 'child_nav_id' => 'nullable|exists:child_navs,id',
                 'price' => 'required|numeric',
-                'original_price' => 'required|numeric',
+                'original_price' => 'nullable|numeric',
                 'available_stock' => 'required|numeric',
                 'phone_number' => 'required|string|max:20',
                 'content' => 'nullable|string',

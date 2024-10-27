@@ -228,10 +228,13 @@ Route::group(['prefix' => 'pages'], function () {
 });
 
 // Review
-Route::group(['prefix' => 'review'], function () {
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'review',
+], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
         Route::post('/', [ReviewController::class, 'store']);
-        Route::patch('/{id}', [ReviewController::class, 'update']);
+        Route::post('/{id}', [ReviewController::class, 'update']);
         Route::delete('/{id}', [ReviewController::class, 'destroy']);
     });
 

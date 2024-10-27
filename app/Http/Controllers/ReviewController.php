@@ -40,7 +40,7 @@ class ReviewController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'image' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:10048',
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif|max:10048',
                 'review' => 'required|string|max:1000',
             ]);
 
@@ -76,24 +76,32 @@ class ReviewController extends Controller
 
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
-                'image' => 'nullable|file|mimes:jpg,jpeg,png,gif|max:10048',
+                'image' => 'nullable|max:10048',
                 'review' => 'sometimes|required|string|max:1000',
             ]);
 
-            $directory = storage_path('app/public/images');
-            if (!Storage::exists('public/images')) {
-                Storage::makeDirectory('public/images');
-            }
+            if ($request->has('image')) {
+                if (filter_var($request->image, FILTER_VALIDATE_URL)) {
+                    $validated['image'] = $request->image;
+                } else {
+                    $request->validate([
+                        'image' => 'file|mimes:jpg,jpeg,png,gif|max:10048',
+                    ]);
 
-            if ($request->hasFile('image')) {
-                $oldImagePath = str_replace(config('app.url') . '/storage/', '', $review->image);
-                Storage::delete('public/' . $oldImagePath);
+                    $directory = storage_path('app/public/reviews');
+                    if (!Storage::exists('public/reviews')) {
+                        Storage::makeDirectory('public/reviews');
+                    }
 
-                $image = $request->file('image');
-                $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
-                $imagePath = $directory . '/' . $filename;
-                convertToWebp($image->getPathname(), $imagePath);
-                $validated['image'] = config('app.url') . '/storage/reviews/' . $filename;
+                    $oldImagePath = str_replace(config('app.url') . '/storage/', '', $review->image);
+                    Storage::delete('public/' . $oldImagePath);
+
+                    $image = $request->file('image');
+                    $filename = Str::random(10) . '-' . str_replace(' ', '_', pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.webp';
+                    $imagePath = $directory . '/' . $filename;
+                    convertToWebp($image->getPathname(), $imagePath);
+                    $validated['image'] = config('app.url') . '/storage/reviews/' . $filename;
+                }
             }
 
             $review->update($validated);
