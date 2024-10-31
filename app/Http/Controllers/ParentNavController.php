@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ParentNav;
+use App\Models\ZhParentNav;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -21,12 +22,33 @@ class ParentNavController extends Controller
         }
     }
 
+    public function indexZh()
+    {
+        try {
+            $zhParentNavs = ZhParentNav::all();
+            return responseJson($zhParentNavs, 200, "Get Zh Parent Navigation Successful");
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
     public function getAllWithChildren()
     {
         try {
             $parentNavs = ParentNav::with('children.children')->get();
 
             return responseJson($parentNavs, 200, 'ParentNavs with children and grandchildren retrieved successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
+    public function getAllZhWithChildren()
+    {
+        try {
+            $zhParentNavs = ZhParentNav::with('children.children')->get();
+
+            return responseJson($zhParentNavs, 200, 'ZhParentNavs with children and grandchildren retrieved successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }
@@ -49,6 +71,23 @@ class ParentNavController extends Controller
         }
     }
 
+    public function getZhChildrenBySlug($slug)
+    {
+        try {
+            $zhParentNav = ZhParentNav::where('slug', $slug)
+                ->with('children.children')
+                ->first();
+
+            if (!$zhParentNav) {
+                return responseJson(null, 404, 'ZhParentNav not found with the provided slug');
+            }
+
+            return responseJson($zhParentNav->children, 200, 'Children and sub-children retrieved successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
 
     public function show($id)
     {
@@ -60,6 +99,21 @@ class ParentNavController extends Controller
             }
 
             return responseJson($parentNav, 200, 'ParentNav found');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
+    public function showZh($id)
+    {
+        try {
+            $zhParentNav = ZhParentNav::find($id);
+
+            if (!$zhParentNav) {
+                return responseJson(null, 404, 'ZhParentNav not found');
+            }
+
+            return responseJson($zhParentNav, 200, 'ZhParentNav found');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }
@@ -87,6 +141,36 @@ class ParentNavController extends Controller
             $parentNav = ParentNav::create($request->all());
 
             return responseJson($parentNav, 201, 'ParentNav created successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
+    public function storeZh(Request $request)
+    {
+        $user = auth()->userOrFail();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'title' => 'required|string|max:255',
+                'created_by' => 'required|string',
+                'updated_by' => 'required|string',
+                'position' => 'required|integer',
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson($validator->errors(), 400, 'Validation Failed');
+            }
+
+            $data = $request->all();
+            $data['slug'] = $data['title'];
+
+            $zhParentNav = ZhParentNav::create($data);
+
+            return responseJson($zhParentNav, 201, 'ZhParentNav created successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }
@@ -134,6 +218,46 @@ class ParentNavController extends Controller
         }
     }
 
+    public function updateZh(Request $request, $id)
+    {
+        $user = auth()->userOrFail();
+        if (!$user) {
+            return responseJson(null, 401, 'Chưa xác thực người dùng');
+        }
+
+        try {
+            $zhParentNav = ZhParentNav::find($id);
+
+            if (!$zhParentNav) {
+                return responseJson(null, 404, 'ParentNav not found');
+            }
+
+            $validator = Validator::make($request->all(), [
+                'title' => 'sometimes|required|string|max:255',
+                'updated_by' => 'string',
+                'position' => 'sometimes|required|integer',
+            ]);
+
+            if ($validator->fails()) {
+                return responseJson($validator->errors(), 400, 'Validation Failed');
+            }
+
+            $updateData = $request->only(['title', 'updated_by', 'position']);
+
+            if (isset($updateData['title'])) {
+                $updateData['slug'] = $updateData['title'];
+            }
+
+            $zhParentNav->update($updateData);
+
+            $updatedZhParentNav = ZhParentNav::find($id);
+
+            return responseJson($updatedZhParentNav, 200, 'ZhParentNav updated successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
 
     public function destroy($id)
     {
@@ -147,6 +271,23 @@ class ParentNavController extends Controller
             $parentNav->delete();
 
             return responseJson(null, 200, 'ParentNav deleted successfully');
+        } catch (Exception $e) {
+            return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }
+
+    public function destroyZh($id)
+    {
+        try {
+            $zhParentNav = ZhParentNav::find($id);
+
+            if (!$zhParentNav) {
+                return responseJson(null, 404, 'ParentNav not found');
+            }
+
+            $zhParentNav->delete();
+
+            return responseJson(null, 200, 'ZhParentNav deleted successfully');
         } catch (Exception $e) {
             return responseJson(null, 500, 'Internal Server Error: ' . $e->getMessage());
         }

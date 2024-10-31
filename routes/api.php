@@ -61,6 +61,20 @@ Route::group(['prefix' => 'parent-navs'], function () {
     Route::get('/{id}', [ParentNavController::class, 'show']);
 });
 
+// Zh Parent Nav
+Route::group(['prefix' => 'zh-parent-navs'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ParentNavController::class, 'storeZh']);
+        Route::patch('/{id}', [ParentNavController::class, 'updateZh']);
+        Route::delete('/{id}', [ParentNavController::class, 'destroyZh']);
+    });
+
+    Route::get('/', [ParentNavController::class, 'indexZh']);
+    Route::get('/all-with-child', [ParentNavController::class, 'getAllZhWithChildren']);
+    Route::get('/slug/{slug}', [ParentNavController::class, 'getZhChildrenBySlug']);
+    Route::get('/{id}', [ParentNavController::class, 'showZh']);
+});
+
 
 // Child Nav
 Route::group(['prefix' => 'child-navs'], function () {
@@ -72,6 +86,18 @@ Route::group(['prefix' => 'child-navs'], function () {
 
     Route::get('/', [ChildNavController::class, 'index']);
     Route::get('/{id}', [ChildNavController::class, 'show']);
+});
+
+// Zh Child Nav
+Route::group(['prefix' => 'zh-child-navs'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ChildNavController::class, 'storeZh']);
+        Route::patch('/{id}', [ChildNavController::class, 'updateZh']);
+        Route::delete('/{id}', [ChildNavController::class, 'destroyZh']);
+    });
+
+    Route::get('/', [ChildNavController::class, 'indexZh']);
+    Route::get('/{id}', [ChildNavController::class, 'showZh']);
 });
 
 // Child Nav Two
@@ -86,6 +112,19 @@ Route::group(['prefix' => 'child-navs-two'], function () {
     Route::get('/{id}', [ChildNavsTwoController::class, 'show']);
 });
 
+// Zh Child Nav Two
+Route::group(['prefix' => 'zh-child-navs-two'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ChildNavsTwoController::class, 'storeZh']);
+        Route::patch('/{id}', [ChildNavsTwoController::class, 'updateZh']);
+        Route::delete('/{id}', [ChildNavsTwoController::class, 'destroyZh']);
+    });
+
+    Route::get('/', [ChildNavsTwoController::class, 'indexZh']);
+    Route::get('/{id}', [ChildNavsTwoController::class, 'showZh']);
+});
+
+
 // Configuration
 Route::group(['prefix' => 'configuration'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
@@ -96,6 +135,18 @@ Route::group(['prefix' => 'configuration'], function () {
 
     Route::get('/', [ConfigurationController::class, 'index']);
     Route::get('/{id}', [ConfigurationController::class, 'show']);
+});
+
+// Zh Configuration
+Route::group(['prefix' => 'zh-configuration'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ConfigurationController::class, 'storeZh']);
+        Route::post('/{id}', [ConfigurationController::class, 'updateZh']);
+        Route::delete('/{id}', [ConfigurationController::class, 'destroyZh']);
+    });
+
+    Route::get('/', [ConfigurationController::class, 'indexZh']);
+    Route::get('/{id}', [ConfigurationController::class, 'showZh']);
 });
 
 // Product
@@ -111,6 +162,19 @@ Route::group(['prefix' => 'products'], function () {
     Route::get('/{id}', [ProductController::class, 'show']);
 });
 
+// Zh Product
+Route::group(['prefix' => 'zh-products'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ProductController::class, 'zhStore']);
+        Route::post('/{id}', [ProductController::class, 'zhUpdate']);
+        Route::delete('/{id}', [ProductController::class, 'zhDestroy']);
+    });
+
+    Route::get('/', [ProductController::class, 'zhIndex']);
+    Route::get('/by-category/{slugNav}', [ProductController::class, 'zhGetProductsBySlugNav']);
+    Route::get('/{id}', [ProductController::class, 'zhShow']);
+});
+
 // Order
 Route::group(['prefix' => 'orders'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
@@ -122,12 +186,31 @@ Route::group(['prefix' => 'orders'], function () {
     Route::post('/{id}/status', [OrderController::class, 'updateStatus']);
 });
 
+// Zh Order
+Route::group(['prefix' => 'zh-orders'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::delete('/{id}', [OrderController::class, 'zhDestroy']);
+        Route::get('/', [OrderController::class, 'zhIndex']);
+    });
+    Route::get('/{key}', [OrderController::class, 'zhShowByKey']);
+    Route::post('/', [OrderController::class, 'zhStore']);
+    Route::post('/{id}/status', [OrderController::class, 'zhUpdateStatus']);
+});
+
 // Comment
 Route::group(['prefix' => 'comments'], function () {
     Route::delete('/{id}', [CommentController::class, 'destroy']);
     Route::post('/', [CommentController::class, 'store']);
     Route::post('/{id}', [CommentController::class, 'update']);
     Route::get('/{id}', [CommentController::class, 'index']);
+});
+
+// Zh Comment
+Route::group(['prefix' => 'zh-comments'], function () {
+    Route::delete('/{id}', [CommentController::class, 'zhDestroy']);
+    Route::post('/', [CommentController::class, 'zhStore']);
+    Route::post('/{id}', [CommentController::class, 'zhUpdate']);
+    Route::get('/{id}', [CommentController::class, 'zhIndex']);
 });
 
 // Service
@@ -164,6 +247,18 @@ Route::group(['prefix' => 'news'], function () {
 
     Route::get('/', [NewsController::class, 'index']);
     Route::get('/{id}', [NewsController::class, 'show']);
+});
+
+// Zh News
+Route::group(['prefix' => 'zh-news'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [NewsController::class, 'zhStore']);
+        Route::post('/{id}', [NewsController::class, 'zhUpdate']);
+        Route::delete('/{id}', [NewsController::class, 'zhDestroy']);
+    });
+
+    Route::get('/', [NewsController::class, 'zhIndex']);
+    Route::get('/{id}', [NewsController::class, 'zhShow']);
 });
 
 // Team
@@ -214,6 +309,17 @@ Route::group(['prefix' => 'contact'], function () {
     Route::post('/', [ContactController::class, 'store']);
 });
 
+// Zh Contact
+Route::group(['prefix' => 'zh-contact'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::delete('/{id}', [ContactController::class, 'zhDestroy']);
+        Route::get('/{id}', [ContactController::class, 'zhShow']);
+        Route::get('/', [ContactController::class, 'zhIndex']);
+    });
+
+    Route::post('/', [ContactController::class, 'zhStore']);
+});
+
 // Page
 Route::group(['prefix' => 'pages'], function () {
     Route::group(['middleware' => AdminMiddleware::class], function () {
@@ -225,6 +331,19 @@ Route::group(['prefix' => 'pages'], function () {
     Route::get('/', [PageController::class, 'index']);
     Route::get('/{id}', [PageController::class, 'show']);
     Route::get('/slug/{slug}', [PageController::class, 'getPageBySlug']);
+});
+
+// Zh Page
+Route::group(['prefix' => 'zh-pages'], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [PageController::class, 'zhStore']);
+        Route::patch('/{slug}', [PageController::class, 'zhUpdate']);
+        Route::delete('/{id}', [PageController::class, 'zhDestroy']);
+    });
+
+    Route::get('/', [PageController::class, 'zhIndex']);
+    Route::get('/{id}', [PageController::class, 'zhShow']);
+    Route::get('/slug/{slug}', [PageController::class, 'zhGetPageBySlug']);
 });
 
 // Review
@@ -242,9 +361,29 @@ Route::group([
     Route::get('/{id}', [ReviewController::class, 'show']);
 });
 
+// Zh Review
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'zh-review',
+], function () {
+    Route::group(['middleware' => AdminMiddleware::class], function () {
+        Route::post('/', [ReviewController::class, 'zhStore']);
+        Route::post('/{id}', [ReviewController::class, 'zhUpdate']);
+        Route::delete('/{id}', [ReviewController::class, 'zhDestroy']);
+    });
+
+    Route::get('/', [ReviewController::class, 'zhIndex']);
+    Route::get('/{id}', [ReviewController::class, 'zhShow']);
+});
+
 // Search
 Route::group(['prefix' => 'search'], function () {
     Route::get('/', [SearchController::class, 'search']);
+});
+
+// Zh Search
+Route::group(['prefix' => 'zh-search'], function () {
+    Route::get('/', [SearchController::class, 'zhSearch']);
 });
 
 //PageVisit

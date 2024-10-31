@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Configuration extends Model
+class ZhConfiguration extends Model
 {
     use HasFactory;
 
@@ -13,10 +13,10 @@ class Configuration extends Model
         'name',
         'homepage_slider',
         'contact_email',
-        'phone_number',
+        'phone_number'
     ];
 
     protected $casts = [
-        'homepage_slider' => 'array',
+        'homepage_slider' => 'array'
     ];
 }

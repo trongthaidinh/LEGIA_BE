@@ -5,18 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Configuration extends Model
+class ZhContact extends Model
 {
     use HasFactory;
 
+    protected $table = 'zh_contacts';
+
     protected $fillable = [
         'name',
-        'homepage_slider',
-        'contact_email',
-        'phone_number',
-    ];
-
-    protected $casts = [
-        'homepage_slider' => 'array',
+        'email',
+        'phone',
+        'content',
     ];
 }

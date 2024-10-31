@@ -5,18 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Configuration extends Model
+class ZhOrderItem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'order_id',
         'name',
-        'homepage_slider',
-        'contact_email',
-        'phone_number',
+        'quantity',
+        'price',
+        'image',
     ];
 
-    protected $casts = [
-        'homepage_slider' => 'array',
-    ];
+    public function order()
+    {
+        return $this->belongsTo(ZhOrder::class);
+    }
 }
